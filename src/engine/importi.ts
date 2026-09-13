@@ -11,8 +11,3 @@ export function inCentesimi(euro: number): Centesimi {
 export function inEuro(centesimi: Centesimi): number {
   return centesimi / 100;
 }
-
-/** Frazione di un importo (es. il 40% della soglia), arrotondata al centesimo. */
-export function frazioneDi(centesimi: Centesimi, frazione: number): Centesimi {
-  return Math.round(centesimi * frazione);
-}
