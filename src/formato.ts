@@ -1,0 +1,52 @@
+// Formattazione italiana, senza dipendere dall'ICU del runtime.
+// Usata dal motore per le motivazioni e dalla UI per le celle.
+
+import type { DataISO, Unita } from './domain';
+
+const SEPARATORE_MIGLIAIA = '.';
+const SEPARATORE_DECIMALI = ',';
+const SPAZIO_STRETTO = ' ';
+
+function raggruppaMigliaia(interi: string): string {
+  return interi.replace(/\B(?=(\d{3})+(?!\d))/g, SEPARATORE_MIGLIAIA);
+}
+
+/**
+ * `decimali` fissa le cifre dopo la virgola; se omesso, ne mostra al più
+ * due e solo se servono.
+ */
+export function formattaNumero(valore: number, decimali?: number): string {
+  const negativo = valore < 0;
+  const assoluto = Math.abs(valore);
+  const fisso = decimali ?? (Number.isInteger(Number(assoluto.toFixed(2))) ? 0 : 2);
+  const [interi, frazione] = assoluto.toFixed(fisso).split('.');
+  const corpo = raggruppaMigliaia(interi ?? '0') + (frazione ? SEPARATORE_DECIMALI + frazione : '');
+  return negativo ? `-${corpo}` : corpo;
+}
+
+export function formattaEuro(euro: number): string {
+  return `${formattaNumero(euro)}${SPAZIO_STRETTO}€`;
+}
+
+/** Da frazione: 0.6 → "60 %", 0.125 → "12,5 %". */
+export function formattaPercentuale(frazione: number): string {
+  const percento = Number((frazione * 100).toFixed(4));
+  const decimali = Number.isInteger(percento) ? 0 : Math.min(2, String(percento).split('.')[1]?.length ?? 0);
+  return `${formattaNumero(percento, decimali)}${SPAZIO_STRETTO}%`;
+}
+
+/** ISO → gg/mm/aaaa. Una data malformata torna com'è: non viene nascosta. */
+export function formattaData(data: DataISO): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(data);
+  if (!m) return data;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+export function formattaConUnita(valore: number, unita: Unita): string {
+  switch (unita) {
+    case 'euro':
+      return formattaEuro(valore);
+    case 'conteggio':
+      return formattaNumero(valore);
+  }
+}
