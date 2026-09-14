@@ -14,6 +14,7 @@ import type {
   FamigliaRequisito,
   GravitaAnomalia,
   Indeterminatezza,
+  Lotto,
   LottoId,
   PercorsoMinimo,
   PrestazioneId,
@@ -693,4 +694,20 @@ export function dichiarazioneDati(bando: Provenienza, fascicoli: Provenienza[]):
       ? 'Le imprese e i loro fascicoli sono reali.'
       : 'Tra le imprese alcune sono reali e altre di esempio: lo dice la fonte di ogni fascicolo.';
   return `${frase} ${imprese}`;
+}
+
+// ─── Quote ───────────────────────────────────────────────────
+
+/**
+ * Perché spostare una quota può non cambiare l'esito, detto dai dati del
+ * lotto: senza questa frase un campo che non incide sembra rotto. `rilevanti`
+ * lo decide il motore (`quoteRilevanti`); qui si dice solo il perché.
+ */
+export function effettoDelleQuote(lotto: Lotto, rilevanti: boolean): string | undefined {
+  if (rilevanti) return undefined;
+  const indivisibile = lotto.prestazioni.length === 1 && lotto.prestazioni[0]?.natura === 'indivisibile';
+  const perche = indivisibile
+    ? 'la prestazione è indivisibile e nessun requisito di questo lotto guarda chi la esegue'
+    : 'nessun requisito di questo lotto guarda chi esegue le prestazioni';
+  return `Qui le quote non cambiano chi copre cosa: ${perche}. Contano per i totali, che devono fare 100 %, e chi è a zero non esegue niente.`;
 }

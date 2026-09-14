@@ -1,36 +1,51 @@
-// Una pagina, nessun routing. I documenti arrivano dallo stesso server che
-// serve la pagina; finché non ci sono, non c'è niente da valutare.
+// Due schermate, nessun router. La prima chiede cosa valutare; la seconda
+// è l'esito. Il passaggio entra nella cronologia del browser, così Indietro
+// torna alla scelta come ci si aspetta, senza ricaricare niente.
 //
-// Lo stato mutabile è il foglio di lavoro; tutto il resto è derivato dal
-// motore: il canale sincrono (requisiti, anomalie, avvisi, verdetto) risponde
-// a ogni modifica, quello differito (rimedi, percorso, confronti) dopo che la
-// modifica si è assestata.
+// I documenti arrivano dallo stesso server che serve la pagina, oppure dal
+// disco di chi la usa; finché non ci sono, non c'è niente da scegliere.
 //
-// La schermata risponde a una domanda: sono dentro su questo lotto, e se
-// no cosa mi manca. Ciò che risponde sta in alto e grande; ciò che motiva
-// sotto; ciò che documenta dietro un'interazione.
+// Nell'esito lo stato mutabile è il foglio di lavoro; tutto il resto è
+// derivato dal motore: il canale sincrono (requisiti, anomalie, avvisi,
+// verdetto) risponde a ogni modifica, quello differito (rimedi, percorso,
+// confronti) dopo che la modifica si è assestata.
+//
+// L'esito risponde a una domanda: sono dentro su questo lotto, e se no cosa
+// mi manca. Ciò che risponde sta in alto e grande; ciò che motiva sotto; ciò
+// che documenta dietro un'interazione.
 
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { Azione, Lavoro } from './lavoro';
 import { composizionePrimaDellUltimaProva, raggruppamentoInPartiUguali, riduci } from './lavoro';
 import type { Bando, ParametriValutazione, Raggruppamento, Soggetto } from './domain';
 import { valutaBase } from './engine';
 import { trovaLotto } from './engine/indici';
-import { formattaData } from './formato';
+import { formattaData, oggiISO } from './formato';
 import { dichiarazioneDati, fraseVerdetto } from './descrizioni';
 import { richiedeChiarimenti } from './engine/rimedi';
-import { caricaRaccolta, soggettiDi, type Raccolta, type Scarica } from './documenti/carica';
+import { caricaRaccolta, leggiDocumento, type Raccolta, type Scarica } from './documenti/carica';
 import type { Provenienza } from './documenti/formato';
 import { ORIZZONTE_SCADENZE_GIORNI } from './parametri';
+import {
+  controllaConflitti,
+  impreseDisponibili,
+  SCELTA_VUOTA,
+  sceltaPronta,
+  type EsitoCaricamento,
+  type Scelta,
+  type SceltaPronta,
+  type VoceBando,
+  type VoceFascicoli,
+} from './scelta';
 import { BarraLotti } from './ui/BarraLotti';
 import { BloccoVerdetto } from './ui/BloccoVerdetto';
 import { Composizione } from './ui/Composizione';
 import { ConfrontoLotti } from './ui/ConfrontoLotti';
 import { ConfrontoProva } from './ui/ConfrontoProva';
-import { ErroriDocumenti } from './ui/ErroriDocumenti';
 import { IntestazioneBando } from './ui/IntestazioneBando';
 import { legendaAssunzioni } from './ui/legenda';
 import { NoteMotore } from './ui/NoteMotore';
+import { SchermataScelta } from './ui/SchermataScelta';
 import { Storia } from './ui/Storia';
 import { TabellaEsito } from './ui/TabellaEsito';
 import { useValutazioneDifferita } from './ui/useValutazioneDifferita';
@@ -54,15 +69,71 @@ function useRaccolta(): Raccolta | undefined {
   return raccolta;
 }
 
+type Schermata = 'scelta' | 'esito';
+
+function schermataDi(stato: unknown): Schermata | undefined {
+  return (stato as { schermata?: Schermata } | null)?.schermata;
+}
+
 /**
- * PROVVISORIO: finché non c'è la schermata iniziale, la pagina apre il primo
- * bando valido con le prime tre imprese, in parti uguali. Sparisce con la
- * schermata in cui l'utente sceglie gara e imprese.
+ * La schermata corrente, legata alla cronologia: entrare nell'esito aggiunge
+ * un passo, Indietro lo toglie. Un ricaricamento riparte dalla scelta, perché
+ * la scelta non sopravvive al ricaricamento.
  */
-const IMPRESE_PROVVISORIE = 3;
+function useSchermata(): { schermata: Schermata; entra: () => void; esci: () => void } {
+  const [schermata, setSchermata] = useState<Schermata>('scelta');
+  useEffect(() => {
+    if (schermataDi(window.history.state)) window.history.replaceState(null, '');
+    const suPopState = (e: PopStateEvent) => setSchermata(schermataDi(e.state) === 'esito' ? 'esito' : 'scelta');
+    window.addEventListener('popstate', suPopState);
+    return () => window.removeEventListener('popstate', suPopState);
+  }, []);
+  const entra = useCallback(() => {
+    window.history.pushState({ schermata: 'esito' }, '');
+    setSchermata('esito');
+  }, []);
+  const esci = useCallback(() => {
+    if (schermataDi(window.history.state) === 'esito') window.history.back();
+    else setSchermata('scelta');
+  }, []);
+  return { schermata, entra, esci };
+}
+
+function leggiTesto(file: File): Promise<string> {
+  return new Promise((risolvi, rifiuta) => {
+    const lettore = new FileReader();
+    lettore.onload = () => risolvi(String(lettore.result));
+    lettore.onerror = () => rifiuta(lettore.error);
+    lettore.readAsText(file);
+  });
+}
 
 export default function App() {
   const raccolta = useRaccolta();
+  const [daDisco, setDaDisco] = useState<{ bandi: VoceBando[]; fascicoli: VoceFascicoli[] }>({ bandi: [], fascicoli: [] });
+  const [ultimoCaricamento, setUltimoCaricamento] = useState<EsitoCaricamento>();
+  const [scelta, setScelta] = useState<Scelta>(SCELTA_VUOTA);
+  const { schermata, entra, esci } = useSchermata();
+  const contatore = useRef(0);
+
+  // Cambiare schermata riparte dall'alto: la nuova schermata non eredita lo scorrimento della vecchia.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [schermata]);
+
+  const bandi = useMemo<VoceBando[]>(
+    () => [
+      ...(raccolta?.bandi ?? []).map((b): VoceBando => ({ chiave: `server:${b.file}`, origine: 'server', caricato: b, dataRiferimentoProposta: b.dataRiferimentoProposta })),
+      ...daDisco.bandi,
+    ],
+    [raccolta, daDisco.bandi],
+  );
+  const fascicoli = useMemo<VoceFascicoli[]>(
+    () => [...(raccolta?.fascicoli ?? []).map((f): VoceFascicoli => ({ chiave: `server:${f.file}`, origine: 'server', caricato: f })), ...daDisco.fascicoli],
+    [raccolta, daDisco.fascicoli],
+  );
+  const imprese = useMemo(() => impreseDisponibili(fascicoli), [fascicoli]);
+  const soggetti = useMemo(() => imprese.map((i) => i.soggetto), [imprese]);
 
   if (!raccolta) {
     return (
@@ -72,27 +143,72 @@ export default function App() {
     );
   }
 
-  const primo = raccolta.bandi.find((b) => b.stato === 'valido');
-  const fascicoliValidi = raccolta.fascicoli.filter((f) => f.stato === 'valido');
-  const soggetti = soggettiDi(raccolta.fascicoli);
-  const nonValidi = [raccolta.indice, ...raccolta.bandi, ...raccolta.fascicoli].filter((d) => d.stato === 'non_valido');
+  const suFile = async (file: File) => {
+    let testo: string;
+    try {
+      testo = await leggiTesto(file);
+    } catch {
+      setUltimoCaricamento({ tipo: 'errori', caricato: { file: file.name, stato: 'non_valido', errori: [{ tipo: 'lettura', motivo: 'il browser non è riuscito a leggere il file' }] } });
+      return;
+    }
+    const letto = leggiDocumento(file.name, testo);
+    contatore.current += 1;
+    const chiave = `disco:${contatore.current}:${file.name}`;
+    if (letto.genere === 'bando' && letto.caricato.stato === 'valido') {
+      const voce: VoceBando = { chiave, origine: 'disco', caricato: letto.caricato };
+      setDaDisco((d) => ({ ...d, bandi: [...d.bandi, voce] }));
+      setScelta((s) => ({ ...s, bando: chiave }));
+      setUltimoCaricamento({ tipo: 'bando', file: file.name, oggetto: letto.caricato.documento.bando.oggetto });
+      return;
+    }
+    if (letto.genere === 'fascicoli') {
+      const controllato = controllaConflitti(letto.caricato, imprese);
+      if (controllato.stato === 'valido') {
+        setDaDisco((d) => ({ ...d, fascicoli: [...d.fascicoli, { chiave, origine: 'disco', caricato: controllato }] }));
+        setUltimoCaricamento({ tipo: 'fascicoli', file: file.name, imprese: controllato.documento.soggetti.length });
+        return;
+      }
+      setUltimoCaricamento({ tipo: 'errori', caricato: controllato });
+      return;
+    }
+    if (letto.caricato.stato === 'non_valido') setUltimoCaricamento({ tipo: 'errori', caricato: letto.caricato });
+  };
 
-  if (!primo || primo.stato !== 'valido' || soggetti.length < IMPRESE_PROVVISORIE) {
-    return (
-      <main className={styles.pagina}>
-        <ErroriDocumenti documenti={nonValidi} />
-      </main>
-    );
+  const pronta = sceltaPronta(scelta, bandi, imprese);
+  const esempio = raccolta.bandi.find((b) => b.stato === 'valido');
+
+  if (schermata === 'esito' && pronta) {
+    return <Esito pronta={pronta} fascicoli={fascicoli} soggetti={soggetti} onCambiaGara={esci} />;
   }
 
-  const imprese = soggetti.slice(0, IMPRESE_PROVVISORIE).map((s) => s.id);
+  return (
+    <SchermataScelta
+      bandi={bandi}
+      fascicoli={fascicoli}
+      altri={[raccolta.indice]}
+      scelta={scelta}
+      onScelta={setScelta}
+      ultimoCaricamento={ultimoCaricamento}
+      onFile={(file) => void suFile(file)}
+      esempioFormato={esempio ? `${BASE_DOCUMENTI}${esempio.file}` : undefined}
+      onValuta={entra}
+    />
+  );
+}
+
+/** Dalla scelta all'esito: la composizione di partenza e i dati che la pagina dichiara. */
+function Esito({ pronta, fascicoli, soggetti, onCambiaGara }: { pronta: SceltaPronta; fascicoli: VoceFascicoli[]; soggetti: Soggetto[]; onCambiaGara: () => void }) {
+  const { bando, provenienza } = pronta.bando.caricato.documento;
+  const provenienzeFascicoli = fascicoli.flatMap((f) => (f.caricato.stato === 'valido' ? [f.caricato.documento.provenienza] : []));
+  const raggruppamento = raggruppamentoInPartiUguali(bando, pronta.imprese, pronta.mandataria);
   return (
     <Valutazione
-      bando={primo.documento.bando}
+      bando={bando}
       soggetti={soggetti}
-      provenienze={{ bando: primo.documento.provenienza, fascicoli: fascicoliValidi.map((f) => f.stato === 'valido' ? f.documento.provenienza : null).filter((p): p is Provenienza => p !== null) }}
-      dataRiferimento={primo.dataRiferimentoProposta ?? ''}
-      raggruppamento={raggruppamentoInPartiUguali(primo.documento.bando, imprese, imprese[0]!)}
+      provenienze={{ bando: provenienza, fascicoli: provenienzeFascicoli }}
+      dataRiferimento={pronta.bando.dataRiferimentoProposta ?? oggiISO()}
+      raggruppamento={raggruppamento}
+      onCambiaGara={onCambiaGara}
     />
   );
 }
@@ -106,9 +222,10 @@ type PropsValutazione = {
   provenienze: { bando: Provenienza; fascicoli: Provenienza[] };
   dataRiferimento: string;
   raggruppamento: Raggruppamento;
+  onCambiaGara: () => void;
 };
 
-function Valutazione({ bando, soggetti, provenienze, dataRiferimento, raggruppamento }: PropsValutazione) {
+function Valutazione({ bando, soggetti, provenienze, dataRiferimento, raggruppamento, onCambiaGara }: PropsValutazione) {
   const contesto = useMemo(() => ({ bando, soggetti }), [bando, soggetti]);
   const riduttore = useCallback((lavoro: Lavoro, azione: Azione) => riduci(lavoro, azione, contesto), [contesto]);
   const [lavoro, dispatch] = useReducer(riduttore, undefined, (): Lavoro => ({
@@ -156,7 +273,10 @@ function Valutazione({ bando, soggetti, provenienze, dataRiferimento, raggruppam
   return (
     <main className={styles.pagina}>
       <header className={styles.testata}>
-        <h1 className={styles.titolo}>Valutazione ammissibilità del raggruppamento</h1>
+        <div className={styles.rigaTitolo}>
+          <h1 className={styles.titolo}>Valutazione ammissibilità del raggruppamento</h1>
+          <button type="button" className={styles.cambiaGara} onClick={onCambiaGara}>Cambia gara</button>
+        </div>
         <p className={styles.gara}>
           <span className={styles.oggetto}>{bando.oggetto}</span>
           <span className={styles.dato}>{bando.stazioneAppaltante}</span>

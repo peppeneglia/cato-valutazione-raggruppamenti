@@ -112,3 +112,11 @@
 .modulo[open] > summary {
   margin-bottom: var(--sp-2);
 }
+
+/* Perché una quota spostata non cambia l'esito: sta sotto la didascalia, nello stesso registro. */
+.effettoQuote {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+  padding-left: var(--sp-3);
+  border-left: var(--spessore-bordo-forte) solid var(--c-bordo);
+}

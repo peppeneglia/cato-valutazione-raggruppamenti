@@ -21,6 +21,12 @@ Bandi e fascicoli non sono nel codice: sono file JSON in `public/documenti/`,
 che l'applicazione carica all'avvio. `indice.json` elenca quelli disponibili;
 per aggiungere un bando basta il suo file e una voce nell'indice.
 
+La pagina si apre sulla scelta, non su un esito: quale gara, quali imprese,
+chi è la mandataria. Accanto alle gare disponibili si carica un file dal
+proprio computer — un bando o dei fascicoli nello stesso formato — che si
+legge nel browser e non viene inviato a nessuno. Le quote partono in parti
+uguali; dall'esito si torna alla scelta senza ricaricare.
+
 Il formato è il nostro formato di ingresso al motore: **requisiti
 strutturati**, prodotti a valle dell'estrazione dal documento di gara.
 L'estrazione questo progetto non la fa, per scelta. Ogni documento dichiara

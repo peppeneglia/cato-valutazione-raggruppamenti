@@ -5,7 +5,8 @@
 // motore. I moduli di aggiunta stanno chiusi: si aprono quando servono.
 
 import type { Azione } from '../lavoro';
-import { etichettaRuolo, nomeRequisito, nomeSoggetto, type ContestoDescrizioni } from '../descrizioni';
+import { effettoDelleQuote, etichettaRuolo, nomeRequisito, nomeSoggetto, type ContestoDescrizioni } from '../descrizioni';
+import { quoteRilevanti } from '../engine/rimedi';
 import type { Lotto, Membro, Raggruppamento, RuoloEsecutore, Soggetto } from '../domain';
 import { AggiungiAusiliaria } from './AggiungiAusiliaria';
 import { AggiungiMembro } from './AggiungiMembro';
@@ -78,6 +79,7 @@ function BloccoAusiliaria({ membro, contesto, dispatch }: { membro: Extract<Memb
 }
 
 export function Composizione({ lotto, raggruppamento, soggetti, contesto, dispatch }: Props) {
+  const effetto = lotto ? effettoDelleQuote(lotto, quoteRilevanti(lotto)) : undefined;
   return (
     <section aria-labelledby="titolo-composizione" className={styles.sezione}>
       <h2 id="titolo-composizione">Composizione del raggruppamento</h2>
@@ -86,6 +88,7 @@ export function Composizione({ lotto, raggruppamento, soggetti, contesto, dispat
       ) : (
         <p className={styles.didascalia}>Quote di esecuzione in percento per ogni prestazione del lotto.</p>
       )}
+      {effetto ? <p className={styles.effettoQuote}>{effetto}</p> : null}
       {lotto && raggruppamento.membri.length > 0 ? (
         <ul className={styles.membri}>
           {raggruppamento.membri.map((m) =>

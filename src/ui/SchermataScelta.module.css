@@ -1,0 +1,386 @@
+/* Una colonna, larga quanto si legge. Card per le due domande, spazio
+   generoso tra le card e compatto dentro. Nessuna larghezza minima: a
+   400 px tutto va a capo. */
+.pagina {
+  max-width: 62em;
+  margin: 0 auto;
+  padding-block: var(--sp-6) var(--sp-8);
+  padding-inline: var(--sp-5);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5);
+}
+
+@media (max-width: 699px) {
+  .pagina {
+    padding-inline: var(--sp-4);
+    padding-top: var(--sp-5);
+  }
+}
+
+.nascosto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ─── Cosa fa, cosa non fa ─────────────────────────────────── */
+
+.intro {
+  display: grid;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-2);
+}
+
+.titolo {
+  font-size: var(--testo-verdetto);
+  font-weight: var(--peso-verdetto);
+  line-height: var(--interlinea-verdetto);
+  letter-spacing: -0.01em;
+  color: var(--c-navy);
+}
+
+.cosaFa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-3) var(--sp-6);
+  font-size: var(--testo-base);
+  max-width: 56em;
+}
+
+@media (min-width: 768px) {
+  .cosaFa {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.etichetta {
+  font-size: var(--testo-xs);
+  font-weight: var(--peso-forte);
+  color: var(--c-testo-tenue);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--sp-1);
+}
+
+/* ─── Card ─────────────────────────────────────────────────── */
+
+.card {
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio);
+  background: var(--c-sfondo);
+  min-width: 0;
+}
+
+@media (max-width: 699px) {
+  .card {
+    padding: var(--sp-4);
+  }
+}
+
+.passo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--testo-titolo);
+}
+
+.numero {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 50%;
+  background: var(--c-navy);
+  color: var(--c-sfondo);
+  font-size: var(--testo-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.elenco {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.vuoto,
+.nota {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+.radio,
+.spunta {
+  margin: 0.2em 0 0;
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--c-navy);
+}
+
+/* ─── Gara ─────────────────────────────────────────────────── */
+
+.garaGriglia {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .garaGriglia {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.gare {
+  display: grid;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.gara {
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio);
+  min-width: 0;
+}
+
+.gara:hover {
+  background: var(--c-superficie);
+}
+
+/* La gara scelta è una scelta compiuta: l'oro sul bordo, mai sul fondo. */
+.garaScelta {
+  border-color: var(--c-accento);
+  box-shadow: inset 0 0 0 var(--spessore-bordo) var(--c-accento);
+}
+
+.garaEtichetta {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  cursor: pointer;
+}
+
+.garaTesto {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.garaOggetto {
+  font-weight: var(--peso-forte);
+  color: var(--c-navy);
+  overflow-wrap: anywhere;
+}
+
+.garaDati {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--sp-3);
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+.garaProvenienza {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+  overflow-wrap: anywhere;
+}
+
+.nonUtilizzabile {
+  font-size: var(--testo-sm);
+  padding: var(--sp-2) var(--sp-3);
+  border-left: var(--spessore-bordo-forte) double var(--c-scoperto);
+  min-width: 0;
+}
+
+.nonUtilizzabile summary {
+  color: var(--c-scoperto);
+}
+
+.nonUtilizzabile details[open] > summary {
+  margin-bottom: var(--sp-2);
+}
+
+.file {
+  font-weight: var(--peso-forte);
+  overflow-wrap: anywhere;
+}
+
+/* ─── Caricamento da disco ─────────────────────────────────── */
+
+.carica {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: var(--spessore-bordo) dashed var(--c-bordo);
+  border-radius: var(--raggio);
+  background: var(--c-superficie);
+  min-width: 0;
+}
+
+.caricaTitolo {
+  font-size: var(--testo-base);
+  color: var(--c-navy);
+}
+
+.caricaSpiegazione {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+.bottoneFile {
+  justify-self: start;
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--spessore-bordo) solid var(--c-accento);
+  border-radius: var(--raggio-piccolo);
+  background: var(--c-sfondo);
+  color: var(--c-navy);
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-forte);
+  cursor: pointer;
+}
+
+.bottoneFile:hover {
+  background: var(--c-accento);
+  color: var(--c-accento-testo);
+}
+
+.bottoneFile:focus-within {
+  outline: var(--anello-focus);
+  outline-offset: var(--anello-focus-distanza);
+}
+
+.link {
+  justify-self: start;
+  font-size: var(--testo-sm);
+  color: var(--c-navy);
+  text-decoration: underline 2px var(--c-accento);
+  text-underline-offset: 3px;
+}
+
+.caricato {
+  font-size: var(--testo-sm);
+  padding-left: var(--sp-3);
+  border-left: var(--spessore-bordo-forte) solid var(--c-coperto);
+}
+
+/* ─── Imprese ──────────────────────────────────────────────── */
+
+.imprese {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.legenda {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 var(--sp-3);
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+}
+
+.impresa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio);
+}
+
+.impresa:hover {
+  background: var(--c-superficie);
+}
+
+.impresaInclusa {
+  border-color: var(--c-navy);
+}
+
+.impresaEtichetta {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.impresaTesto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.impresaNome {
+  font-weight: var(--peso-forte);
+  overflow-wrap: anywhere;
+}
+
+.impresaDati {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+  overflow-wrap: anywhere;
+}
+
+/* La mandataria si sceglie sulla riga, allineata sotto la sua intestazione. */
+.mandataria {
+  display: grid;
+  place-items: center;
+  padding: var(--sp-3) calc(var(--sp-3) + 1.2em);
+  cursor: pointer;
+}
+
+/* ─── Azione ───────────────────────────────────────────────── */
+
+.azione {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+}
+
+.valuta {
+  padding: var(--sp-3) var(--sp-5);
+  border: var(--spessore-bordo) solid var(--c-accento);
+  border-radius: var(--raggio-piccolo);
+  background: var(--c-accento);
+  color: var(--c-accento-testo);
+  font-size: var(--testo-base);
+  font-weight: var(--peso-forte);
+}
+
+.valuta:hover:not(:disabled) {
+  background: var(--c-accento-chiaro);
+  border-color: var(--c-accento-chiaro);
+}
+
+.valuta:disabled {
+  background: var(--c-superficie);
+  border-color: var(--c-bordo);
+  color: var(--c-testo-tenue);
+}
+
+.manca {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+.erroriCaricamento {
+  padding: var(--sp-4);
+  border-radius: var(--raggio);
+  background: var(--c-superficie);
+}

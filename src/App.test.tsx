@@ -9,12 +9,14 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
-import { FILE_BANDO, scaricaDaiDocumenti, TESTI } from './documenti/documentiDiProva';
+import { FILE_BANDO, FILE_FASCICOLI, scaricaDaiDocumenti, TESTI } from './documenti/documentiDiProva';
 
 const TESTO_BANDO = TESTI[FILE_BANDO]!;
 
 beforeEach(() => {
   vi.stubGlobal('fetch', scaricaDaiDocumenti());
+  // jsdom non implementa lo scorrimento della finestra.
+  vi.stubGlobal('scrollTo', () => {});
 });
 
 afterEach(() => {
@@ -24,16 +26,47 @@ afterEach(() => {
 
 const LENTO = { timeout: 4000 };
 
-/** La pagina carica i documenti prima di valutare: si aspetta il verdetto. */
-async function avvia(): Promise<void> {
-  render(<App />);
-  await screen.findByRole('region', { name: 'Verdetto' }, LENTO);
-}
-
 const FORNITURA = 'Fornitura di farmaci, parafarmaci, dispositivi medici e altro, da grossista con consegna veloce';
 const FARMALAZIO = 'Farmadistribuzione Laziale S.p.A.';
 const OSPEDALIA = 'Ospedalia Forniture S.r.l.';
+const MEDIFARM = 'Medifarm Logistica S.r.l.';
 const GROSSFARMA = 'Grossfarma Centro-Sud S.p.A.';
+const TITOLO_SCELTA = 'Il raggruppamento può partecipare alla gara?';
+const GARA_REALE = /^Fornitura di farmaci di fascia A e C/;
+
+function inizia(nome: string): RegExp {
+  return new RegExp(`^${nome.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+}
+
+type Utente = ReturnType<typeof userEvent.setup>;
+
+/** La schermata iniziale, con i documenti caricati. */
+async function apriScelta(): Promise<void> {
+  render(<App />);
+  await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO);
+}
+
+async function scegli(user: Utente, imprese: string[], mandataria: string): Promise<void> {
+  await user.click(screen.getByRole('radio', { name: GARA_REALE }));
+  for (const nome of imprese) await user.click(screen.getByRole('checkbox', { name: inizia(nome) }));
+  await user.click(screen.getByRole('radio', { name: `Mandataria: ${mandataria}` }));
+}
+
+/**
+ * Lo scenario dei test sulla gara reale: la schermata iniziale, la gara, le
+ * tre imprese che mostrano i comportamenti del motore, la prima mandataria.
+ */
+async function avvia(): Promise<void> {
+  const user = userEvent.setup();
+  await apriScelta();
+  await scegli(user, [FARMALAZIO, OSPEDALIA, MEDIFARM], FARMALAZIO);
+  await user.click(screen.getByRole('button', { name: 'Valuta il raggruppamento' }));
+  await screen.findByRole('region', { name: 'Verdetto' }, LENTO);
+}
+
+function fileJson(nome: string, contenuto: string): File {
+  return new File([contenuto], nome, { type: 'application/json' });
+}
 
 function riga(requisitoId: string): HTMLElement {
   const el = document.getElementById(`requisito-${requisitoId}`);
@@ -97,27 +130,136 @@ describe('pagina — avvio', () => {
   });
 });
 
-describe('pagina — documenti', () => {
-  it('finché i documenti non arrivano lo dice, e non mostra nessun esito', async () => {
+describe('schermata iniziale', () => {
+  it('all’apertura non c’è nessuna valutazione: c’è la domanda, cosa fa e cosa non fa', async () => {
+    await apriScelta();
+    expect(screen.queryByRole('region', { name: 'Verdetto' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Cosa fa' })).toBeTruthy();
+    expect(screen.getByText(/^Non legge il documento di gara: riceve i requisiti già strutturati\./)).toBeTruthy();
+    expect(screen.getByRole('radio', { name: GARA_REALE })).toHaveProperty('checked', false);
+    expect(screen.getByRole('button', { name: 'Valuta il raggruppamento' })).toHaveProperty('disabled', true);
+    expect(screen.getByText('Per valutare scegli la gara, almeno due imprese e la mandataria.')).toBeTruthy();
+  });
+  it('con una sola impresa il bottone resta spento e dice cosa manca', async () => {
+    const user = userEvent.setup();
+    await apriScelta();
+    await scegli(user, [], FARMALAZIO);
+    expect(screen.getByRole('checkbox', { name: inizia(FARMALAZIO) })).toHaveProperty('checked', true);
+    expect(screen.getByRole('button', { name: 'Valuta il raggruppamento' })).toHaveProperty('disabled', true);
+    expect(screen.getByText('Per valutare scegli almeno un’altra impresa.')).toBeTruthy();
+  });
+  it('le quote partono in parti uguali, con l’arrotondamento alla mandataria', async () => {
+    await avvia();
+    expect(quotaInput(FARMALAZIO, FORNITURA).value).toBe('34');
+    expect(quotaInput(OSPEDALIA, FORNITURA).value).toBe('33');
+    expect(quotaInput(MEDIFARM, FORNITURA).value).toBe('33');
+  });
+  it('dall’esito «Cambia gara» torna alla scelta senza ricaricare, e la scelta è ancora lì', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    await user.click(screen.getByRole('button', { name: 'Cambia gara' }));
+    await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO);
+    expect(screen.queryByRole('region', { name: 'Verdetto' })).toBeNull();
+    expect(screen.getByRole('radio', { name: GARA_REALE })).toHaveProperty('checked', true);
+    expect(screen.getByRole('checkbox', { name: inizia(OSPEDALIA) })).toHaveProperty('checked', true);
+    expect(screen.getByRole('radio', { name: `Mandataria: ${FARMALAZIO}` })).toHaveProperty('checked', true);
+    await user.click(screen.getByRole('button', { name: 'Valuta il raggruppamento' }));
+    expect(await screen.findByRole('region', { name: 'Verdetto' }, LENTO)).toBeTruthy();
+  });
+  it('anche Indietro del browser torna alla scelta', async () => {
+    await avvia();
+    window.history.back();
+    expect(await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO)).toBeTruthy();
+  });
+  it('nel pannello composizione dice perché le quote non cambiano l’esito su questa gara', async () => {
+    await avvia();
+    expect(within(regione('Composizione del raggruppamento')).getByText(/^Qui le quote non cambiano chi copre cosa: la prestazione è indivisibile e nessun requisito di questo lotto guarda chi la esegue\./)).toBeTruthy();
+  });
+});
+
+describe('schermata iniziale — caricamento da disco', () => {
+  function bandoConOggetto(oggetto: string): string {
+    const json = JSON.parse(TESTO_BANDO) as { bando: { id: string; oggetto: string } };
+    json.bando.id = 'bando-dal-disco';
+    json.bando.oggetto = oggetto;
+    return JSON.stringify(json);
+  }
+
+  it('un bando valido si aggiunge all’elenco, già scelto, e si valuta', async () => {
+    const user = userEvent.setup();
+    await apriScelta();
+    await user.upload(screen.getByLabelText('Scegli un file JSON'), fileJson('mio-bando.json', bandoConOggetto('Servizio di prova caricato dal disco')));
+    expect(await screen.findByText('Bando caricato da mio-bando.json e scelto: «Servizio di prova caricato dal disco».', undefined, LENTO)).toBeTruthy();
+    const gara = screen.getByRole('radio', { name: /^Servizio di prova caricato dal disco/ });
+    expect(gara).toHaveProperty('checked', true);
+    expect(screen.getByText(/dal tuo computer: mio-bando\.json/)).toBeTruthy();
+    for (const nome of [FARMALAZIO, OSPEDALIA]) await user.click(screen.getByRole('checkbox', { name: inizia(nome) }));
+    await user.click(screen.getByRole('radio', { name: `Mandataria: ${OSPEDALIA}` }));
+    await user.click(screen.getByRole('button', { name: 'Valuta il raggruppamento' }));
+    expect(await screen.findByRole('region', { name: 'Verdetto' }, LENTO)).toBeTruthy();
+    expect(screen.getAllByText('Servizio di prova caricato dal disco').length).toBeGreaterThan(0);
+  });
+  it('un file scritto a mano con un campo sbagliato mostra subito dove, cosa ci voleva e cosa c’è', async () => {
+    const user = userEvent.setup();
+    await apriScelta();
+    const json = JSON.parse(TESTO_BANDO) as { bando: { lotti: { requisiti: Record<string, unknown>[] }[] } };
+    json.bando.lotti[0]!.requisiti[3]!.avvalibbile = true;
+    await user.upload(screen.getByLabelText('Scegli un file JSON'), fileJson('scritto-a-mano.json', JSON.stringify(json)));
+    const errori = await screen.findByRole('region', { name: 'Errori in scritto-a-mano.json' }, LENTO);
+    expect(within(errori).getByText('bando › lotti › «lotto-unico» › requisiti › «fatturato-globale» › avvalibbile')).toBeTruthy();
+    expect(within(errori).getByText(/forse «avvalibile»\?$/)).toBeTruthy();
+    expect(within(errori).getByText('un campo «avvalibbile» che questo oggetto non prevede')).toBeTruthy();
+    expect(screen.getAllByRole('radio', { name: /^Fornitura|^Servizio/ })).toHaveLength(1);
+  });
+  it('un file che non è JSON dice riga e colonna', async () => {
+    const user = userEvent.setup();
+    await apriScelta();
+    await user.upload(screen.getByLabelText('Scegli un file JSON'), fileJson('rotto.json', '{\n  "formato": {\n    "nome": "requisiti-strutturati",\n  }\n}'));
+    const errori = await screen.findByRole('region', { name: 'Errori in rotto.json' }, LENTO);
+    expect(within(errori).getByText('Riga 4, colonna 3')).toBeTruthy();
+  });
+  it('dei fascicoli con un’impresa nuova la aggiungono; con un id già usato dicono di chi è', async () => {
+    const user = userEvent.setup();
+    await apriScelta();
+    const nuovi = JSON.parse(TESTI[FILE_FASCICOLI]!) as { soggetti: { id: string; denominazione: string }[] };
+    nuovi.soggetti = [{ ...nuovi.soggetti[0]!, id: 's-nuova', denominazione: 'Nuova Distribuzione S.r.l.' }];
+    await user.upload(screen.getByLabelText('Scegli un file JSON'), fileJson('nuova.json', JSON.stringify(nuovi)));
+    expect(await screen.findByText('Fascicoli caricati da nuova.json: 1 impresa aggiunta all\'elenco.', undefined, LENTO)).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: inizia('Nuova Distribuzione S.r.l.') })).toBeTruthy();
+
+    await user.upload(screen.getByLabelText('Scegli un file JSON'), fileJson('doppione.json', TESTI[FILE_FASCICOLI]!));
+    const errori = await screen.findByRole('region', { name: 'Errori in doppione.json' }, LENTO);
+    expect(within(errori).getByText(`un id non ancora usato: «s-farmalazio» è già di ${FARMALAZIO}, in ${FILE_FASCICOLI}`)).toBeTruthy();
+  });
+});
+
+describe('schermata iniziale — documenti del server', () => {
+  async function apriErrori(file: string): Promise<HTMLElement> {
+    const user = userEvent.setup();
+    const elenco = await screen.findByRole('list', { name: 'Documenti non utilizzabili' }, LENTO);
+    await user.click(within(elenco).getByText(/non è utilizzabile/, { selector: 'summary' }));
+    return within(elenco).getByRole('region', { name: `Errori in ${file}` });
+  }
+
+  it('finché i documenti non arrivano lo dice', async () => {
     render(<App />);
     expect(screen.getByRole('status').textContent).toBe('Caricamento dei documenti…');
-    expect(screen.queryByRole('region', { name: 'Verdetto' })).toBeNull();
-    await screen.findByRole('region', { name: 'Verdetto' }, LENTO);
+    await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO);
   });
-  it('un bando che non è JSON valido non rompe la pagina: dice il file e dove', async () => {
+  it('un bando del server che non è JSON valido non rompe la pagina: resta il caricamento da disco', async () => {
     vi.stubGlobal('fetch', scaricaDaiDocumenti({ [FILE_BANDO]: '{\n  "formato": {\n    "nome": "requisiti-strutturati",\n  }\n}' }));
     render(<App />);
-    const errori = await screen.findByRole('region', { name: `Errori in ${FILE_BANDO}` }, LENTO);
-    expect(within(errori).getByText('non è utilizzabile: 1 errore')).toBeTruthy();
+    const errori = await apriErrori(FILE_BANDO);
     expect(within(errori).getByText('Riga 4, colonna 3')).toBeTruthy();
-    expect(screen.queryByRole('region', { name: 'Verdetto' })).toBeNull();
+    expect(screen.getByText('Nessuna gara disponibile: caricane una dal tuo computer.')).toBeTruthy();
+    expect(screen.getByLabelText('Scegli un file JSON')).toBeTruthy();
   });
-  it('un bando con un campo sbagliato dice il percorso, cosa si aspettava e cosa ha trovato', async () => {
+  it('un bando del server con un campo sbagliato dice il percorso, cosa si aspettava e cosa ha trovato', async () => {
     const rotto = JSON.parse(TESTO_BANDO) as { bando: { lotti: { requisiti: { regola: { tipo: string } }[] }[] } };
     rotto.bando.lotti[0]!.requisiti[3]!.regola.tipo = 'somma';
     vi.stubGlobal('fetch', scaricaDaiDocumenti({ [FILE_BANDO]: JSON.stringify(rotto) }));
     render(<App />);
-    const errori = await screen.findByRole('region', { name: `Errori in ${FILE_BANDO}` }, LENTO);
+    const errori = await apriErrori(FILE_BANDO);
     expect(within(errori).getByText('bando › lotti › «lotto-unico» › requisiti › «fatturato-globale» › regola › tipo')).toBeTruthy();
     expect(within(errori).getByText(/^uno tra «ciascun_membro», «somma_membri»/)).toBeTruthy();
     expect(within(errori).getByText('il testo «somma»')).toBeTruthy();
@@ -125,7 +267,7 @@ describe('pagina — documenti', () => {
   it('un indice mancante dice che il file non esiste sul server', async () => {
     vi.stubGlobal('fetch', scaricaDaiDocumenti({ 'indice.json': 404 }));
     render(<App />);
-    const errori = await screen.findByRole('region', { name: 'Errori in indice.json' }, LENTO);
+    const errori = await apriErrori('indice.json');
     expect(within(errori).getByText('il file non esiste sul server (404)')).toBeTruthy();
   });
 });

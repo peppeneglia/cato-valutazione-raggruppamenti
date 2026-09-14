@@ -53,3 +53,10 @@ export function formattaConUnita(valore: number, unita: Unita): string {
       return `${formattaNumero(valore)} ${valore === 1 ? unita.sostantivo.singolare : unita.sostantivo.plurale}`;
   }
 }
+
+/** La data di oggi nel fuso di chi usa la pagina, in formato ISO. */
+export function oggiISO(): DataISO {
+  const oggi = new Date();
+  const due = (n: number) => String(n).padStart(2, '0');
+  return `${oggi.getFullYear()}-${due(oggi.getMonth() + 1)}-${due(oggi.getDate())}`;
+}

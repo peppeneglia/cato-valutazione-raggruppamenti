@@ -1,13 +1,3 @@
-.sezione {
-  display: grid;
-  gap: var(--sp-4);
-  max-width: 62em;
-}
-
-.spiegazione {
-  color: var(--c-testo-tenue);
-}
-
 .documento {
   display: grid;
   gap: var(--sp-2);

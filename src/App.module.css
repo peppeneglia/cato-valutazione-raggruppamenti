@@ -135,3 +135,26 @@
   background: var(--c-sfondo);
   font-variant-numeric: tabular-nums;
 }
+
+.rigaTitolo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-1) var(--sp-3);
+}
+
+.cambiaGara {
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--spessore-bordo) solid var(--c-accento);
+  border-radius: var(--raggio-piccolo);
+  background: var(--c-sfondo);
+  color: var(--c-navy);
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-forte);
+}
+
+.cambiaGara:hover {
+  background: var(--c-accento);
+  color: var(--c-accento-testo);
+}
