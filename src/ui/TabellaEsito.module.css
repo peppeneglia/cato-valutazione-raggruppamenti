@@ -227,6 +227,11 @@
 
 /* Stretto: la riga si impila. Stato e Dettagli sopra, requisito e quanto manca a tutta larghezza. */
 @media (max-width: 699px) {
+  .tabella,
+  .tabella tbody {
+    display: block;
+  }
+
   .tabella thead {
     display: none;
   }
@@ -245,7 +250,9 @@
   .stato { grid-column: 1; grid-row: 1; }
   .azioni { grid-column: 2; grid-row: 1; }
   .requisito { grid-column: 1 / -1; padding-top: 0; }
-  .manca { grid-column: 1 / -1; text-align: left; padding-top: 0; }
+  .manca { grid-column: 1 / -1; text-align: left; padding-top: 0; white-space: normal; }
+  .gruppo { display: block; }
+  .gruppo > td { display: block; }
   .manca:empty { display: none; }
 
   .rigaEspansione > td {

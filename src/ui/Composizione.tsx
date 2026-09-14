@@ -1,6 +1,8 @@
-// La composizione del raggruppamento: membri × prestazioni del lotto,
-// ruoli e quote editabili, ingresso e uscita. Nessuna somma: se le quote
-// non tornano lo dice un'anomalia del motore, con il link alla prestazione.
+// La composizione del raggruppamento, come pannello da manipolare: un
+// blocco per membro con nome, ruolo e quote impilati, così sta in una
+// colonna laterale e sotto il corpo a schermo stretto con lo stesso
+// layout. Nessuna somma: se le quote non tornano lo dice un'anomalia del
+// motore. I moduli di aggiunta stanno chiusi: si aprono quando servono.
 
 import type { Azione } from '../lavoro';
 import { etichettaRuolo, nomeRequisito, nomeSoggetto, type ContestoDescrizioni } from '../descrizioni';
@@ -20,12 +22,18 @@ type Props = {
   dispatch: (azione: Azione) => void;
 };
 
-function RigaEsecutore({ membro, lotto, contesto, dispatch }: { membro: Extract<Membro, { ruolo: RuoloEsecutore }>; lotto: Lotto; contesto: ContestoDescrizioni; dispatch: Props['dispatch'] }) {
+function BloccoEsecutore({ membro, lotto, contesto, dispatch }: { membro: Extract<Membro, { ruolo: RuoloEsecutore }>; lotto: Lotto; contesto: ContestoDescrizioni; dispatch: Props['dispatch'] }) {
   const nome = nomeSoggetto(membro.soggettoId, contesto);
+  const unica = lotto.prestazioni.length === 1;
   return (
-    <tr id={`membro-${membro.soggettoId}`}>
-      <th scope="row" className={styles.nome}>{nome}</th>
-      <td>
+    <li id={`membro-${membro.soggettoId}`} className={styles.membro}>
+      <div className={styles.testata}>
+        <h3 className={styles.nome}>{nome}</h3>
+        <button type="button" className={styles.rimuovi} onClick={() => dispatch({ tipo: 'rimuovi_membro', soggettoId: membro.soggettoId })}>
+          Rimuovi
+        </button>
+      </div>
+      <div className={styles.campi}>
         <select
           aria-label={`Ruolo di ${nome}`}
           value={membro.ruolo}
@@ -36,40 +44,36 @@ function RigaEsecutore({ membro, lotto, contesto, dispatch }: { membro: Extract<
             <option key={r} value={r}>{etichettaRuolo(r)}</option>
           ))}
         </select>
-      </td>
-      {lotto.prestazioni.map((p) => (
-        <td key={p.id} className={styles.quota}>
-          <InputQuota
-            etichetta={`Quota di ${nome} su ${p.descrizione}`}
-            quota={membro.quote[p.id] ?? 0}
-            onQuota={(quota) => dispatch({ tipo: 'imposta_quota', soggettoId: membro.soggettoId, prestazioneId: p.id, quota })}
-          />
-        </td>
-      ))}
-      <td>
-        <button type="button" className={styles.azione} onClick={() => dispatch({ tipo: 'rimuovi_membro', soggettoId: membro.soggettoId })}>
-          Rimuovi
-        </button>
-      </td>
-    </tr>
+        {lotto.prestazioni.map((p) => (
+          <label key={p.id} className={styles.quota}>
+            {/* Con una prestazione sola il nome è già detto dal lotto: resta per chi usa un lettore di schermo. */}
+            <span className={unica ? styles.nascosto : styles.prestazione}>{p.descrizione}</span>
+            {unica ? <span className={styles.prestazione} aria-hidden="true">Quota</span> : null}
+            <InputQuota
+              etichetta={`Quota di ${nome} su ${p.descrizione}`}
+              quota={membro.quote[p.id] ?? 0}
+              onQuota={(quota) => dispatch({ tipo: 'imposta_quota', soggettoId: membro.soggettoId, prestazioneId: p.id, quota })}
+            />
+          </label>
+        ))}
+      </div>
+    </li>
   );
 }
 
-function RigaAusiliaria({ membro, lotto, contesto, dispatch }: { membro: Extract<Membro, { ruolo: 'ausiliaria' }>; lotto: Lotto; contesto: ContestoDescrizioni; dispatch: Props['dispatch'] }) {
-  const nome = nomeSoggetto(membro.soggettoId, contesto);
+function BloccoAusiliaria({ membro, contesto, dispatch }: { membro: Extract<Membro, { ruolo: 'ausiliaria' }>; contesto: ContestoDescrizioni; dispatch: Props['dispatch'] }) {
   return (
-    <tr id={`membro-${membro.soggettoId}`} className={styles.ausiliaria}>
-      <th scope="row" className={styles.nome}>{nome}</th>
-      <td>{etichettaRuolo('ausiliaria')}</td>
-      <td colSpan={lotto.prestazioni.length} className={styles.dettaglioAusiliaria}>
-        A favore di {nomeSoggetto(membro.ausiliataId, contesto)} per: {membro.requisitiIds.length === 0 ? 'nessun requisito indicato' : membro.requisitiIds.map((id) => nomeRequisito(id, contesto)).join('; ')}
-      </td>
-      <td>
-        <button type="button" className={styles.azione} onClick={() => dispatch({ tipo: 'rimuovi_membro', soggettoId: membro.soggettoId })}>
+    <li id={`membro-${membro.soggettoId}`} className={`${styles.membro} ${styles.ausiliaria}`}>
+      <div className={styles.testata}>
+        <h3 className={styles.nome}>{nomeSoggetto(membro.soggettoId, contesto)}</h3>
+        <button type="button" className={styles.rimuovi} onClick={() => dispatch({ tipo: 'rimuovi_membro', soggettoId: membro.soggettoId })}>
           Rimuovi
         </button>
-      </td>
-    </tr>
+      </div>
+      <p className={styles.dettaglioAusiliaria}>
+        {etichettaRuolo('ausiliaria')}. A favore di {nomeSoggetto(membro.ausiliataId, contesto)} per: {membro.requisitiIds.length === 0 ? 'nessun requisito indicato' : membro.requisitiIds.map((id) => nomeRequisito(id, contesto)).join('; ')}
+      </p>
+    </li>
   );
 }
 
@@ -77,33 +81,31 @@ export function Composizione({ lotto, raggruppamento, soggetti, contesto, dispat
   return (
     <section aria-labelledby="titolo-composizione" className={styles.sezione}>
       <h2 id="titolo-composizione">Composizione del raggruppamento</h2>
-      {lotto ? (
-        <table className={styles.tabella}>
-          <caption className={styles.didascalia}>
-            Quote di esecuzione in percento per ogni prestazione del lotto. Le quote su altri lotti non compaiono qui e non contano qui.
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Soggetto</th>
-              <th scope="col">Ruolo</th>
-              {lotto.prestazioni.map((p) => (
-                <th scope="col" key={p.id} className={styles.quota}>{p.descrizione}</th>
-              ))}
-              <th scope="col"><span className={styles.nascosto}>Azioni</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            {raggruppamento.membri.map((m) =>
-              m.ruolo === 'ausiliaria'
-                ? <RigaAusiliaria key={m.soggettoId} membro={m} lotto={lotto} contesto={contesto} dispatch={dispatch} />
-                : <RigaEsecutore key={m.soggettoId} membro={m} lotto={lotto} contesto={contesto} dispatch={dispatch} />,
-            )}
-          </tbody>
-        </table>
+      {lotto && lotto.prestazioni.length === 1 && lotto.prestazioni[0]?.natura === 'indivisibile' ? (
+        <p className={styles.didascalia}>Fornitura indivisibile: le quote sono la percentuale che ciascun membro esegue.</p>
+      ) : (
+        <p className={styles.didascalia}>Quote di esecuzione in percento per ogni prestazione del lotto.</p>
+      )}
+      {lotto && raggruppamento.membri.length > 0 ? (
+        <ul className={styles.membri}>
+          {raggruppamento.membri.map((m) =>
+            m.ruolo === 'ausiliaria'
+              ? <BloccoAusiliaria key={m.soggettoId} membro={m} contesto={contesto} dispatch={dispatch} />
+              : <BloccoEsecutore key={m.soggettoId} membro={m} lotto={lotto} contesto={contesto} dispatch={dispatch} />,
+          )}
+        </ul>
       ) : null}
-      {raggruppamento.membri.length === 0 ? <p className={styles.vuoto}>Il raggruppamento è vuoto: aggiungi almeno una mandataria.</p> : null}
-      <AggiungiMembro raggruppamento={raggruppamento} soggetti={soggetti} dispatch={dispatch} />
-      {lotto ? <AggiungiAusiliaria lotto={lotto} raggruppamento={raggruppamento} soggetti={soggetti} contesto={contesto} dispatch={dispatch} /> : null}
+      {raggruppamento.membri.length === 0 ? <p className={styles.vuoto}>Aggiungi una mandataria per iniziare.</p> : null}
+      <details className={styles.modulo}>
+        <summary>Aggiungi un membro</summary>
+        <AggiungiMembro raggruppamento={raggruppamento} soggetti={soggetti} dispatch={dispatch} />
+      </details>
+      {lotto ? (
+        <details className={styles.modulo}>
+          <summary>Aggiungi un'ausiliaria</summary>
+          <AggiungiAusiliaria lotto={lotto} raggruppamento={raggruppamento} soggetti={soggetti} contesto={contesto} dispatch={dispatch} />
+        </details>
+      ) : null}
     </section>
   );
 }

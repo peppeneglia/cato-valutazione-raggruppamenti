@@ -71,3 +71,7 @@
   font-size: var(--testo-sm);
   color: var(--c-testo-tenue);
 }
+
+.select {
+  max-width: 100%;
+}

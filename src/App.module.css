@@ -4,7 +4,15 @@
   padding-block: var(--sp-4) var(--sp-8);
   padding-inline: var(--sp-5);
   display: grid;
+  /* Senza il minimo a zero la colonna si allarga fino al figlio più largo e la pagina scorre. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-5);
+}
+
+@media (max-width: 699px) {
+  .pagina {
+    padding-inline: var(--sp-4);
+  }
 }
 
 /* Una riga sottile: il titolo, la gara, la dichiarazione sui dati. Non compete con il verdetto. */

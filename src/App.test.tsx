@@ -161,15 +161,15 @@ describe('pagina — prove e annullamento', () => {
     await user.click(prove[prove.length - 1] as HTMLElement);
 
     const composizione = regione('Composizione del raggruppamento');
-    expect(within(composizione).getByRole('rowheader', { name: GROSSFARMA })).toBeTruthy();
+    expect(within(composizione).getByRole('heading', { name: GROSSFARMA })).toBeTruthy();
     expect(within(regione('Modifiche')).getByText(/^Prova: Avvalimento di Grossfarma/)).toBeTruthy();
     // Coperto, la riga passa nel gruppo chiuso dei coperti.
     expect(document.getElementById('requisito-fatturato-globale')).toBeNull();
     await apriCoperti(user);
     expect(within(riga('fatturato-globale')).getByText('Coperto')).toBeTruthy();
 
-    await user.click(screen.getByRole('button', { name: 'Annulla ultima modifica' }));
-    expect(within(composizione).queryByRole('rowheader', { name: GROSSFARMA })).toBeNull();
+    await user.click(screen.getByRole('button', { name: "Annulla l'ultima modifica" }));
+    expect(within(composizione).queryByRole('heading', { name: GROSSFARMA })).toBeNull();
     expect(within(riga('fatturato-globale')).getByText('Da verificare')).toBeTruthy();
     expect(within(regione('Modifiche')).getByText(/Nessuna modifica/)).toBeTruthy();
   });
@@ -234,14 +234,17 @@ describe('pagina — membri e ausiliarie', () => {
   it('aggiungere un membro lo mostra a quote zero con la segnalazione del motore', async () => {
     const user = userEvent.setup();
     render(<App />);
+    // I moduli di aggiunta stanno chiusi: si aprono quando servono.
+    await user.click(screen.getByText('Aggiungi un membro'));
     await user.click(screen.getByRole('button', { name: 'Aggiungi al raggruppamento' }));
-    expect(within(regione('Composizione del raggruppamento')).getByRole('rowheader', { name: GROSSFARMA })).toBeTruthy();
+    expect(within(regione('Composizione del raggruppamento')).getByRole('heading', { name: GROSSFARMA })).toBeTruthy();
     expect(within(regione('Anomalie nei dati')).getByText(/s-grossfarma non esegue prestazioni nel lotto lotto-unico/)).toBeTruthy();
   });
   it('un’ausiliaria aggiunta a mano sul fatturato lo copre sotto ogni lettura; i non avvalibili sono disabilitati con la ragione', async () => {
     const user = userEvent.setup();
     render(<App />);
     expect(within(riga('fatturato-globale')).getByText('Da verificare')).toBeTruthy();
+    await user.click(screen.getByText("Aggiungi un'ausiliaria"));
     const modulo = screen.getByRole('heading', { name: "Aggiungi un'ausiliaria in avvalimento" }).closest('form');
     if (!modulo) throw new Error('modulo ausiliaria non trovato');
     await user.selectOptions(within(modulo).getByLabelText('Ausiliaria'), 's-grossfarma');

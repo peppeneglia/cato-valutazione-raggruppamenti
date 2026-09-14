@@ -11,11 +11,11 @@ export function Storia({ storia, onAnnulla }: { storia: Passo[]; onAnnulla: () =
       <div className={styles.testata}>
         <h3 id="titolo-storia">Modifiche</h3>
         <button type="button" className={styles.annulla} onClick={onAnnulla} disabled={storia.length === 0}>
-          Annulla ultima modifica
+          Annulla l'ultima modifica
         </button>
       </div>
       {storia.length === 0 ? (
-        <p className={styles.vuoto}>Nessuna modifica: questa è la composizione di partenza.</p>
+        <p className={styles.vuoto}>Nessuna modifica ancora: prova una mossa o cambia una quota.</p>
       ) : (
         <ol className={styles.elenco} reversed>
           {[...storia].reverse().map((passo, i) => (

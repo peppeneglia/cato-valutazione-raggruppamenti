@@ -1,29 +1,51 @@
 .sezione {
   display: grid;
   gap: var(--sp-3);
+  min-width: 0;
 }
 
-.tabella th,
-.tabella td {
-  padding: var(--sp-1) var(--sp-2);
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
-  vertical-align: middle;
-}
-
-.didascalia {
+.didascalia,
+.vuoto {
   font-size: var(--testo-sm);
   color: var(--c-testo-tenue);
-  padding-bottom: var(--sp-2);
+}
+
+.membri {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+}
+
+.membro {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0;
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+}
+
+.membro:first-child {
+  border-top: var(--spessore-bordo) solid var(--c-bordo-forte);
+}
+
+.testata {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
 }
 
 .nome {
+  font-size: var(--testo-base);
   font-weight: var(--peso-medio);
-  white-space: nowrap;
+  color: var(--c-testo);
 }
 
-.quota {
-  text-align: right;
-  white-space: nowrap;
+.campi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
 }
 
 .select {
@@ -31,26 +53,17 @@
   border: var(--spessore-bordo) solid var(--c-bordo-forte);
   border-radius: var(--raggio-piccolo);
   background: var(--c-sfondo);
-}
-
-.azione {
-  padding: var(--sp-1) var(--sp-2);
-  border: var(--spessore-bordo) solid var(--c-bordo-forte);
-  border-radius: var(--raggio-piccolo);
-  background: var(--c-sfondo);
   font-size: var(--testo-sm);
 }
 
-.azione:hover {
-  background: var(--c-superficie);
-}
-
-.ausiliaria {
-  background: var(--c-superficie);
-}
-
-.dettaglioAusiliaria {
+.quota {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
   font-size: var(--testo-sm);
+}
+
+.prestazione {
   color: var(--c-testo-tenue);
 }
 
@@ -63,6 +76,37 @@
   white-space: nowrap;
 }
 
-.vuoto {
+.rimuovi {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--testo-sm);
   color: var(--c-testo-tenue);
+  text-decoration: underline;
+}
+
+.rimuovi:hover {
+  color: var(--c-scoperto);
+}
+
+.ausiliaria .nome::after {
+  content: '';
+}
+
+.dettaglioAusiliaria {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+.modulo {
+  font-size: var(--testo-sm);
+}
+
+.modulo > summary {
+  color: var(--c-accento);
+  width: max-content;
+}
+
+.modulo[open] > summary {
+  margin-bottom: var(--sp-2);
 }
