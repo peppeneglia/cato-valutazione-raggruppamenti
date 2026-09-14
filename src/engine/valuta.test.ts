@@ -90,6 +90,15 @@ describe('valuta', () => {
     expect(esito.percorsoMinimo).toEqual({ esito: 'bloccato_da_anomalie' });
     expect(esito.requisiti.every((r) => r.rimedi.length === 0)).toBe(true);
   });
+  it('è deterministica: due chiamate sullo stesso input danno lo stesso esito', () => {
+    const l = lotto({ prestazioni: [prestazione('p-1'), prestazione('p-2')], requisiti: [requisito('r-iso', ISO, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' })] });
+    const p = parametri({
+      bando: bando([l]),
+      soggetti: [soggetto('s-alfa', [certificazione('ISO 9001', 'x')]), soggetto('s-beta'), soggetto('s-x', [certificazione('ISO 9001', 'x')])],
+      raggruppamento: raggruppamento([esecutore('s-alfa', 'mandataria', { 'p-1': 1 }), esecutore('s-beta', 'mandante', { 'p-2': 1 })]),
+    });
+    expect(valuta(p)).toEqual(valuta(p));
+  });
   it('non muta gli input nemmeno durante la ricerca', () => {
     const l = lotto({ prestazioni: [prestazione('p-1'), prestazione('p-2')], requisiti: [requisito('r-iso', ISO, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' })] });
     const p = parametri({

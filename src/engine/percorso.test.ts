@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Lotto, ParametriValutazione, PercorsoMinimo, Requisito } from '../domain';
 import { chiaveStato, percorsoMinimo } from './percorso';
 import { bando, certificazione, dichiarazione, esecutore, lotto, parametri, prestazione, raggruppamento, requisito, soggetto } from './prova';
-import { valutazione } from './valutazione';
+import { creaMemo, valutazione } from './valutazione';
+import { bando as bandoFixture, DATA_RIFERIMENTO, ORIZZONTE_SCADENZE_GIORNI, raggruppamento as raggruppamentoFixture, soggetti as soggettiFixture } from '../fixture';
 
 const ISO = { tipo: 'certificazione', norma: 'ISO 9001' } as const;
 const ISO_SCOPE = { tipo: 'certificazione', norma: 'ISO 9001', scope: 'giusto' } as const;
@@ -152,6 +153,37 @@ describe('percorsoMinimo', () => {
     expect(esito).toMatchObject({ esito: 'trovato', verdettoRaggiunto: 'ammissibile' });
     if (esito.esito !== 'trovato') throw new Error('atteso trovato');
     expect(esito.mosse.some((m) => m.tipo === 'uscita_soggetto')).toBe(true);
+  });
+});
+
+describe('percorsoMinimo — limite teorico di copribilità', () => {
+  // Senza limite la ricerca esplora l'intero spazio degli stati: è una prova
+  // di equivalenza, non di velocità, e ha il suo timeout.
+  it('con e senza limite l’esito è identico su ogni lotto della fixture', { timeout: 120_000 }, () => {
+    for (const l of bandoFixture.lotti) {
+      const p: ParametriValutazione = {
+        bando: bandoFixture, lottoId: l.id, soggetti: soggettiFixture, raggruppamento: raggruppamentoFixture,
+        dataRiferimento: DATA_RIFERIMENTO, orizzonteScadenzeGiorni: ORIZZONTE_SCADENZE_GIORNI,
+      };
+      const memo = creaMemo(p);
+      const iniziale = valutazione(p, memo).esito;
+      const conLimite = percorsoMinimo(p, l, iniziale, memo, { limiteTeorico: true });
+      const senzaLimite = percorsoMinimo(p, l, iniziale, memo, { limiteTeorico: false });
+      expect(conLimite).toEqual(senzaLimite);
+    }
+  });
+});
+
+describe('percorsoMinimo — pareggio', () => {
+  it('a parità di lunghezza preferisce meno residui a meno segnalazioni', () => {
+    // Riassegnare p-2 ad Alfa costa una mossa e lascia un residuo (scope da verificare);
+    // l'ingresso di X che rileva p-2 costa una mossa e non lascia residui.
+    // Entrambi lasciano Beta a quote zero: la segnalazione non decide.
+    const esito = cerca([requisito('r', ISO_SCOPE, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' })], {
+      soggetti: [soggetto('s-alfa', [certificazione('ISO 9001', 'altro')]), soggetto('s-beta'), soggetto('s-x', [certificazione('ISO 9001', 'giusto')])],
+      raggruppamento: alfaBeta,
+    });
+    expect(esito).toMatchObject({ esito: 'trovato', verdettoRaggiunto: 'ammissibile', residui: [], mosse: [{ tipo: 'ingresso_soggetto', soggettoId: 's-x' }] });
   });
 });
 

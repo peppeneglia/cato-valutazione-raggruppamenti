@@ -4,7 +4,8 @@
 //
 // Prima si cerca il percorso ad `ammissibile`; se non esiste, quello ad
 // `ammissibile_con_riserva`. A parità di lunghezza vince chi lascia meno
-// segnalazioni, poi l'ordine di scoperta, che è l'ordine di invasività.
+// residui (domande aperte), poi meno segnalazioni, poi l'ordine di
+// scoperta, che è l'ordine di invasività e poi alfabetico.
 
 import { assertNever } from '../assertNever';
 import type { Lotto, ParametriValutazione, PercorsoMinimo, Raggruppamento, Requisito, RequisitoId } from '../domain';
@@ -78,21 +79,47 @@ function scopertiVincolanti(esito: EsitoBase, lotto: Lotto): Set<RequisitoId> {
   return new Set(esito.requisiti.filter((r) => r.stato === 'scoperto' && vincolanti.has(r.requisitoId)).map((r) => r.requisitoId));
 }
 
-/** Tra le soluzioni dello stesso livello: meno segnalazioni, poi la prima scoperta. */
+/**
+ * Tra le soluzioni dello stesso livello: meno residui, poi meno
+ * segnalazioni, poi la prima scoperta. Un residuo è una domanda aperta
+ * che qualcuno deve risolvere; un socio a quote zero è un fastidio formale.
+ */
 function migliore(soluzioni: Nodo[]): Nodo | undefined {
-  return soluzioni.reduce<Nodo | undefined>((acc, n) => (!acc || n.esito.anomalie.length < acc.esito.anomalie.length ? n : acc), undefined);
+  const costo = (n: Nodo) => [residuiDi(n.esito).length, n.esito.anomalie.length] as const;
+  return soluzioni.reduce<Nodo | undefined>((acc, n) => {
+    if (!acc) return n;
+    const [residuiAcc, segnalazioniAcc] = costo(acc);
+    const [residuiN, segnalazioniN] = costo(n);
+    return residuiN < residuiAcc || (residuiN === residuiAcc && segnalazioniN < segnalazioniAcc) ? n : acc;
+  }, undefined);
 }
 
 function trovato(nodo: Nodo, verdettoRaggiunto: 'ammissibile' | 'ammissibile_con_riserva'): PercorsoMinimo {
   return { esito: 'trovato', mosse: nodo.mosse, verdettoRaggiunto, residui: residuiDi(nodo.esito), segnalazioni: nodo.esito.anomalie.length };
 }
 
-export function percorsoMinimo(parametri: ParametriValutazione, lotto: Lotto, iniziale: EsitoBase, memo?: Memo): PercorsoMinimo {
+export type OpzioniRicerca = {
+  /**
+   * Se false, la ricerca ignora il limite teorico ed esplora tutto lo spazio.
+   * Serve solo ai test che dimostrano che il limite non cambia l'esito.
+   */
+  limiteTeorico: boolean;
+};
+
+const OPZIONI_PREDEFINITE: OpzioniRicerca = { limiteTeorico: true };
+
+export function percorsoMinimo(
+  parametri: ParametriValutazione,
+  lotto: Lotto,
+  iniziale: EsitoBase,
+  memo?: Memo,
+  opzioni: OpzioniRicerca = OPZIONI_PREDEFINITE,
+): PercorsoMinimo {
   if (iniziale.anomalie.some(eBloccante)) return { esito: 'bloccato_da_anomalie' };
   if (iniziale.verdetto === 'ammissibile') return { esito: 'gia_ammissibile', verdetto: 'ammissibile', residui: [] };
 
   const partenzaConRiserva = iniziale.verdetto === 'ammissibile_con_riserva';
-  const cercaPieno = ammissibileRaggiungibile(parametri, lotto, memo);
+  const cercaPieno = opzioni.limiteTeorico ? ammissibileRaggiungibile(parametri, lotto, memo) : true;
   if (partenzaConRiserva && !cercaPieno) {
     return { esito: 'gia_ammissibile', verdetto: 'ammissibile_con_riserva', residui: residuiDi(iniziale) };
   }

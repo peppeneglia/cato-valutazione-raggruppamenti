@@ -117,9 +117,10 @@ export const bando: Bando = {
             cpv: '33100000',
             // Il disciplinare dichiara equivalenti le apparecchiature per imaging.
             cpvEquivalenti: ['33110000'],
-            // Prime quattro cifre = classe CPV: fuori da «3310» non è analogo
-            // (la regola è del motore, il numero è del criterio). Gli arredi
-            // 33192000 escono; nel lotto 2, a due cifre, resterebbero dentro.
+            // Quattro cifre = classe CPV (3310 «apparecchiature mediche»). Per
+            // una fornitura di elettromedicali un arredo per reparto di degenza
+            // (3319 «dispositivi medici vari») non è analogo: lo stesso settore
+            // merceologico non basta, serve la stessa classe di apparecchiatura.
             cifreCpvComuni: 4,
             anni: 5,
             ancoraggio: 'pubblicazione',
@@ -194,6 +195,10 @@ export const bando: Bando = {
           criterio: {
             tipo: 'servizi',
             cpv: '33192000',
+            // Due cifre = divisione CPV (33 «apparecchiature mediche e vari»).
+            // Per gli arredi sanitari basta essere fornitori del settore medicale:
+            // una fornitura di dispositivi merita la verifica, una di mobili da
+            // ufficio (divisione 39) no.
             cifreCpvComuni: 2,
             anni: 5,
             ancoraggio: 'pubblicazione',
