@@ -40,10 +40,11 @@ export function CellaContributo({ contributo, unita }: { contributo: Contributo 
     <div className={`${styles.cella} ${contributo.conteggiato ? '' : styles.nonConteggiato}`}>
       <span className={classe}>{testo}</span>
       {contributo.conteggiato ? null : <span className={styles.nonConta}>non conta qui</span>}
-      {contributo.nota !== undefined || contributo.fonti.length > 0 ? (
+      {contributo.nota !== undefined || contributo.fonti.length > 0 || contributo.dettagli ? (
         <details className={styles.dettagli}>
           <summary>{contributo.fonti.length} {contributo.fonti.length === 1 ? 'fonte' : 'fonti'}{contributo.nota !== undefined ? ' · nota' : ''}</summary>
           {contributo.nota !== undefined ? <p className={styles.nota}>{contributo.nota}</p> : null}
+          {contributo.dettagli?.map((d) => <p key={d} className={styles.nota}>{d}</p>)}
           <Fonti fonti={contributo.fonti} />
         </details>
       ) : null}

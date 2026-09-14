@@ -323,11 +323,11 @@ export const raggruppamento: Raggruppamento = {
 };
 
 /**
- * Tra il termine per i chiarimenti (27/12/2023) e quello di presentazione
- * (15/01/2024): i rimedi di chiarimenti risultano decorsi, e si vede cosa
- * succede. I test coprono anche una data prima del 27/12/2023.
+ * Prima del termine per i chiarimenti (27/12/2023): il verdetto è azionabile,
+ * con i quesiti da porre e una scadenza davanti. Spostando la data oltre il
+ * 27/12 si vede il caso decorso, che i test coprono.
  */
-export const DATA_RIFERIMENTO = '2024-01-08';
+export const DATA_RIFERIMENTO = '2023-12-20';
 export const ORIZZONTE_SCADENZE_GIORNI = 90;
 
 /** La pagina lo dice: il bando è vero, le imprese no. */
@@ -342,7 +342,7 @@ export const DICHIARAZIONE_DATI = 'Bando reale: ASL Roma 6, gara n. 9445747, dis
 export const esitoAtteso: Record<LottoId, Esito> = {
   "lotto-unico": {
     "lottoId": "lotto-unico",
-    "valutatoAl": "2024-01-08",
+    "valutatoAl": "2023-12-20",
     "verdetto": "ammissibile_con_riserva",
     "requisiti": [
       {
@@ -410,7 +410,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
               "data": "2023-12-27",
               "ora": "12:00"
             },
-            "decorso": true
+            "decorso": false
           }
         ]
       },
@@ -468,10 +468,25 @@ export const esitoAtteso: Record<LottoId, Esito> = {
           {
             "tipo": "giudizio_richiesto",
             "soggettoId": "s-ospedalia",
-            "oggetto": "equivalenza tra «commercio all'ingrosso di articoli medicali e ortopedici» e «attività pertinenti con quelle oggetto della presente procedura di gara» (iscrizione Registro delle imprese)"
+            "oggetto": "equivalenza tra «commercio all'ingrosso di articoli medicali e ortopedici» e «attività pertinenti con quelle oggetto della presente procedura di gara» (iscrizione Registro delle imprese)",
+            "interpella": "stazione_appaltante",
+            "quesito": "L'attività «commercio all'ingrosso di articoli medicali e ortopedici» dell'iscrizione Registro delle imprese è pertinente rispetto a «attività pertinenti con quelle oggetto della presente procedura di gara»"
           }
         ],
-        "rimedi": []
+        "rimedi": [
+          {
+            "tipo": "richiesta_chiarimenti",
+            "requisitoId": "registro-imprese",
+            "quesiti": [
+              "L'attività «commercio all'ingrosso di articoli medicali e ortopedici» dell'iscrizione Registro delle imprese è pertinente rispetto a «attività pertinenti con quelle oggetto della presente procedura di gara» ai fini del requisito «Iscrizione nel registro delle imprese oppure nell'Albo delle Imprese Artigiane per attività pertinenti con quelle oggetto della procedura» (§6.1 lett. a) — Requisiti di idoneità professionale)?"
+            ],
+            "termine": {
+              "data": "2023-12-27",
+              "ora": "12:00"
+            },
+            "decorso": false
+          }
+        ]
       },
       {
         "requisitoId": "registri-di-settore",
@@ -500,7 +515,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
               "data": "2023-12-27",
               "ora": "12:00"
             },
-            "decorso": true
+            "decorso": false
           }
         ]
       },
@@ -608,33 +623,6 @@ export const esitoAtteso: Record<LottoId, Esito> = {
             "quote": {}
           },
           {
-            "tipo": "ingresso_soggetto",
-            "soggettoId": "s-grossfarma",
-            "ruolo": "mandante",
-            "quote": {
-              "fornitura": 0.6
-            },
-            "rilevateDa": "s-farmalazio"
-          },
-          {
-            "tipo": "ingresso_soggetto",
-            "soggettoId": "s-grossfarma",
-            "ruolo": "mandante",
-            "quote": {
-              "fornitura": 0.15
-            },
-            "rilevateDa": "s-medifarm"
-          },
-          {
-            "tipo": "ingresso_soggetto",
-            "soggettoId": "s-grossfarma",
-            "ruolo": "mandante",
-            "quote": {
-              "fornitura": 0.25
-            },
-            "rilevateDa": "s-ospedalia"
-          },
-          {
             "tipo": "avvalimento",
             "requisitoId": "fatturato-globale",
             "ausiliariaId": "s-grossfarma",
@@ -650,7 +638,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
               "data": "2023-12-27",
               "ora": "12:00"
             },
-            "decorso": true
+            "decorso": false
           }
         ],
         "misurazione": {
@@ -764,7 +752,9 @@ export const esitoAtteso: Record<LottoId, Esito> = {
           {
             "tipo": "giudizio_richiesto",
             "soggettoId": "s-ospedalia",
-            "oggetto": "equivalenza tra «commercializzazione di arredi e attrezzature per strutture sanitarie» e «settore oggetto dell'appalto» (certificazione UNI EN ISO 9001:2015 o ISO 13485)"
+            "oggetto": "equivalenza tra «commercializzazione di arredi e attrezzature per strutture sanitarie» e «settore oggetto dell'appalto» (certificazione UNI EN ISO 9001:2015 o ISO 13485)",
+            "interpella": "stazione_appaltante",
+            "quesito": "Una certificazione UNI EN ISO 9001:2015 o ISO 13485 con scope «commercializzazione di arredi e attrezzature per strutture sanitarie» rientra in «settore oggetto dell'appalto»"
           }
         ],
         "rimedi": [
@@ -772,13 +762,14 @@ export const esitoAtteso: Record<LottoId, Esito> = {
             "tipo": "richiesta_chiarimenti",
             "requisitoId": "certificazione-qualita",
             "quesiti": [
-              "In caso di raggruppamento temporaneo, da chi deve essere posseduto il requisito «Certificazione del sistema di gestione della qualità UNI EN ISO 9001:2015 nel settore oggetto dell'appalto e/o ISO 13485»: da ciascun componente, dalla sola mandataria o dal raggruppamento nel complesso?"
+              "In caso di raggruppamento temporaneo, da chi deve essere posseduto il requisito «Certificazione del sistema di gestione della qualità UNI EN ISO 9001:2015 nel settore oggetto dell'appalto e/o ISO 13485»: da ciascun componente, dalla sola mandataria o dal raggruppamento nel complesso?",
+              "Una certificazione UNI EN ISO 9001:2015 o ISO 13485 con scope «commercializzazione di arredi e attrezzature per strutture sanitarie» rientra in «settore oggetto dell'appalto» ai fini del requisito «Certificazione del sistema di gestione della qualità UNI EN ISO 9001:2015 nel settore oggetto dell'appalto e/o ISO 13485» (§6.3 lett. a) — Requisiti di capacità tecnica e professionale)?"
             ],
             "termine": {
               "data": "2023-12-27",
               "ora": "12:00"
             },
-            "decorso": true
+            "decorso": false
           }
         ]
       },
@@ -800,7 +791,10 @@ export const esitoAtteso: Record<LottoId, Esito> = {
                 "riferimento": "certificato di esecuzione — Azienda sanitaria di esempio A"
               }
             ],
-            "nota": "servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: importo 150.000 € sotto il minimo unitario di 750.000 €; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); ancoraggio assunto al termine di presentazione: quelle contate restano nella finestra fino a un arretramento di 713 giorni (la più esposta è «Fornitura di farmaci e dispositivi medici con consegna in urgenza»); con un arretramento di almeno 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»"
+            "nota": "servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: importo 150.000 € sotto il minimo unitario di 750.000 €; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); con un ancoraggio anteriore di 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»",
+            "dettagli": [
+              "le forniture contate restano nella finestra fino a un arretramento dell'ancoraggio di 713 giorni; la più esposta è «Fornitura di farmaci e dispositivi medici con consegna in urgenza»"
+            ]
           },
           {
             "soggettoId": "s-ospedalia",
@@ -825,7 +819,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
             "nota": "servizio «Consegna urgente di farmaci e dispositivi a strutture territoriali» per Azienda sanitaria di esempio E: importo 60.000 € sotto il minimo unitario di 750.000 €"
           }
         ],
-        "motivazione": "Somma dei contributi certi: 1 fornitura analoga su una soglia di 1 fornitura analoga: soglia raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 1 fornitura analoga (servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: importo 150.000 € sotto il minimo unitario di 750.000 €; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); ancoraggio assunto al termine di presentazione: quelle contate restano nella finestra fino a un arretramento di 713 giorni (la più esposta è «Fornitura di farmaci e dispositivi medici con consegna in urgenza»); con un arretramento di almeno 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»); Ospedalia Forniture S.r.l. 0 forniture analoghe (servizio «Fornitura di dispositivi medici per reparti di degenza» per Azienda sanitaria di esempio D: importo 120.000 € sotto il minimo unitario di 750.000 €); Medifarm Logistica S.r.l. 0 forniture analoghe (servizio «Consegna urgente di farmaci e dispositivi a strutture territoriali» per Azienda sanitaria di esempio E: importo 60.000 € sotto il minimo unitario di 750.000 €). Le letture misurano cose diverse (forniture analoghe, euro) e l'esito coincide sotto tutte.",
+        "motivazione": "Somma dei contributi certi: 1 fornitura analoga su una soglia di 1 fornitura analoga: soglia raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 1 fornitura analoga (servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: importo 150.000 € sotto il minimo unitario di 750.000 €; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); con un ancoraggio anteriore di 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»); Ospedalia Forniture S.r.l. 0 forniture analoghe (servizio «Fornitura di dispositivi medici per reparti di degenza» per Azienda sanitaria di esempio D: importo 120.000 € sotto il minimo unitario di 750.000 €); Medifarm Logistica S.r.l. 0 forniture analoghe (servizio «Consegna urgente di farmaci e dispositivi a strutture territoriali» per Azienda sanitaria di esempio E: importo 60.000 € sotto il minimo unitario di 750.000 €). Le letture misurano cose diverse (forniture analoghe, euro) e l'esito coincide sotto tutte.",
         "assunzioni": [
           {
             "codice": "ancoraggio_termine_presentazione",
@@ -870,7 +864,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
               "delta": 0,
               "minimiRuolo": []
             },
-            "motivazione": "Somma dei contributi certi: 1 fornitura analoga su una soglia di 1 fornitura analoga: soglia raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 1 fornitura analoga (servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: importo 150.000 € sotto il minimo unitario di 750.000 €; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); ancoraggio assunto al termine di presentazione: quelle contate restano nella finestra fino a un arretramento di 713 giorni (la più esposta è «Fornitura di farmaci e dispositivi medici con consegna in urgenza»); con un arretramento di almeno 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»); Ospedalia Forniture S.r.l. 0 forniture analoghe (servizio «Fornitura di dispositivi medici per reparti di degenza» per Azienda sanitaria di esempio D: importo 120.000 € sotto il minimo unitario di 750.000 €); Medifarm Logistica S.r.l. 0 forniture analoghe (servizio «Consegna urgente di farmaci e dispositivi a strutture territoriali» per Azienda sanitaria di esempio E: importo 60.000 € sotto il minimo unitario di 750.000 €)."
+            "motivazione": "Somma dei contributi certi: 1 fornitura analoga su una soglia di 1 fornitura analoga: soglia raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 1 fornitura analoga (servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: importo 150.000 € sotto il minimo unitario di 750.000 €; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); con un ancoraggio anteriore di 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»); Ospedalia Forniture S.r.l. 0 forniture analoghe (servizio «Fornitura di dispositivi medici per reparti di degenza» per Azienda sanitaria di esempio D: importo 120.000 € sotto il minimo unitario di 750.000 €); Medifarm Logistica S.r.l. 0 forniture analoghe (servizio «Consegna urgente di farmaci e dispositivi a strutture territoriali» per Azienda sanitaria di esempio E: importo 60.000 € sotto il minimo unitario di 750.000 €)."
           },
           {
             "etichetta": "la somma delle forniture non inferiore all'importo a base d'asta",
@@ -885,28 +879,13 @@ export const esitoAtteso: Record<LottoId, Esito> = {
               "delta": 0,
               "minimiRuolo": []
             },
-            "motivazione": "Somma dei contributi certi: 980.000 € su una soglia di 750.000 €: soglia raggiunta. Altri 150.000 € dipendono da fatti da verificare: se reggono, la soglia è raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 800.000 € più 150.000 € da verificare (servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: CPV 33600000-6 diverso da quello di gara 33190000-8, analogia da valutare; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); ancoraggio assunto al termine di presentazione: quelle contate restano nella finestra fino a un arretramento di 379 giorni (la più esposta è «Fornitura di farmaci di fascia A»); con un arretramento di almeno 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»); Ospedalia Forniture S.r.l. 120.000 € (ancoraggio assunto al termine di presentazione: quelle contate restano nella finestra fino a un arretramento di 501 giorni (la più esposta è «Fornitura di dispositivi medici per reparti di degenza»)); Medifarm Logistica S.r.l. 60.000 € (ancoraggio assunto al termine di presentazione: quelle contate restano nella finestra fino a un arretramento di 320 giorni (la più esposta è «Consegna urgente di farmaci e dispositivi a strutture territoriali»))."
+            "motivazione": "Somma dei contributi certi: 980.000 € su una soglia di 750.000 €: soglia raggiunta. Altri 150.000 € dipendono da fatti da verificare: se reggono, la soglia è raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 800.000 € più 150.000 € da verificare (servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: CPV 33600000-6 diverso da quello di gara 33190000-8, analogia da valutare; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); con un ancoraggio anteriore di 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»); Ospedalia Forniture S.r.l. 120.000 €; Medifarm Logistica S.r.l. 60.000 €."
           }
         ]
       }
     ],
     "anomalie": [],
-    "avvisiScadenza": [
-      {
-        "soggettoId": "s-farmalazio",
-        "descrizioneVoce": "certificazione UNI EN ISO 9001:2015 — settore oggetto dell'appalto",
-        "scadeIl": "2024-03-31",
-        "fonte": {
-          "documento": "Fascicolo aziendale (di esempio)",
-          "riferimento": "certificato ISO 9001:2015"
-        },
-        "requisitiIds": [
-          "certificazione-qualita"
-        ],
-        "primaDelTermine": false,
-        "entroOrizzonte": true
-      }
-    ],
+    "avvisiScadenza": [],
     "percorsoMinimo": {
       "esito": "gia_ammissibile",
       "verdetto": "ammissibile_con_riserva",
@@ -924,48 +903,6 @@ export const esitoAtteso: Record<LottoId, Esito> = {
             "soggettoId": "s-grossfarma",
             "ruolo": "mandante",
             "quote": {}
-          },
-          "requisitiRisolti": [
-            "fatturato-globale"
-          ]
-        },
-        {
-          "mossa": {
-            "tipo": "ingresso_soggetto",
-            "soggettoId": "s-grossfarma",
-            "ruolo": "mandante",
-            "quote": {
-              "fornitura": 0.6
-            },
-            "rilevateDa": "s-farmalazio"
-          },
-          "requisitiRisolti": [
-            "fatturato-globale"
-          ]
-        },
-        {
-          "mossa": {
-            "tipo": "ingresso_soggetto",
-            "soggettoId": "s-grossfarma",
-            "ruolo": "mandante",
-            "quote": {
-              "fornitura": 0.15
-            },
-            "rilevateDa": "s-medifarm"
-          },
-          "requisitiRisolti": [
-            "fatturato-globale"
-          ]
-        },
-        {
-          "mossa": {
-            "tipo": "ingresso_soggetto",
-            "soggettoId": "s-grossfarma",
-            "ruolo": "mandante",
-            "quote": {
-              "fornitura": 0.25
-            },
-            "rilevateDa": "s-ospedalia"
           },
           "requisitiRisolti": [
             "fatturato-globale"

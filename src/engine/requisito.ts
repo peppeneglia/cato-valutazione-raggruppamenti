@@ -253,6 +253,7 @@ function valutaVariante(requisito: Requisito, variante: Variante, contesto: Cont
         conteggiato,
         fonti: esecutore.grezzo.usati.map((u) => u.fonte),
         nota: unisciNote(note),
+        ...(esecutore.grezzo.dettagli.length > 0 ? { dettagli: esecutore.grezzo.dettagli } : {}),
       });
       righe.push({
         soggettoId: membro.soggettoId,
@@ -269,7 +270,7 @@ function valutaVariante(requisito: Requisito, variante: Variante, contesto: Cont
         usati.push(...esecutore.grezzo.usati.map((fatto) => ({ soggettoId: membro.soggettoId, requisitoId: requisito.id, fatto })));
         scaduti.push(...esecutore.grezzo.scaduti.map((fatto) => ({ soggettoId: membro.soggettoId, fatto })));
         // Il giudizio conta solo se il valore composto è ancora incerto: un'ausiliaria certa lo rende superfluo.
-        if (incerto(composto)) giudizi.push(...esecutore.grezzo.giudizi.map((oggetto) => ({ tipo: 'giudizio_richiesto' as const, soggettoId: membro.soggettoId, oggetto })));
+        if (incerto(composto)) giudizi.push(...esecutore.grezzo.giudizi.map((g) => ({ tipo: 'giudizio_richiesto' as const, soggettoId: membro.soggettoId, ...g })));
       }
       continue;
     }
@@ -283,10 +284,11 @@ function valutaVariante(requisito: Requisito, variante: Variante, contesto: Cont
         conteggiato,
         fonti: ausiliaria.grezzo.usati.map((u) => u.fonte),
         nota: unisciNote([`in avvalimento a favore di ${ausiliata?.denominazione ?? ausiliaria.membro.ausiliataId}`, ...ausiliaria.grezzo.note]),
+        ...(ausiliaria.grezzo.dettagli.length > 0 ? { dettagli: ausiliaria.grezzo.dettagli } : {}),
       });
       if (conteggiato) {
         usati.push(...ausiliaria.grezzo.usati.map((fatto) => ({ soggettoId: membro.soggettoId, requisitoId: requisito.id, fatto })));
-        giudizi.push(...ausiliaria.grezzo.giudizi.map((oggetto) => ({ tipo: 'giudizio_richiesto' as const, soggettoId: membro.soggettoId, oggetto })));
+        giudizi.push(...ausiliaria.grezzo.giudizi.map((g) => ({ tipo: 'giudizio_richiesto' as const, soggettoId: membro.soggettoId, ...g })));
       }
     }
   }

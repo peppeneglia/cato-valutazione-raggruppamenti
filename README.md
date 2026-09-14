@@ -59,8 +59,10 @@ perché in un elenco di **indeterminatezze** con due famiglie dentro. Il
 letture discordanti, valore contraddittorio — e allora si chiedono chiarimenti
 alla stazione appaltante, entro il termine del bando. Oppure serve un
 *giudizio* — uno scope, un'attività, un CPV che non coincidono — e allora
-decide una persona con il disciplinare in mano. Un requisito può averle
-entrambe: sulla gara reale la certificazione ISO le ha tutte e due.
+decide chi può: la stazione appaltante, se il dubbio è su cosa significa il
+suo documento (e il quesito la interpella per nome); il concorrente, se il
+dubbio è su cosa c'è nel suo fascicolo. Un requisito può averle entrambe:
+sulla gara reale la certificazione ISO le ha tutte e due.
 
 ## Cosa fa
 

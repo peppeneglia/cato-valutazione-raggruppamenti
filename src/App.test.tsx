@@ -35,7 +35,7 @@ describe('pagina — avvio', () => {
   it('mostra il verdetto del lotto unico e la data di riferimento della fixture', () => {
     render(<App />);
     expect(within(regione('Verdetto')).getByText('Ammissibile con riserva')).toBeTruthy();
-    expect(screen.getByLabelText('Data di riferimento')).toHaveProperty('value', '2024-01-08');
+    expect(screen.getByLabelText('Data di riferimento')).toHaveProperty('value', '2023-12-20');
   });
   it('elenca il lotto unico e dichiara la classifica in calcolo finché il motore non risponde', async () => {
     render(<App />);
@@ -61,11 +61,11 @@ describe('pagina — il documento che non decide', () => {
     expect(within(regione(/Fornitura di farmaci di fascia A e C/)).getByText(/il documento lo scrive in 3 modi/)).toBeTruthy();
     expect(screen.getByText(/Termine per i chiarimenti/)).toBeTruthy();
   });
-  it('sulla riga della ISO convivono le due famiglie: il documento non dice, e per un membro decide una persona', () => {
+  it('sulla riga della ISO convivono le due famiglie: il documento non dice, e per un membro serve un giudizio', () => {
     render(<App />);
     const iso = riga('certificazione-qualita');
     expect(within(iso).getByText('Il disciplinare non dice chi debba possederlo nel raggruppamento.')).toBeTruthy();
-    expect(within(iso).getByText(/^Per Ospedalia Forniture S\.r\.l\. decide una persona/)).toBeTruthy();
+    expect(within(iso).getByText(/^Per Ospedalia Forniture S\.r\.l\. si chiede alla stazione appaltante/)).toBeTruthy();
   });
   it('il fatturato mostra le tre letture con il loro esito', () => {
     render(<App />);
@@ -158,24 +158,24 @@ describe('pagina — prove e annullamento', () => {
 });
 
 describe('pagina — data di riferimento', () => {
-  it('prima del 27/12/2023 i chiarimenti si possono ancora chiedere; dopo, il termine è decorso', async () => {
+  it('alla data iniziale i chiarimenti si possono chiedere entro il 27/12/2023; spostando la data oltre, il termine è decorso', async () => {
     const user = userEvent.setup();
     render(<App />);
     // I rimedi arrivano dal canale differito: si aspettano.
-    expect(await within(riga('certificazione-qualita')).findByText(/Il termine per i chiarimenti .* è decorso/, undefined, LENTO)).toBeTruthy();
+    expect(await within(riga('certificazione-qualita')).findByText(/Chiedi chiarimenti alla stazione appaltante entro le 12:00 del 27\/12\/2023/, undefined, LENTO)).toBeTruthy();
     const data = screen.getByLabelText('Data di riferimento');
     await user.clear(data);
-    await user.type(data, '2023-12-20');
-    expect(await within(riga('certificazione-qualita')).findByText(/Chiedi chiarimenti alla stazione appaltante entro le 12:00 del 27\/12\/2023/, undefined, LENTO)).toBeTruthy();
+    await user.type(data, '2024-01-08');
+    expect(await within(riga('certificazione-qualita')).findByText(/Il termine per i chiarimenti .* è decorso/, undefined, LENTO)).toBeTruthy();
   });
-  it('la ISO 9001 di Farmadistribuzione è un avviso di scadenza solo entro l’orizzonte', async () => {
+  it('la ISO 9001 di Farmadistribuzione diventa un avviso di scadenza quando entra nell’orizzonte', async () => {
     const user = userEvent.setup();
     render(<App />);
-    expect(within(regione('Avvisi di scadenza')).getByText(/certificazione UNI EN ISO 9001:2015/)).toBeTruthy();
+    expect(within(regione('Avvisi di scadenza')).getByText(/Nessun documento usato scade/)).toBeTruthy();
     const data = screen.getByLabelText('Data di riferimento');
     await user.clear(data);
-    await user.type(data, '2023-10-01');
-    expect(within(regione('Avvisi di scadenza')).getByText(/Nessun documento usato scade/)).toBeTruthy();
+    await user.type(data, '2024-01-08');
+    expect(within(regione('Avvisi di scadenza')).getByText(/certificazione UNI EN ISO 9001:2015/)).toBeTruthy();
   });
 });
 

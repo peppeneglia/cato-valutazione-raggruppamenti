@@ -3,7 +3,7 @@
 // che è descrittiva e serve solo a questo.
 
 import { descriviIndeterminatezza, etichettaFamiglia, etichettaStato, nomeSoggetto, type ContestoDescrizioni } from '../descrizioni';
-import { delDocumento } from '../engine/rimedi';
+import { richiedeChiarimenti } from '../engine/rimedi';
 import type { EsitoRequisito, FamigliaRequisito, Lotto, Membro, Requisito, Rimedio } from '../domain';
 import { formattaConUnita } from '../formato';
 import type { Azione } from '../lavoro';
@@ -71,7 +71,7 @@ function RigaRequisito({ requisito, esito, rimedi, membri, legenda, contesto, di
         {esito.indeterminatezze.length > 0 ? (
           <ul className={styles.indeterminatezze}>
             {esito.indeterminatezze.map((i, k) => (
-              <li key={k} className={delDocumento(i) ? styles.documento : styles.giudizio}>{descriviIndeterminatezza(i, contesto)}</li>
+              <li key={k} className={richiedeChiarimenti(i) ? styles.documento : styles.giudizio}>{descriviIndeterminatezza(i, contesto)}</li>
             ))}
           </ul>
         ) : null}

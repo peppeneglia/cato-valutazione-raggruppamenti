@@ -111,7 +111,13 @@ describe('regola di composizione non dichiarata (§6.4 muto su tre requisiti)', 
     const e = esitoDi('r-iso', valuta(p).requisiti);
     expect(e.indeterminatezze).toEqual([
       { tipo: 'regola_non_dichiarata' },
-      { tipo: 'giudizio_richiesto', soggettoId: 's-b', oggetto: 'equivalenza tra «logistica generica» e «settore oggetto dell\'appalto» (certificazione ISO 9001 o ISO 13485)' },
+      {
+        tipo: 'giudizio_richiesto',
+        soggettoId: 's-b',
+        oggetto: 'equivalenza tra «logistica generica» e «settore oggetto dell\'appalto» (certificazione ISO 9001 o ISO 13485)',
+        interpella: 'stazione_appaltante',
+        quesito: 'Una certificazione ISO 9001 o ISO 13485 con scope «logistica generica» rientra in «settore oggetto dell\'appalto»',
+      },
     ]);
     expect(e.motivazione).toContain('lo possiede con riserva');
     expect(e.motivazione).toContain('decide una persona, non il motore');
@@ -196,7 +202,8 @@ describe('soglia per rinvio a un valore scritto in tre modi (art. 3.2 p. 10)', (
   it('un soggetto che porta la somma sopra tutti i candidati, per ingresso o avvalimento, è un rimedio verificato accanto ai chiarimenti', () => {
     const p = scenario([r], [...conFatturato(600_000, 390_000), soggetto('s-x', [fatturatoGlobale(2020, 100_000), fatturatoGlobale(2021, 100_000), fatturatoGlobale(2022, 100_000)])]);
     const e = esitoDi('r-fatt', valuta(p).requisiti);
-    expect(e.rimedi.map((x) => x.tipo)).toEqual(['ingresso_soggetto', 'ingresso_soggetto', 'ingresso_soggetto', 'avvalimento', 'richiesta_chiarimenti']);
+    // Gli ingressi che producono lo stesso esito sono la stessa mossa: ne resta uno, senza il socio a quote zero.
+    expect(e.rimedi.map((x) => x.tipo)).toEqual(['ingresso_soggetto', 'avvalimento', 'richiesta_chiarimenti']);
     expect(e.rimedi.some((x) => x.tipo === 'profilo_mancante')).toBe(false);
   });
 });
@@ -236,6 +243,25 @@ describe('letture alternative: contratto singolo oppure somma (§6.3 b)', () => 
   });
 });
 
+// ─── 4b. Chi scioglie il giudizio ────────────────────────────
+
+describe('chi può sciogliere un giudizio', () => {
+  it('l’analogia del CPV di una fornitura del concorrente non genera un quesito: nessuno risponde al suo posto', () => {
+    const r = requisito('r-forn', { ...SOMMA_CONTRATTI, cifreCpvComuni: 2, soglia: 100_000 }, { tipo: 'somma_membri' });
+    const p = scenario([r], [soggetto('s-a', [servizio('33600000', '2022-01-01', '2023-06-30', 400_000)]), soggetto('s-b', [])]);
+    const e = esitoDi('r-forn', valuta(p).requisiti);
+    expect(e.stato).toBe('da_verificare');
+    expect(e.indeterminatezze).toEqual([{ tipo: 'giudizio_richiesto', soggettoId: 's-a', oggetto: 'analogia del CPV 33600000 con 33190000 per «Servizio 33600000»', interpella: 'concorrente' }]);
+    expect(chiarimenti(e.rimedi)).toBeUndefined();
+  });
+  it('la pertinenza di un’attività iscritta la scioglie la stazione appaltante: il quesito la nomina, con il requisito e la fonte', () => {
+    const r = requisito('r-reg', { tipo: 'iscrizione', registro: 'Registro delle imprese', attivita: 'attività pertinenti' }, { tipo: 'ciascun_membro' });
+    const p = scenario([r], [soggetto('s-a', [iscrizione('Registro delle imprese', 'attività pertinenti')]), soggetto('s-b', [iscrizione('Registro delle imprese', 'commercio di arredi')])]);
+    const e = esitoDi('r-reg', valuta(p).requisiti);
+    expect(chiarimenti(e.rimedi)?.quesiti).toEqual(["L'attività «commercio di arredi» dell'iscrizione Registro delle imprese è pertinente rispetto a «attività pertinenti» ai fini del requisito «Requisito r-reg» (rif.)?"]);
+  });
+});
+
 // ─── 5. Ancoraggio non dichiarato ────────────────────────────
 
 describe('ancoraggio non dichiarato: "nell’ultimo triennio" senza dire da quando', () => {
@@ -252,8 +278,10 @@ describe('ancoraggio non dichiarato: "nell’ultimo triennio" senza dire da quan
       codice: 'ancoraggio_termine_presentazione',
       testo: 'La finestra «ultimi 3 anni» non ha un ancoraggio dichiarato nel disciplinare: è stata ancorata al termine di presentazione (15/01/2024), l\'unica data certa del bando. È un\'assunzione del motore, non del disciplinare.',
     }]);
-    const nota = e.contributi[0]?.nota ?? '';
-    expect(nota).toContain('ancoraggio assunto al termine di presentazione: quelle contate restano nella finestra fino a un arretramento di 1050 giorni (la più esposta è «Servizio 33190000»); con un arretramento di almeno 15 giorni conterebbe anche «Servizio 33190000»');
+    // In riga l'informazione; il margine di chi conta è rassicurazione e sta nei dettagli.
+    expect(e.contributi[0]?.nota).toContain('con un ancoraggio anteriore di 15 giorni conterebbe anche «Servizio 33190000»');
+    expect(e.contributi[0]?.nota).not.toContain('1050');
+    expect(e.contributi[0]?.dettagli).toEqual(['le forniture contate restano nella finestra fino a un arretramento dell\'ancoraggio di 1050 giorni; la più esposta è «Servizio 33190000»']);
   });
   it('la data di pubblicazione assente non è un’anomalia finché nessun criterio la chiede', () => {
     const p = scenario([r], [soggetto('s-a', []), soggetto('s-b', [])]);
@@ -332,10 +360,10 @@ describe('percorso con requisiti che nessuna mossa può coprire', () => {
     expect(esito.percorsoMinimo).toMatchObject({ esito: 'gia_ammissibile', verdetto: 'ammissibile_con_riserva', residui: ['r-iso', 'r-fatt'] });
     if (esito.percorsoMinimo.esito !== 'gia_ammissibile') throw new Error('atteso gia_ammissibile');
     const { miglioramenti } = esito.percorsoMinimo;
-    // Tre ingressi di s-x (a quote zero, o rilevando la metà di uno dei due) e un avvalimento: tutti risolvono solo il fatturato.
-    expect(miglioramenti.map((m) => m.mossa.tipo)).toEqual(['ingresso_soggetto', 'ingresso_soggetto', 'ingresso_soggetto', 'avvalimento']);
+    // Un ingresso di s-x (le varianti di quota sono la stessa mossa) e un avvalimento: entrambi risolvono solo il fatturato.
+    expect(miglioramenti.map((m) => m.mossa.tipo)).toEqual(['ingresso_soggetto', 'avvalimento']);
     expect(miglioramenti.every((m) => m.requisitiRisolti.length === 1 && m.requisitiRisolti[0] === 'r-fatt')).toBe(true);
-    expect(miglioramenti[3]?.mossa).toEqual({ tipo: 'avvalimento', requisitoId: 'r-fatt', ausiliariaId: 's-x', ausiliataId: 's-a' });
+    expect(miglioramenti[1]?.mossa).toEqual({ tipo: 'avvalimento', requisitoId: 'r-fatt', ausiliariaId: 's-x', ausiliataId: 's-a' });
   });
   it('senza mosse utili, i miglioramenti sono vuoti', () => {
     const esito = valuta(scenario([iso], soggetti.slice(0, 2)));

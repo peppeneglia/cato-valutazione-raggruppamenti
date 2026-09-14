@@ -407,7 +407,10 @@ export type Contributo = {
   conteggiato: boolean;
   /** Le fonti dei fatti effettivamente usati. Vuota se non contribuisce. */
   fonti: Fonte[];
+  /** Ciò che spiega il valore: entra nella motivazione. */
   nota?: string;
+  /** Ciò che rassicura o approfondisce: solo nell'espansione, mai in riga. */
+  dettagli?: string[];
 };
 
 /** Minimo per ruolo su una regola di somma: una scopertura diversa dal totale. */
@@ -452,12 +455,22 @@ export type Assunzione = {
 export type EsitoVariante = { etichetta: string; stato: StatoRequisito };
 
 /**
+ * Chi può sciogliere un giudizio. La stazione appaltante può rispondere su
+ * cosa significa il proprio documento — se un'attività è pertinente, se uno
+ * scope rientra nel settore — e quel giudizio genera un quesito. Non può
+ * rispondere su cosa c'è nel fascicolo del concorrente — se una sua
+ * fornitura è analoga a quella di gara — e quel giudizio resta a lui.
+ */
+export type Interpellato = 'stazione_appaltante' | 'concorrente';
+
+/**
  * Perché il motore non può decidere. Due famiglie, due azioni:
  * - il DOCUMENTO non lo dice (regola non dichiarata, criterio non
  *   determinato, letture discordanti, valore contraddittorio): si chiedono
  *   chiarimenti alla stazione appaltante, entro il termine;
  * - serve un GIUDIZIO (scope, attività, CPV che non coincidono): una
- *   persona legge il disciplinare e decide.
+ *   persona decide — la stazione appaltante se interpellata, altrimenti il
+ *   concorrente con il disciplinare in mano.
  * Un requisito può averle entrambe: sulla gara ASL Roma 6 la ISO ha la
  * regola non dichiarata e, per un membro, uno scope da valutare.
  */
@@ -466,7 +479,14 @@ export type Indeterminatezza =
   | { tipo: 'criterio_non_determinato'; testo: string }
   | { tipo: 'letture_discordanti'; esiti: EsitoVariante[] }
   | { tipo: 'valore_contraddittorio'; nome: string; esiti: EsitoVariante[] }
-  | { tipo: 'giudizio_richiesto'; soggettoId: SoggettoId; oggetto: string };
+  | {
+      tipo: 'giudizio_richiesto';
+      soggettoId: SoggettoId;
+      oggetto: string;
+      interpella: Interpellato;
+      /** La domanda, senza il requisito: la completa chi conosce il requisito. Solo se interpella la stazione appaltante. */
+      quesito?: string;
+    };
 
 /** L'esito di una variante (lettura × candidati), quando le varianti sono più di una. */
 export type EsitoVarianteCompleto = {

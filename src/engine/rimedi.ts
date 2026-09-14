@@ -59,8 +59,20 @@ function candidatiEsterni(parametri: ParametriValutazione): Soggetto[] {
   return perId(parametri.soggetti.filter((s) => !membri.has(s.id)));
 }
 
+/**
+ * Le quote contano per i requisiti solo se una regola guarda chi esegue
+ * una prestazione, o se il lotto vincola l'esecuzione della principale.
+ * Altrimenti spostarle non cambia nessun esito, e il generatore che le
+ * sposta gira a vuoto: su un lotto con una prestazione indivisibile le
+ * configurazioni distinguibili sono pochissime.
+ */
+export function quoteRilevanti(lotto: Lotto): boolean {
+  return lotto.vincoloPrestazionePrincipale !== undefined || lotto.requisiti.some((r) => r.regola.tipo === 'esecutore_prestazione');
+}
+
 function mosseRiassegnazione(lotto: Lotto, esecutori: MembroEsecutore[]): Mossa[] {
   const mosse: Mossa[] = [];
+  if (!quoteRilevanti(lotto)) return mosse;
   for (const prestazione of perId(lotto.prestazioni)) {
     for (const da of esecutori) {
       const quota = quotaSu(da.quote, prestazione.id);
@@ -79,16 +91,22 @@ function mosseUscita(esecutori: MembroEsecutore[]): Mossa[] {
   return esecutori.filter((m) => m.ruolo !== 'mandataria').map((m) => ({ tipo: 'uscita_soggetto', soggettoId: m.soggettoId }));
 }
 
-/** Ingresso a quote zero, oppure rilevando per intero la quota di un esecutore su una prestazione. */
+/**
+ * Ingresso a quote zero, oppure rilevando per intero la quota di un
+ * esecutore su una prestazione. Se le quote non contano per nessun
+ * requisito, da chi si rileva è indistinguibile: si rileva da chi ne ha di
+ * più, una mossa sola per prestazione.
+ */
 function mosseIngresso(lotto: Lotto, esecutori: MembroEsecutore[], esterni: Soggetto[]): Mossa[] {
   const mosse: Mossa[] = [];
+  const rilevanti = quoteRilevanti(lotto);
   for (const candidato of esterni) {
     mosse.push({ tipo: 'ingresso_soggetto', soggettoId: candidato.id, ruolo: 'mandante', quote: {} });
     for (const prestazione of perId(lotto.prestazioni)) {
-      for (const da of esecutori) {
-        const quota = quotaSu(da.quote, prestazione.id);
-        if (!quotaPositiva(quota)) continue;
-        mosse.push({ tipo: 'ingresso_soggetto', soggettoId: candidato.id, ruolo: 'mandante', quote: { [prestazione.id]: quota }, rilevateDa: da.soggettoId });
+      const conQuota = esecutori.filter((da) => quotaPositiva(quotaSu(da.quote, prestazione.id)));
+      const cedenti = rilevanti ? conQuota : conQuota.slice().sort((a, b) => quotaSu(b.quote, prestazione.id) - quotaSu(a.quote, prestazione.id)).slice(0, 1);
+      for (const da of cedenti) {
+        mosse.push({ tipo: 'ingresso_soggetto', soggettoId: candidato.id, ruolo: 'mandante', quote: { [prestazione.id]: quotaSu(da.quote, prestazione.id) }, rilevateDa: da.soggettoId });
       }
     }
   }
@@ -266,6 +284,31 @@ export function peggiora(prima: EsitoBase, dopo: EsitoBase): boolean {
   });
 }
 
+// ─── Equivalenza tra mosse ───────────────────────────────────
+
+/** Ciò che distingue due esiti: stato e misura di ogni requisito, e chi c'è nel raggruppamento con quale ruolo. */
+function firmaEsito(dopo: EsitoBase, raggruppamento: Raggruppamento, mossa: Mossa): string {
+  const membri = applicaMossa(raggruppamento, mossa).membri.map((m) => `${m.soggettoId}:${m.ruolo}`).sort();
+  const requisiti = dopo.requisiti.map((r) => [r.requisitoId, r.stato, r.misurazione?.raggiunto ?? null, r.misurazione?.delta ?? null]);
+  return JSON.stringify([membri, requisiti]);
+}
+
+/**
+ * Mosse che portano allo stesso esito sono la stessa mossa scritta in più
+ * modi: ne resta una, la meno invasiva nell'ordine di generazione. A parità
+ * di esito vince chi porta meno anomalie: un socio a quote zero è una
+ * segnalazione in più, non un'alternativa.
+ */
+function senzaEquivalenti<T extends { mossa: Mossa; dopo: EsitoBase }>(candidate: T[], raggruppamento: Raggruppamento): T[] {
+  const migliori = new Map<string, T>();
+  for (const c of candidate) {
+    const firma = firmaEsito(c.dopo, raggruppamento, c.mossa);
+    const attuale = migliori.get(firma);
+    if (!attuale || c.dopo.anomalie.length < attuale.dopo.anomalie.length) migliori.set(firma, c);
+  }
+  return candidate.filter((c) => migliori.get(firmaEsito(c.dopo, raggruppamento, c.mossa)) === c);
+}
+
 // ─── Rinnovo (non applicabile, ma verificato) ────────────────
 
 /** Copia dei soggetti in cui il fatto scaduto è tornato valido. */
@@ -295,8 +338,12 @@ function conFattoRinnovato(soggetti: Soggetto[], scaduto: FattoScadutoDi): Sogge
 
 // ─── Chiarimenti (non applicabile: il documento non decide) ──
 
-/** Le indeterminatezze che dipendono dal documento, non dal fascicolo. */
-export function delDocumento(i: Indeterminatezza): boolean {
+/**
+ * Le indeterminatezze che la stazione appaltante può sciogliere: quelle del
+ * documento, e i giudizi su cosa significa il requisito. Non i giudizi sui
+ * fatti del fascicolo: nessuno risponde al posto del concorrente.
+ */
+export function richiedeChiarimenti(i: Indeterminatezza): boolean {
   switch (i.tipo) {
     case 'regola_non_dichiarata':
     case 'criterio_non_determinato':
@@ -304,7 +351,7 @@ export function delDocumento(i: Indeterminatezza): boolean {
     case 'valore_contraddittorio':
       return true;
     case 'giudizio_richiesto':
-      return false;
+      return i.interpella === 'stazione_appaltante';
     default:
       return assertNever(i);
   }
@@ -323,14 +370,14 @@ export function quesitoDi(requisito: Requisito, indeterminatezza: Indeterminatez
     case 'valore_contraddittorio':
       return `Quale valore di «${indeterminatezza.nome}» vale per il requisito ${nome}: ${indeterminatezza.esiti.map((e) => e.etichetta).join(' oppure ')}?`;
     case 'giudizio_richiesto':
-      return `Per il requisito ${nome}, è ammessa l'${indeterminatezza.oggetto}?`;
+      return `${indeterminatezza.quesito ?? `È ammessa l'${indeterminatezza.oggetto}`} ai fini del requisito ${nome} (${requisito.fonte.riferimento})?`;
     default:
       return assertNever(indeterminatezza);
   }
 }
 
 function richiestaChiarimenti(requisito: Requisito, esitoRequisito: EsitoRequisito, bando: Bando, dataRiferimento: string): Rimedio[] {
-  const quesiti = esitoRequisito.indeterminatezze.filter(delDocumento).map((i) => quesitoDi(requisito, i));
+  const quesiti = esitoRequisito.indeterminatezze.filter(richiedeChiarimenti).map((i) => quesitoDi(requisito, i));
   if (quesiti.length === 0) return [];
   const termine = bando.termineChiarimenti;
   return [{
@@ -369,9 +416,10 @@ export function rimediPerRequisito(
     const requisito = requisiti.get(esitoRequisito.requisitoId);
     if (!requisito) continue;
 
-    const applicabili: Rimedio[] = esitiDopo
-      .filter(({ dopo }) => statoDi(dopo, requisito.id) === 'coperto' && !peggiora(esito, dopo))
-      .map(({ mossa }) => mossa);
+    const applicabili: Rimedio[] = senzaEquivalenti(
+      esitiDopo.filter(({ dopo }) => statoDi(dopo, requisito.id) === 'coperto' && !peggiora(esito, dopo)),
+      parametri.raggruppamento,
+    ).map(({ mossa }) => mossa);
 
     const rinnovi: Rimedio[] = (scaduti.get(requisito.id) ?? [])
       .filter((scaduto) => {

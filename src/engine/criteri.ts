@@ -14,6 +14,7 @@ import type {
   DataISO,
   Fatto,
   Fonte,
+  Interpellato,
   Unita,
   ValoreContributo,
   VoceFascicolo,
@@ -61,8 +62,23 @@ export type ContributoGrezzo = {
   note: string[];
   /** Regole del motore, non del disciplinare, che hanno inciso: dichiarate a chi legge. */
   assunzioni: Assunzione[];
-  /** L'oggetto di ogni giudizio semantico richiesto: "equivalenza tra «x» e «y»". */
-  giudizi: string[];
+  /** I giudizi semantici richiesti, con chi può scioglierli. */
+  giudizi: Giudizio[];
+  /** Approfondimenti che non entrano nella motivazione: solo nell'espansione. */
+  dettagli: string[];
+};
+
+/**
+ * Un giudizio che il motore non può fare. Se riguarda cosa significa il
+ * requisito (uno scope, un'attività) lo scioglie la stazione appaltante e
+ * porta la domanda da porle; se riguarda i fatti del fascicolo (l'analogia
+ * di una fornitura) lo scioglie solo il concorrente.
+ */
+export type Giudizio = {
+  oggetto: string;
+  interpella: Interpellato;
+  /** La domanda senza il requisito, che la completa chi lo conosce. */
+  quesito?: string;
 };
 
 // ─── Proprietà del criterio ──────────────────────────────────
@@ -156,7 +172,7 @@ type VocePossesso = { voce: VoceFascicolo; usato: FattoUsato; attributo?: string
 type VociPerValidita = { valide: VocePossesso[]; scaduti: FattoScaduto[]; noteNonValide: string[] };
 
 function grezzo(parziale: Partial<ContributoGrezzo> & { valore: ValoreContributo }): ContributoGrezzo {
-  return { usati: [], scaduti: [], note: [], assunzioni: [], giudizi: [], ...parziale };
+  return { usati: [], scaduti: [], note: [], assunzioni: [], giudizi: [], dettagli: [], ...parziale };
 }
 
 /**
@@ -167,6 +183,8 @@ function componiPossesso(
   { valide, scaduti, noteNonValide }: VociPerValidita,
   attributoRichiesto: string | undefined,
   descrizioneRichiesta: string,
+  /** La domanda alla stazione appaltante su un attributo che non coincide: è lei che sa cosa intende. */
+  quesitoSu: (attributo: string, richiesto: string) => string = (a, r) => `«${a}» rientra in «${r}»`,
 ): ContributoGrezzo {
   if (valide.length === 0) {
     const note = noteNonValide.length === 0 ? [`nessuna ${descrizioneRichiesta} nel fascicolo`] : noteNonValide;
@@ -187,7 +205,11 @@ function componiPossesso(
     usati: valide.map((p) => p.usato),
     scaduti,
     note: valide.map((p) => `${descrizioneRichiesta} con «${p.attributo ?? ''}» invece di «${attributoRichiesto}»: equivalenza da valutare`),
-    giudizi: valide.map((p) => `equivalenza tra «${p.attributo ?? ''}» e «${attributoRichiesto}» (${descrizioneRichiesta})`),
+    giudizi: valide.map((p) => ({
+      oggetto: `equivalenza tra «${p.attributo ?? ''}» e «${attributoRichiesto}» (${descrizioneRichiesta})`,
+      interpella: 'stazione_appaltante' as const,
+      quesito: quesitoSu(p.attributo ?? '', attributoRichiesto),
+    })),
   });
 }
 
@@ -227,7 +249,12 @@ function valutaCertificazione(norme: readonly string[], scope: string | undefine
   for (const voce of fascicolo) {
     if (voce.tipo === 'certificazione' && norme.some((n) => coincidono(voce.norma, n))) pertinenti.push({ voce, fatto: voce.possesso, attributo: voce.scope });
   }
-  return componiPossesso(separaPerValidita(pertinenti, data), scope, `certificazione ${norme.join(' o ')}`);
+  return componiPossesso(
+    separaPerValidita(pertinenti, data),
+    scope,
+    `certificazione ${norme.join(' o ')}`,
+    (attributo, richiesto) => `Una certificazione ${norme.join(' o ')} con scope «${attributo}» rientra in «${richiesto}»`,
+  );
 }
 
 function valutaIscrizione(registro: string, attivita: string | undefined, fascicolo: VoceFascicolo[], data: DataISO): ContributoGrezzo {
@@ -235,7 +262,12 @@ function valutaIscrizione(registro: string, attivita: string | undefined, fascic
   for (const voce of fascicolo) {
     if (voce.tipo === 'iscrizione' && coincidono(voce.registro, registro)) pertinenti.push({ voce, fatto: voce.possesso, attributo: voce.attivita });
   }
-  return componiPossesso(separaPerValidita(pertinenti, data), attivita, `iscrizione ${registro}`);
+  return componiPossesso(
+    separaPerValidita(pertinenti, data),
+    attivita,
+    `iscrizione ${registro}`,
+    (attributo, richiesto) => `L'attività «${attributo}» dell'iscrizione ${registro} è pertinente rispetto a «${richiesto}»`,
+  );
 }
 
 // ─── Fatturato ───────────────────────────────────────────────
@@ -363,7 +395,7 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
   let incerto = 0;
   const usati: FattoUsato[] = [];
   const note: string[] = [];
-  const giudizi: string[] = [];
+  const giudizi: Giudizio[] = [];
   const fuoriFinestra: string[] = [];
   const nonAnaloghi: string[] = [];
   /**
@@ -399,7 +431,8 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
         usati.push({ descrizione: descriviVoce(voce), fonte: voce.periodo.fonte });
         incerto += pesoServizio(criterio, voce.importo);
         note.push(`${descriviVoce(voce)}: CPV ${voce.cpv} diverso da quello di gara ${criterio.cpv}, analogia da valutare`);
-        giudizi.push(`analogia del CPV ${voce.cpv} con ${criterio.cpv} per «${voce.oggetto}»`);
+        // Se una fornitura del concorrente è analoga lo sa lui: la stazione appaltante non può rispondere al suo posto.
+        giudizi.push({ oggetto: `analogia del CPV ${voce.cpv} con ${criterio.cpv} per «${voce.oggetto}»`, interpella: 'concorrente' });
         break;
       case 'non_analogo':
         nonAnaloghi.push(`«${voce.oggetto}» (CPV ${voce.cpv})`);
@@ -425,17 +458,20 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
   if (fuoriFinestra.length > 0) {
     note.push(`fuori dalla finestra ${formattaData(finestra.da)} – ${formattaData(finestra.a)}: ${fuoriFinestra.join(', ')}`);
   }
-  if (margineContate || primaEsclusa) {
-    const parti: string[] = [];
-    if (margineContate) parti.push(`quelle contate restano nella finestra fino a un arretramento di ${margineContate.giorni} giorni (la più esposta è «${margineContate.oggetto}»)`);
-    if (primaEsclusa) parti.push(`con un arretramento di almeno ${primaEsclusa.giorni} giorni conterebbe anche «${primaEsclusa.oggetto}»`);
-    note.push(`ancoraggio assunto al termine di presentazione: ${parti.join('; ')}`);
+  // In riga solo l'informazione: esiste una fornitura che con un'altra lettura del
+  // "triennio" conterebbe. Il margine di chi conta è rassicurazione: nell'espansione.
+  if (primaEsclusa) {
+    note.push(`con un ancoraggio anteriore di ${primaEsclusa.giorni} giorni conterebbe anche «${primaEsclusa.oggetto}»`);
+  }
+  const dettagli: string[] = [];
+  if (margineContate) {
+    dettagli.push(`le forniture contate restano nella finestra fino a un arretramento dell'ancoraggio di ${margineContate.giorni} giorni; la più esposta è «${margineContate.oggetto}»`);
   }
   if (certo === 0 && incerto === 0 && usati.length === 0 && note.length === 0) {
     note.push('nessun servizio nel fascicolo');
   }
 
-  return grezzo({ valore: { tipo: 'misura', certo, incerto }, usati, note, assunzioni, giudizi });
+  return grezzo({ valore: { tipo: 'misura', certo, incerto }, usati, note, assunzioni, giudizi, dettagli });
 }
 
 // ─── Ingresso ────────────────────────────────────────────────

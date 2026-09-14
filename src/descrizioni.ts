@@ -170,7 +170,14 @@ export function descriviIndeterminatezza(i: Indeterminatezza, contesto: Contesto
     case 'valore_contraddittorio':
       return `Il bando scrive «${i.nome}» in più modi, con esiti diversi: ${i.esiti.map((e) => `${e.etichetta} → ${etichettaStato(e.stato).toLowerCase()}`).join('; ')}.`;
     case 'giudizio_richiesto':
-      return `Per ${nomeSoggetto(i.soggettoId, contesto)} decide una persona: ${i.oggetto}.`;
+      switch (i.interpella) {
+        case 'stazione_appaltante':
+          return `Per ${nomeSoggetto(i.soggettoId, contesto)} si chiede alla stazione appaltante: ${i.oggetto}.`;
+        case 'concorrente':
+          return `Per ${nomeSoggetto(i.soggettoId, contesto)} decide il concorrente: ${i.oggetto}.`;
+        default:
+          return assertNever(i.interpella);
+      }
     default:
       return assertNever(i);
   }

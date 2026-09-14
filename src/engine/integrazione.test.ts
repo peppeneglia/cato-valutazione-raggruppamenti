@@ -41,7 +41,7 @@ describe('fixture — fatti verificati a mano sul disciplinare', () => {
       ['forniture-analoghe', 'coperto'],
     ]);
     const conChiarimenti = esito.requisiti.filter((r) => r.rimedi.some((m) => m.tipo === 'richiesta_chiarimenti')).map((r) => r.requisitoId);
-    expect(conChiarimenti).toEqual(['requisiti-generali', 'registri-di-settore', 'fatturato-globale', 'certificazione-qualita']);
+    expect(conChiarimenti).toEqual(['requisiti-generali', 'registro-imprese', 'registri-di-settore', 'fatturato-globale', 'certificazione-qualita']);
   });
   it('requisiti generali: tutti dichiarano, ma l’art. 5 non dice come si possiede nei RTI', () => {
     const r = requisito('requisiti-generali');
@@ -49,10 +49,11 @@ describe('fixture — fatti verificati a mano sul disciplinare', () => {
     expect(r.indeterminatezze).toEqual([{ tipo: 'regola_non_dichiarata' }]);
     expect(r.misurazione).toBeUndefined();
   });
-  it('registro imprese: da ciascun componente; per Ospedalia la pertinenza dell’attività è un giudizio, non un chiarimento', () => {
+  it('registro imprese: da ciascun componente; per Ospedalia la pertinenza dell’attività la scioglie la stazione appaltante, e il quesito la nomina', () => {
     const r = requisito('registro-imprese');
-    expect(r.indeterminatezze.map((i) => i.tipo)).toEqual(['giudizio_richiesto']);
-    expect(r.rimedi).toEqual([]);
+    expect(r.indeterminatezze.map((i) => i.tipo === 'giudizio_richiesto' && i.interpella)).toEqual(['stazione_appaltante']);
+    const chiarimenti = r.rimedi.find((m) => m.tipo === 'richiesta_chiarimenti');
+    expect(chiarimenti?.tipo === 'richiesta_chiarimenti' && chiarimenti.quesiti[0]).toMatch(/^L'attività «commercio all'ingrosso di articoli medicali e ortopedici» dell'iscrizione Registro delle imprese è pertinente rispetto a «attività pertinenti con quelle oggetto della presente procedura di gara» ai fini del requisito «Iscrizione nel registro delle imprese/);
   });
   it('registri di settore: criterio non determinato e regola non dichiarata, nessun contributo, due quesiti', () => {
     const r = requisito('registri-di-settore');
@@ -67,11 +68,8 @@ describe('fixture — fatti verificati a mano sul disciplinare', () => {
     expect(r.varianti?.map((v) => v.stato)).toEqual(['coperto', 'coperto', 'scoperto']);
     expect(r.indeterminatezze.map((i) => i.tipo)).toEqual(['valore_contraddittorio']);
   });
-  it('fatturato: Grossfarma, per ingresso o avvalimento, porta la somma sopra tutti e tre i candidati', () => {
-    const tipi = requisito('fatturato-globale').rimedi.map((m) => m.tipo);
-    expect(tipi).toContain('avvalimento');
-    expect(tipi).toContain('ingresso_soggetto');
-    expect(tipi).not.toContain('profilo_mancante');
+  it('fatturato: Grossfarma, per ingresso o avvalimento, porta la somma sopra tutti e tre i candidati; le varianti di quota sono una mossa sola', () => {
+    expect(requisito('fatturato-globale').rimedi.map((m) => m.tipo)).toEqual(['ingresso_soggetto', 'avvalimento', 'richiesta_chiarimenti']);
   });
   it('ISO: le due famiglie di indeterminatezza sulla stessa riga, con i contributi visibili', () => {
     const r = requisito('certificazione-qualita');
@@ -92,13 +90,12 @@ describe('fixture — fatti verificati a mano sul disciplinare', () => {
   it('le assunzioni del motore stanno solo sulle forniture analoghe', () => {
     expect(esito.requisiti.filter((r) => r.assunzioni.length > 0).map((r) => r.requisitoId)).toEqual(['forniture-analoghe']);
   });
-  it('alla data di riferimento il termine dei chiarimenti è decorso; prima del 27/12/2023 non lo è', () => {
-    const decorsi = esito.requisiti.flatMap((r) => r.rimedi).filter((m) => m.tipo === 'richiesta_chiarimenti').map((m) => m.tipo === 'richiesta_chiarimenti' && m.decorso);
-    expect(decorsi).toEqual([true, true, true, true]);
-    const prima = valuta(parametri({ dataRiferimento: '2023-12-20' }));
-    const nonDecorsi = prima.requisiti.flatMap((r) => r.rimedi).filter((m) => m.tipo === 'richiesta_chiarimenti').map((m) => m.tipo === 'richiesta_chiarimenti' && m.decorso);
-    expect(nonDecorsi).toEqual([false, false, false, false]);
-    expect(prima.verdetto).toBe('ammissibile_con_riserva');
+  it('alla data di riferimento i chiarimenti si possono ancora chiedere; dall’08/01/2024 il termine è decorso', () => {
+    const decorsi = (e: typeof esito) => e.requisiti.flatMap((r) => r.rimedi).filter((m) => m.tipo === 'richiesta_chiarimenti').map((m) => m.tipo === 'richiesta_chiarimenti' && m.decorso);
+    expect(decorsi(esito)).toEqual([false, false, false, false, false]);
+    const dopo = valuta(parametri({ dataRiferimento: '2024-01-08' }));
+    expect(decorsi(dopo)).toEqual([true, true, true, true, true]);
+    expect(dopo.verdetto).toBe('ammissibile_con_riserva');
   });
   it('percorso: il massimo raggiungibile è già raggiunto, e le mosse sul fatturato sono dichiarate come miglioramenti', () => {
     expect(esito.percorsoMinimo).toMatchObject({
@@ -110,8 +107,10 @@ describe('fixture — fatti verificati a mano sul disciplinare', () => {
     expect(esito.percorsoMinimo.miglioramenti.every((m) => m.requisitiRisolti.length === 1 && m.requisitiRisolti[0] === 'fatturato-globale')).toBe(true);
     expect(esito.percorsoMinimo.miglioramenti.map((m) => m.mossa.tipo)).toContain('avvalimento');
   });
-  it('la ISO 9001 di Farmadistribuzione scade entro l’orizzonte, dopo il termine di presentazione', () => {
-    expect(esito.avvisiScadenza).toEqual([expect.objectContaining({ soggettoId: 's-farmalazio', scadeIl: '2024-03-31', primaDelTermine: false, entroOrizzonte: true, requisitiIds: ['certificazione-qualita'] })]);
+  it('la ISO 9001 di Farmadistribuzione entra nell’orizzonte dei 90 giorni solo dopo l’inizio di gennaio', () => {
+    expect(esito.avvisiScadenza).toEqual([]);
+    const dopo = valuta(parametri({ dataRiferimento: '2024-01-08' }));
+    expect(dopo.avvisiScadenza).toEqual([expect.objectContaining({ soggettoId: 's-farmalazio', scadeIl: '2024-03-31', primaDelTermine: false, entroOrizzonte: true, requisitiIds: ['certificazione-qualita'] })]);
   });
   it('nessuna anomalia: la data di pubblicazione assente non lo è, finché nessun criterio la chiede', () => {
     expect(esito.anomalie).toEqual([]);

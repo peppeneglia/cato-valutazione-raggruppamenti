@@ -96,7 +96,8 @@ describe('descrizioni — il documento che non decide', () => {
   });
   it('ogni indeterminatezza ha una frase per chi legge la riga', () => {
     expect(descriviIndeterminatezza({ tipo: 'regola_non_dichiarata' }, contesto)).toBe('Il disciplinare non dice chi debba possederlo nel raggruppamento.');
-    expect(descriviIndeterminatezza({ tipo: 'giudizio_richiesto', soggettoId: 's-a', oggetto: 'equivalenza tra «x» e «y»' }, contesto)).toBe('Per Alfa decide una persona: equivalenza tra «x» e «y».');
+    expect(descriviIndeterminatezza({ tipo: 'giudizio_richiesto', soggettoId: 's-a', oggetto: 'equivalenza tra «x» e «y»', interpella: 'stazione_appaltante' }, contesto)).toBe('Per Alfa si chiede alla stazione appaltante: equivalenza tra «x» e «y».');
+    expect(descriviIndeterminatezza({ tipo: 'giudizio_richiesto', soggettoId: 's-a', oggetto: 'analogia del CPV', interpella: 'concorrente' }, contesto)).toBe('Per Alfa decide il concorrente: analogia del CPV.');
     expect(descriviIndeterminatezza({ tipo: 'letture_discordanti', esiti: [{ etichetta: 'A', stato: 'coperto' }, { etichetta: 'B', stato: 'scoperto' }] }, contesto)).toBe('Il documento ammette più letture con esiti diversi: «A» coperto; «B» scoperto.');
   });
   it('le assunzioni nuove hanno un’etichetta', () => {
