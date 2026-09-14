@@ -215,8 +215,12 @@ export function descriviRimedio(rimedio: Rimedio, contesto: ContestoDescrizioni)
     case 'rinnovo_documento':
       return `Rinnovo di «${rimedio.fonte.riferimento}» di ${nomeSoggetto(rimedio.soggettoId, contesto)}, scaduto il ${formattaData(rimedio.scadutoIl)}`;
     case 'richiesta_chiarimenti': {
-      const quando = rimedio.termine === undefined ? '' : rimedio.decorso ? `: il termine (${descriviTermine(rimedio.termine).replace(/^entro /, '')}) è decorso, l'ambiguità resta a rischio del concorrente` : ` ${descriviTermine(rimedio.termine)}`;
-      return `Chiedi chiarimenti alla stazione appaltante${quando}. ${rimedio.quesiti.join(' ')}`;
+      const quesiti = rimedio.quesiti.join(' ');
+      if (rimedio.termine !== undefined && rimedio.decorso) {
+        return `Il termine per i chiarimenti (${descriviTermine(rimedio.termine).replace(/^entro /, '')}) è decorso: l'ambiguità resta a rischio del concorrente. Il quesito che andava posto: ${quesiti}`;
+      }
+      const entro = rimedio.termine === undefined ? '' : ` ${descriviTermine(rimedio.termine)}`;
+      return `Chiedi chiarimenti alla stazione appaltante${entro}: ${quesiti}`;
     }
     default:
       return assertNever(rimedio);

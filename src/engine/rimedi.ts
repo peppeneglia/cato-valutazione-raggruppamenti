@@ -317,7 +317,7 @@ export function quesitoDi(requisito: Requisito, indeterminatezza: Indeterminatez
     case 'regola_non_dichiarata':
       return `In caso di raggruppamento temporaneo, da chi deve essere posseduto il requisito ${nome}: da ciascun componente, dalla sola mandataria o dal raggruppamento nel complesso?`;
     case 'criterio_non_determinato':
-      return `Cosa soddisfa il requisito ${nome}, che il disciplinare formula come «${indeterminatezza.testo}» senza nominare un registro, una norma o un documento?`;
+      return `Quale registro, albo o documento soddisfa il requisito ${nome}? Il disciplinare non lo nomina.`;
     case 'letture_discordanti':
       return `Per il requisito ${nome}, quale lettura vale: ${indeterminatezza.esiti.map((e) => `«${e.etichetta}»`).join(' oppure ')}?`;
     case 'valore_contraddittorio':
@@ -350,8 +350,7 @@ export type ScadutiPerRequisito = ReadonlyMap<RequisitoId, FattoScadutoDi[]>;
  * Per ogni requisito non coperto: le mosse che, applicate da sole, lo
  * rendono coperto senza peggiorare il resto; i rinnovi che, simulati,
  * lo coprirebbero; la richiesta di chiarimenti se il documento non
- * decide; il profilo mancante se nessuna mossa esiste e il documento
- * è chiaro.
+ * decide; il profilo mancante se è scoperto e nessuna mossa esiste.
  */
 export function rimediPerRequisito(
   parametri: ParametriValutazione,
@@ -389,8 +388,10 @@ export function rimediPerRequisito(
 
     const chiarimenti = richiestaChiarimenti(requisito, esitoRequisito, parametri.bando, parametri.dataRiferimento);
 
+    // "Nessun soggetto disponibile copre questo requisito" ha senso solo se è scoperto: un
+    // requisito da verificare aspetta un giudizio o un chiarimento, non un fascicolo.
     const criterio = variantiDi(requisito, parametri.bando, memo?.varianti).varianti[0]?.criterio;
-    const profilo: Rimedio[] = applicabili.length === 0 && chiarimenti.length === 0 && criterio !== undefined
+    const profilo: Rimedio[] = esitoRequisito.stato === 'scoperto' && applicabili.length === 0 && criterio !== undefined
       ? [{ tipo: 'profilo_mancante', requisitoId: requisito.id, criterio, mancante: esitoRequisito.misurazione?.delta }]
       : [];
 

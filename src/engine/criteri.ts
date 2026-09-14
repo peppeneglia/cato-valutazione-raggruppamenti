@@ -366,8 +366,13 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
   const giudizi: string[] = [];
   const fuoriFinestra: string[] = [];
   const nonAnaloghi: string[] = [];
-  /** Con ancoraggio assunto: di quanto potrebbe arretrare senza cambiare chi conta. È un numero dai dati, non una tolleranza. */
-  const margini: string[] = [];
+  /**
+   * Con ancoraggio assunto: di quanto potrebbe arretrare senza cambiare chi
+   * conta (il margine più stretto tra le voci contate) e di quanto dovrebbe
+   * arretrare perché entri la prima esclusa. Numeri dai dati, non tolleranze.
+   */
+  let margineContate: { giorni: number; oggetto: string } | undefined;
+  let primaEsclusa: { giorni: number; oggetto: string } | undefined;
 
   for (const voce of fascicolo) {
     if (voce.tipo !== 'servizio') continue;
@@ -375,7 +380,8 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
     if (!siSovrappongono(periodo, finestra)) {
       fuoriFinestra.push(`«${voce.oggetto}» (${formattaData(periodo.da)} – ${formattaData(periodo.a)})`);
       if (ancoraggioAssunto && periodo.a < finestra.da) {
-        margini.push(`«${voce.oggetto}» conterebbe con un ancoraggio anteriore di almeno ${giorniTra(periodo.a, finestra.da)} giorni`);
+        const giorni = giorniTra(periodo.a, finestra.da);
+        if (!primaEsclusa || giorni < primaEsclusa.giorni) primaEsclusa = { giorni, oggetto: voce.oggetto };
       }
       continue;
     }
@@ -402,7 +408,8 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
         assertNever(classe);
     }
     if (ancoraggioAssunto && classe !== 'non_analogo') {
-      margini.push(`«${voce.oggetto}» resta nella finestra finché l'ancoraggio non arretra di più di ${giorniTra(periodo.da, fine)} giorni`);
+      const giorni = giorniTra(periodo.da, fine);
+      if (!margineContate || giorni < margineContate.giorni) margineContate = { giorni, oggetto: voce.oggetto };
     }
   }
 
@@ -418,8 +425,11 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
   if (fuoriFinestra.length > 0) {
     note.push(`fuori dalla finestra ${formattaData(finestra.da)} – ${formattaData(finestra.a)}: ${fuoriFinestra.join(', ')}`);
   }
-  if (margini.length > 0) {
-    note.push(`finestra ancorata al termine di presentazione per assunzione: ${margini.join('; ')}`);
+  if (margineContate || primaEsclusa) {
+    const parti: string[] = [];
+    if (margineContate) parti.push(`quelle contate restano nella finestra fino a un arretramento di ${margineContate.giorni} giorni (la più esposta è «${margineContate.oggetto}»)`);
+    if (primaEsclusa) parti.push(`con un arretramento di almeno ${primaEsclusa.giorni} giorni conterebbe anche «${primaEsclusa.oggetto}»`);
+    note.push(`ancoraggio assunto al termine di presentazione: ${parti.join('; ')}`);
   }
   if (certo === 0 && incerto === 0 && usati.length === 0 && note.length === 0) {
     note.push('nessun servizio nel fascicolo');

@@ -131,10 +131,12 @@ function minimoUnitarioDi(criterio: CriterioRisolto): number | undefined {
 
 // ─── Etichette ───────────────────────────────────────────────
 
-export function descriviCandidato(candidato: CandidatoScelto): string {
+/** "valore stimato = 966.144,50 € (art. 3.2, p. 10)"; senza nome quando il nome è già detto accanto. */
+export function descriviCandidato(candidato: CandidatoScelto, conNome = true): string {
   const { fonte } = candidato.valore;
   const dove = fonte.pagina === undefined ? fonte.riferimento : `${fonte.riferimento}, p. ${fonte.pagina}`;
-  return `${candidato.nome} = ${formattaEuro(candidato.valore.valore)} (${dove})`;
+  const valore = `${formattaEuro(candidato.valore.valore)} (${dove})`;
+  return conNome ? `${candidato.nome} = ${valore}` : valore;
 }
 
 function etichettaDi(requisito: Requisito, lettura: number, candidati: CandidatoScelto[], bando: Bando): string {

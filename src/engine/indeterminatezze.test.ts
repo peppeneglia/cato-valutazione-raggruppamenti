@@ -48,9 +48,12 @@ const TERMINE_CHIARIMENTI = { data: '2023-12-27', ora: '12:00', fonte: F('art. 2
 
 // Le etichette dei candidati passano dal formato italiano: lo spazio prima di € è quello stretto.
 const E = formattaEuro;
-const CANDIDATO_BASE = `valore stimato = ${E(750_000)} (art. 3, p. 9)`;
-const CANDIDATO_TESTO = `valore stimato = ${E(966_144.5)} (art. 3.2, testo, p. 10)`;
-const CANDIDATO_TABELLA = `valore stimato = ${E(1_025_000)} (art. 3.2, tabella, p. 10)`;
+const BASE = `${E(750_000)} (art. 3, p. 9)`;
+const TESTO = `${E(966_144.5)} (art. 3.2, testo, p. 10)`;
+const TABELLA = `${E(1_025_000)} (art. 3.2, tabella, p. 10)`;
+const CANDIDATO_BASE = `valore stimato = ${BASE}`;
+const CANDIDATO_TESTO = `valore stimato = ${TESTO}`;
+const CANDIDATO_TABELLA = `valore stimato = ${TABELLA}`;
 
 function esitoDi(requisitoId: string, requisiti: EsitoRequisito[]): EsitoRequisito {
   const e = requisiti.find((r) => r.requisitoId === requisitoId);
@@ -134,7 +137,10 @@ describe('criterio non determinato (§6.1 b: registri o albi «se prescritti», 
     expect(e.contributi).toEqual([]);
     expect(tipi(e.indeterminatezze)).toEqual(['criterio_non_determinato', 'regola_non_dichiarata']);
     expect(e.motivazione).toContain('Il disciplinare non dice cosa soddisfi il requisito');
-    expect(chiarimenti(e.rimedi)?.quesiti).toHaveLength(2);
+    expect(chiarimenti(e.rimedi)?.quesiti).toEqual([
+      'Quale registro, albo o documento soddisfa il requisito «Requisito r-albi»? Il disciplinare non lo nomina.',
+      'In caso di raggruppamento temporaneo, da chi deve essere posseduto il requisito «Requisito r-albi»: da ciascun componente, dalla sola mandataria o dal raggruppamento nel complesso?',
+    ]);
   });
   it('nessun avvalimento e nessun ingresso lo copre: non c’è niente contro cui calcolare', () => {
     const p = scenario([{ ...r, avvalibile: true }], [soggetto('s-a', []), soggetto('s-b', []), soggetto('s-x', [iscrizione('Albo grossisti', 'farmaci')])]);
@@ -161,14 +167,14 @@ describe('soglia per rinvio a un valore scritto in tre modi (art. 3.2 p. 10)', (
       tipo: 'valore_contraddittorio',
       nome: 'valore stimato',
       esiti: [
-        { etichetta: CANDIDATO_BASE, stato: 'coperto' },
-        { etichetta: CANDIDATO_TESTO, stato: 'coperto' },
-        { etichetta: CANDIDATO_TABELLA, stato: 'scoperto' },
+        { etichetta: BASE, stato: 'coperto' },
+        { etichetta: TESTO, stato: 'coperto' },
+        { etichetta: TABELLA, stato: 'scoperto' },
       ],
     }]);
     expect(e.varianti?.map((v) => v.stato)).toEqual(['coperto', 'coperto', 'scoperto']);
     expect(e.motivazione).toBe(`Il documento ammette 3 letture con esiti diversi: sotto «${CANDIDATO_BASE}» coperto; sotto «${CANDIDATO_TESTO}» coperto; sotto «${CANDIDATO_TABELLA}» scoperto (mancano ${E(35_000)}). Fino a un chiarimento non si può decidere; i numeri mostrati sono della lettura peggiore.`);
-    expect(chiarimenti(e.rimedi)?.quesiti).toEqual([`Quale valore di «valore stimato» vale per il requisito «Requisito r-fatt»: ${CANDIDATO_BASE} oppure ${CANDIDATO_TESTO} oppure ${CANDIDATO_TABELLA}?`]);
+    expect(chiarimenti(e.rimedi)?.quesiti).toEqual([`Quale valore di «valore stimato» vale per il requisito «Requisito r-fatt»: ${BASE} oppure ${TESTO} oppure ${TABELLA}?`]);
   });
   it('sopra tutti i candidati: coperto sotto ogni lettura, con l’assunzione esito_concordante e la soglia peggiore', () => {
     const p = scenario([r], conFatturato(900_000, 300_000));
@@ -207,6 +213,10 @@ describe('letture alternative: contratto singolo oppure somma (§6.3 b)', () => 
     const e = esitoDi('r-forn', valuta(p).requisiti);
     expect(e.stato).toBe('coperto');
     expect(e.assunzioni.map((a) => a.codice)).toEqual(['ancoraggio_termine_presentazione', 'esito_concordante']);
+    // Forniture ed euro non si confrontano: si mostra la prima lettura del documento e si dice che l'esito coincide.
+    expect(e.misurazione?.unita).toEqual({ tipo: 'conteggio', sostantivo: FORNITURE });
+    expect(e.motivazione).toContain('Le letture misurano cose diverse (forniture, euro) e l\'esito coincide sotto tutte.');
+    expect(e.assunzioni[1]?.testo).toBe('Il documento ammette più letture del requisito (un solo contratto non inferiore alla base d\'asta; la somma dei contratti non inferiore alla base d\'asta). L\'esito è lo stesso sotto ciascuna, e vale anche se il documento è ambiguo. È un\'assunzione del motore, non del disciplinare.');
     expect(e.varianti?.map((v) => v.etichetta)).toEqual(['un solo contratto non inferiore alla base d\'asta', 'la somma dei contratti non inferiore alla base d\'asta']);
   });
   it('solo contratti piccoli che sommano sopra soglia: le letture discordano, da verificare con letture_discordanti', () => {
@@ -243,8 +253,7 @@ describe('ancoraggio non dichiarato: "nell’ultimo triennio" senza dire da quan
       testo: 'La finestra «ultimi 3 anni» non ha un ancoraggio dichiarato nel disciplinare: è stata ancorata al termine di presentazione (15/01/2024), l\'unica data certa del bando. È un\'assunzione del motore, non del disciplinare.',
     }]);
     const nota = e.contributi[0]?.nota ?? '';
-    expect(nota).toContain('«Servizio 33190000» resta nella finestra finché l\'ancoraggio non arretra di più di 1050 giorni');
-    expect(nota).toContain('«Servizio 33190000» conterebbe con un ancoraggio anteriore di almeno 15 giorni');
+    expect(nota).toContain('ancoraggio assunto al termine di presentazione: quelle contate restano nella finestra fino a un arretramento di 1050 giorni (la più esposta è «Servizio 33190000»); con un arretramento di almeno 15 giorni conterebbe anche «Servizio 33190000»');
   });
   it('la data di pubblicazione assente non è un’anomalia finché nessun criterio la chiede', () => {
     const p = scenario([r], [soggetto('s-a', []), soggetto('s-b', [])]);

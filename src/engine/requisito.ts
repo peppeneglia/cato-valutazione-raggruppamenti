@@ -332,12 +332,21 @@ function valutaVariante(requisito: Requisito, variante: Variante, contesto: Cont
 
 const PESO: Record<StatoRequisito, number> = { coperto: 0, da_verificare: 1, scoperto: 2 };
 
-/** La variante peggiore: stato peggiore, poi delta maggiore, poi soglia maggiore, poi l'ordine del documento. */
+function stessaUnita(a: Misurazione | undefined, b: Misurazione | undefined): boolean {
+  return a !== undefined && b !== undefined && JSON.stringify(a.unita) === JSON.stringify(b.unita);
+}
+
+/**
+ * La variante peggiore: stato peggiore, poi — solo tra misure della stessa
+ * unità, perché forniture ed euro non si confrontano — delta maggiore e
+ * soglia maggiore; altrimenti l'ordine del documento.
+ */
 function peggiore(valutate: VarianteValutata[]): VarianteValutata {
   return valutate.reduce((acc, v) => {
     const pa = PESO[acc.esito.stato];
     const pv = PESO[v.esito.stato];
     if (pv !== pa) return pv > pa ? v : acc;
+    if (!stessaUnita(acc.esito.misurazione, v.esito.misurazione)) return acc;
     const da = acc.esito.misurazione?.delta ?? 0;
     const dv = v.esito.misurazione?.delta ?? 0;
     if (dv !== da) return dv > da ? v : acc;
@@ -345,6 +354,17 @@ function peggiore(valutate: VarianteValutata[]): VarianteValutata {
     const sv = v.esito.misurazione?.soglia ?? 0;
     return sv > sa ? v : acc;
   });
+}
+
+function descriviUnita(unita: Unita): string {
+  switch (unita.tipo) {
+    case 'euro':
+      return 'euro';
+    case 'conteggio':
+      return unita.sostantivo.plurale;
+    default:
+      return assertNever(unita);
+  }
 }
 
 function etichettaStato(stato: StatoRequisito): string {
@@ -387,7 +407,7 @@ function attribuisci(valutate: VarianteValutata[], peggio: VarianteValutata, req
     const perNome = valutate.filter((v) => v.variante.lettura === peggio.variante.lettura && stessiCandidati(v.variante, peggio.variante, scelto.nome));
     const esiti: EsitoVariante[] = perNome.flatMap((v) => {
       const c = v.variante.candidati.find((x) => x.nome === scelto.nome);
-      return c ? [{ etichetta: descriviCandidato(c), stato: v.esito.stato }] : [];
+      return c ? [{ etichetta: descriviCandidato(c, false), stato: v.esito.stato }] : [];
     });
     if (stati(esiti)) risultato.push({ tipo: 'valore_contraddittorio', nome: scelto.nome, esiti });
   }
@@ -420,9 +440,14 @@ function fondiVarianti(requisito: Requisito, valutate: VarianteValutata[]): Requ
   if (concordanti) {
     const misurazioni = valutate.flatMap((v) => (v.esito.misurazione ? [v.esito.misurazione] : []));
     const riferimento = misurazioni[0];
+    const unitaUguali = misurazioni.every((m) => stessaUnita(m, riferimento));
     const divergono = riferimento !== undefined && misurazioni.some((m) => m.soglia !== riferimento.soglia || m.raggiunto !== riferimento.raggiunto || m.delta !== riferimento.delta);
     let motivazione = peggio.esito.motivazione;
-    if (divergono && riferimento) {
+    if (riferimento && !unitaUguali) {
+      // Forniture ed euro non si confrontano: si dice solo che l'esito coincide.
+      const unita = [...new Set(misurazioni.map((m) => descriviUnita(m.unita)))].join(', ');
+      motivazione += ` Le letture misurano cose diverse (${unita}) e l'esito coincide sotto tutte.`;
+    } else if (divergono && riferimento) {
       const unita = riferimento.unita;
       const delte = misurazioni.map((m) => m.delta);
       const soglie = misurazioni.map((m) => m.soglia);
@@ -430,9 +455,10 @@ function fondiVarianti(requisito: Requisito, valutate: VarianteValutata[]): Requ
         ? ` La soglia va da ${fmtMisura(Math.min(...soglie), unita)} a ${fmtMisura(Math.max(...soglie), unita)} a seconda della lettura, ed è raggiunta sotto tutte.`
         : ` A seconda della lettura mancano tra ${fmtMisura(Math.min(...delte), unita)} e ${fmtMisura(Math.max(...delte), unita)}: si mostra la peggiore.`;
     }
+    const numeri = !unitaUguali ? '' : divergono ? ' Dove i numeri differiscono si mostra la lettura peggiore.' : '';
     assunzioni.push({
       codice: 'esito_concordante',
-      testo: `Il documento ammette più letture del requisito (${etichette.join('; ')}) e l'esito è lo stesso sotto ciascuna${divergono ? ', con numeri diversi: si mostra la lettura peggiore' : ''}: l'esito vale anche se il documento è ambiguo. È un'assunzione del motore, non del disciplinare.`,
+      testo: `Il documento ammette più letture del requisito (${etichette.join('; ')}). L'esito è lo stesso sotto ciascuna, e vale anche se il documento è ambiguo.${numeri} È un'assunzione del motore, non del disciplinare.`,
     });
     return {
       esito: { ...peggio.esito, motivazione, assunzioni, indeterminatezze: [...peggio.esito.indeterminatezze.filter((i) => i.tipo !== 'giudizio_richiesto'), ...giudizi], varianti },

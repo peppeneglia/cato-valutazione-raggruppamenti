@@ -1,81 +1,120 @@
-// Test di integrazione sulla fixture completa. L'esito atteso è generato dal
-// motore e fissato dopo lettura: se il motore diverge, qui si scopre, e chi
-// ha ragione va capito prima di riallineare (`npm run fixture:esito`).
+// Test di integrazione sulla fixture completa: la gara reale ASL Roma 6.
+// L'esito atteso è generato dal motore e fissato dopo lettura riga per
+// riga: se il motore diverge, qui si scopre, e chi ha ragione va capito
+// prima di riallineare (`npm run fixture:esito`). I fatti sotto sono
+// verificati a mano sul disciplinare, indipendenti dall'esito generato.
 
 import { describe, expect, it } from 'vitest';
 import type { ParametriValutazione } from '../domain';
 import { bando, DATA_RIFERIMENTO, esitoAtteso, ORIZZONTE_SCADENZE_GIORNI, raggruppamento, soggetti } from '../fixture';
-import { confrontaLotti, valuta } from './index';
+import { valuta } from './index';
 
-function parametri(lottoId: string): ParametriValutazione {
-  return { bando, lottoId, soggetti, raggruppamento, dataRiferimento: DATA_RIFERIMENTO, orizzonteScadenzeGiorni: ORIZZONTE_SCADENZE_GIORNI };
+function parametri(extra: Partial<ParametriValutazione> = {}): ParametriValutazione {
+  return { bando, lottoId: 'lotto-unico', soggetti, raggruppamento, dataRiferimento: DATA_RIFERIMENTO, orizzonteScadenzeGiorni: ORIZZONTE_SCADENZE_GIORNI, ...extra };
 }
 
 describe('fixture — esito completo', () => {
-  for (const lotto of bando.lotti) {
-    it(`il motore produce esattamente l'esito atteso sul ${lotto.id}`, () => {
-      expect(valuta(parametri(lotto.id))).toEqual(esitoAtteso[lotto.id]);
-    });
-  }
+  it('il motore produce esattamente l’esito atteso sul lotto unico', () => {
+    expect(valuta(parametri())).toEqual(esitoAtteso['lotto-unico']);
+  });
+  it('la gara è monolotto', () => {
+    expect(bando.lotti.map((l) => l.id)).toEqual(['lotto-unico']);
+  });
 });
 
-describe('fixture — fatti verificati a mano, indipendenti dall’esito generato', () => {
-  const lotto1 = valuta(parametri('lotto-1'));
-  const lotto2 = valuta(parametri('lotto-2'));
-  const stato = (id: string) => lotto1.requisiti.find((r) => r.requisitoId === id)?.stato;
+describe('fixture — fatti verificati a mano sul disciplinare', () => {
+  const esito = valuta(parametri());
+  const requisito = (id: string) => {
+    const r = esito.requisiti.find((x) => x.requisitoId === id);
+    if (!r) throw new Error(`requisito ${id} assente`);
+    return r;
+  };
 
-  it('lotto 1: non ammissibile per fatturato, ISO 9001 scaduta e referenze; scope di Gamma da verificare', () => {
-    expect(lotto1.verdetto).toBe('non_ammissibile');
-    expect(stato('l1-fatturato')).toBe('scoperto');
-    expect(stato('l1-iso-9001-manutenzione')).toBe('scoperto');
-    expect(stato('l1-referenze')).toBe('scoperto');
-    expect(stato('l1-iso-9001-formazione')).toBe('da_verificare');
-    expect(stato('l1-generale')).toBe('coperto');
-    expect(stato('l1-cciaa')).toBe('coperto');
-    expect(stato('l1-iso-13485')).toBe('coperto');
+  it('ammissibile con riserva: nessuno scoperto, quattro requisiti su sei indeterminati dal documento', () => {
+    expect(esito.verdetto).toBe('ammissibile_con_riserva');
+    expect(esito.requisiti.map((r) => [r.requisitoId, r.stato])).toEqual([
+      ['requisiti-generali', 'da_verificare'],
+      ['registro-imprese', 'da_verificare'],
+      ['registri-di-settore', 'da_verificare'],
+      ['fatturato-globale', 'da_verificare'],
+      ['certificazione-qualita', 'da_verificare'],
+      ['forniture-analoghe', 'coperto'],
+    ]);
+    const conChiarimenti = esito.requisiti.filter((r) => r.rimedi.some((m) => m.tipo === 'richiesta_chiarimenti')).map((r) => r.requisitoId);
+    expect(conChiarimenti).toEqual(['requisiti-generali', 'registri-di-settore', 'fatturato-globale', 'certificazione-qualita']);
   });
-  it('lotto 1: il fatturato manca di 100.000 € e il minimo della mandataria è rispettato', () => {
-    const m = lotto1.requisiti.find((r) => r.requisitoId === 'l1-fatturato')?.misurazione;
-    expect(m).toMatchObject({ raggiunto: 2_900_000, soglia: 3_000_000, delta: 100_000 });
-    expect(m?.minimiRuolo).toEqual([{ soggettoId: 's-alfa', ruolo: 'mandataria', richiesto: 1_200_000, raggiunto: 2_100_000, delta: 0 }]);
+  it('requisiti generali: tutti dichiarano, ma l’art. 5 non dice come si possiede nei RTI', () => {
+    const r = requisito('requisiti-generali');
+    expect(r.contributi.every((c) => c.conteggiato && c.valore.tipo === 'possesso' && c.valore.esito === 'posseduto')).toBe(true);
+    expect(r.indeterminatezze).toEqual([{ tipo: 'regola_non_dichiarata' }]);
+    expect(r.misurazione).toBeUndefined();
   });
-  it('lotto 1: Gamma possiede la ISO 9001 ma non è conteggiata per la manutenzione', () => {
-    const gamma = lotto1.requisiti.find((r) => r.requisitoId === 'l1-iso-9001-manutenzione')?.contributi.find((c) => c.soggettoId === 's-gamma');
-    expect(gamma).toMatchObject({ valore: { tipo: 'possesso', esito: 'da_verificare' }, conteggiato: false });
+  it('registro imprese: da ciascun componente; per Ospedalia la pertinenza dell’attività è un giudizio, non un chiarimento', () => {
+    const r = requisito('registro-imprese');
+    expect(r.indeterminatezze.map((i) => i.tipo)).toEqual(['giudizio_richiesto']);
+    expect(r.rimedi).toEqual([]);
   });
-  it('lotto 1: il percorso minimo è di due mosse e raggiunge con riserva sul solo scope di Gamma', () => {
-    expect(lotto1.percorsoMinimo).toMatchObject({
-      esito: 'trovato',
-      verdettoRaggiunto: 'ammissibile_con_riserva',
-      residui: ['l1-iso-9001-formazione'],
-      mosse: [
-        { tipo: 'ingresso_soggetto', soggettoId: 's-delta', quote: { 'l1-manutenzione': 1 }, rilevateDa: 's-beta' },
-        { tipo: 'avvalimento', requisitoId: 'l1-referenze', ausiliariaId: 's-epsilon', ausiliataId: 's-alfa' },
-      ],
+  it('registri di settore: criterio non determinato e regola non dichiarata, nessun contributo, due quesiti', () => {
+    const r = requisito('registri-di-settore');
+    expect(r.contributi).toEqual([]);
+    expect(r.indeterminatezze.map((i) => i.tipo)).toEqual(['criterio_non_determinato', 'regola_non_dichiarata']);
+    const chiarimenti = r.rimedi.find((m) => m.tipo === 'richiesta_chiarimenti');
+    expect(chiarimenti?.tipo === 'richiesta_chiarimenti' && chiarimenti.quesiti).toHaveLength(2);
+  });
+  it('fatturato: 990.000 € sopra due candidati e sotto il terzo; si mostra la lettura peggiore', () => {
+    const r = requisito('fatturato-globale');
+    expect(r.misurazione).toMatchObject({ soglia: 1_025_000, raggiunto: 990_000, delta: 35_000, minimiRuolo: [] });
+    expect(r.varianti?.map((v) => v.stato)).toEqual(['coperto', 'coperto', 'scoperto']);
+    expect(r.indeterminatezze.map((i) => i.tipo)).toEqual(['valore_contraddittorio']);
+  });
+  it('fatturato: Grossfarma, per ingresso o avvalimento, porta la somma sopra tutti e tre i candidati', () => {
+    const tipi = requisito('fatturato-globale').rimedi.map((m) => m.tipo);
+    expect(tipi).toContain('avvalimento');
+    expect(tipi).toContain('ingresso_soggetto');
+    expect(tipi).not.toContain('profilo_mancante');
+  });
+  it('ISO: le due famiglie di indeterminatezza sulla stessa riga, con i contributi visibili', () => {
+    const r = requisito('certificazione-qualita');
+    expect(r.contributi.map((c) => [c.soggettoId, c.valore.tipo === 'possesso' && c.valore.esito])).toEqual([
+      ['s-farmalazio', 'posseduto'],
+      ['s-ospedalia', 'da_verificare'],
+      ['s-medifarm', 'assente'],
+    ]);
+    expect(r.indeterminatezze.map((i) => i.tipo)).toEqual(['regola_non_dichiarata', 'giudizio_richiesto']);
+  });
+  it('forniture analoghe: il contratto da 800.000 € copre sotto entrambe le letture, con le due assunzioni', () => {
+    const r = requisito('forniture-analoghe');
+    expect(r.stato).toBe('coperto');
+    expect(r.indeterminatezze).toEqual([]);
+    expect(r.assunzioni.map((a) => a.codice)).toEqual(['ancoraggio_termine_presentazione', 'esito_concordante']);
+    expect(r.varianti?.map((v) => v.stato)).toEqual(['coperto', 'coperto']);
+  });
+  it('le assunzioni del motore stanno solo sulle forniture analoghe', () => {
+    expect(esito.requisiti.filter((r) => r.assunzioni.length > 0).map((r) => r.requisitoId)).toEqual(['forniture-analoghe']);
+  });
+  it('alla data di riferimento il termine dei chiarimenti è decorso; prima del 27/12/2023 non lo è', () => {
+    const decorsi = esito.requisiti.flatMap((r) => r.rimedi).filter((m) => m.tipo === 'richiesta_chiarimenti').map((m) => m.tipo === 'richiesta_chiarimenti' && m.decorso);
+    expect(decorsi).toEqual([true, true, true, true]);
+    const prima = valuta(parametri({ dataRiferimento: '2023-12-20' }));
+    const nonDecorsi = prima.requisiti.flatMap((r) => r.rimedi).filter((m) => m.tipo === 'richiesta_chiarimenti').map((m) => m.tipo === 'richiesta_chiarimenti' && m.decorso);
+    expect(nonDecorsi).toEqual([false, false, false, false]);
+    expect(prima.verdetto).toBe('ammissibile_con_riserva');
+  });
+  it('percorso: il massimo raggiungibile è già raggiunto, e le mosse sul fatturato sono dichiarate come miglioramenti', () => {
+    expect(esito.percorsoMinimo).toMatchObject({
+      esito: 'gia_ammissibile',
+      verdetto: 'ammissibile_con_riserva',
+      residui: ['requisiti-generali', 'registro-imprese', 'registri-di-settore', 'fatturato-globale', 'certificazione-qualita'],
     });
+    if (esito.percorsoMinimo.esito !== 'gia_ammissibile') throw new Error('atteso gia_ammissibile');
+    expect(esito.percorsoMinimo.miglioramenti.every((m) => m.requisitiRisolti.length === 1 && m.requisitiRisolti[0] === 'fatturato-globale')).toBe(true);
+    expect(esito.percorsoMinimo.miglioramenti.map((m) => m.mossa.tipo)).toContain('avvalimento');
   });
-  it('lotto 1: la ISO 13485 di Alfa scade prima del termine di presentazione', () => {
-    expect(lotto1.avvisiScadenza).toEqual([expect.objectContaining({ soggettoId: 's-alfa', scadeIl: '2026-10-31', primaDelTermine: true, entroOrizzonte: true, requisitiIds: ['l1-iso-13485'] })]);
+  it('la ISO 9001 di Farmadistribuzione scade entro l’orizzonte, dopo il termine di presentazione', () => {
+    expect(esito.avvisiScadenza).toEqual([expect.objectContaining({ soggettoId: 's-farmalazio', scadeIl: '2024-03-31', primaDelTermine: false, entroOrizzonte: true, requisitiIds: ['certificazione-qualita'] })]);
   });
-  it('lotto 1: le assunzioni del motore sono dichiarate sulle referenze e da nessun’altra parte', () => {
-    expect(lotto1.requisiti.filter((r) => r.assunzioni.length > 0).map((r) => r.requisitoId)).toEqual(['l1-referenze']);
-  });
-  it('lotto 2: ammissibile, già senza mosse, con la ISO 9001 di Alfa in scadenza entro l’orizzonte', () => {
-    expect(lotto2.verdetto).toBe('ammissibile');
-    expect(lotto2.percorsoMinimo).toEqual({ esito: 'gia_ammissibile', verdetto: 'ammissibile', residui: [], miglioramenti: [] });
-    expect(lotto2.avvisiScadenza).toEqual([expect.objectContaining({ soggettoId: 's-alfa', scadeIl: '2026-11-30', primaDelTermine: false, entroOrizzonte: true })]);
-  });
-  it('lotto 2: il servizio di punta scarta la formazione da 80.000 € e trova gli arredi da 450.000 €', () => {
-    const punta = lotto2.requisiti.find((r) => r.requisitoId === 'l2-punta');
-    expect(punta?.stato).toBe('coperto');
-    expect(punta?.contributi.find((c) => c.soggettoId === 's-gamma')?.nota).toContain('sotto il minimo unitario');
-  });
-  it('nessuna anomalia in nessun lotto', () => {
-    expect(lotto1.anomalie).toEqual([]);
-    expect(lotto2.anomalie).toEqual([]);
-  });
-  it('il confronto tra lotti mette il lotto 2 davanti al lotto 1', () => {
-    const classifica = confrontaLotti({ bando, soggetti, raggruppamento, dataRiferimento: DATA_RIFERIMENTO, orizzonteScadenzeGiorni: ORIZZONTE_SCADENZE_GIORNI });
-    expect(classifica.map((v) => [v.chiave, v.posizione])).toEqual([['lotto-2', 1], ['lotto-1', 2]]);
+  it('nessuna anomalia: la data di pubblicazione assente non lo è, finché nessun criterio la chiede', () => {
+    expect(esito.anomalie).toEqual([]);
+    expect(bando.dataPubblicazione).toBeUndefined();
   });
 });

@@ -7,10 +7,10 @@ const contesto = { bando, soggetti };
 
 describe('nomi', () => {
   it('traduce gli id in nomi reali e lascia l’id se non esiste', () => {
-    expect(nomeSoggetto('s-alfa', contesto)).toBe('Alfa Medical S.p.A.');
+    expect(nomeSoggetto('s-farmalazio', contesto)).toBe('Farmadistribuzione Laziale S.p.A.');
     expect(nomeSoggetto('s-ignoto', contesto)).toBe('s-ignoto');
-    expect(nomePrestazione('l1-manutenzione', contesto)).toBe('Manutenzione e assistenza tecnica');
-    expect(nomeRequisito('l1-referenze', contesto)).toBe('Tre forniture analoghe nel quinquennio antecedente la pubblicazione');
+    expect(nomePrestazione('fornitura', contesto)).toBe('Fornitura di farmaci, parafarmaci, dispositivi medici e altro, da grossista con consegna veloce');
+    expect(nomeRequisito('registro-imprese', contesto)).toBe("Iscrizione nel registro delle imprese oppure nell'Albo delle Imprese Artigiane per attività pertinenti con quelle oggetto della procedura");
   });
 });
 
@@ -26,26 +26,26 @@ describe('etichette', () => {
 
 describe('descriviMossa', () => {
   it('riassegnazione con percentuale e nomi', () => {
-    expect(descriviMossa({ tipo: 'riassegna_quota', prestazioneId: 'l1-manutenzione', daSoggettoId: 's-beta', aSoggettoId: 's-alfa', quota: 1 }, contesto))
-      .toBe('Riassegna il 100 % di «Manutenzione e assistenza tecnica» da Beta Service S.r.l. a Alfa Medical S.p.A.');
+    expect(descriviMossa({ tipo: 'riassegna_quota', prestazioneId: 'fornitura', daSoggettoId: 's-ospedalia', aSoggettoId: 's-farmalazio', quota: 0.25 }, contesto))
+      .toBe('Riassegna il 25 % di «Fornitura di farmaci, parafarmaci, dispositivi medici e altro, da grossista con consegna veloce» da Ospedalia Forniture S.r.l. a Farmadistribuzione Laziale S.p.A.');
   });
   it('ingresso a quote zero, con quote proprie, o rilevando', () => {
-    expect(descriviMossa({ tipo: 'ingresso_soggetto', soggettoId: 's-delta', ruolo: 'mandante', quote: {} }, contesto))
-      .toBe('Ingresso di Delta Tecnica S.r.l. come mandante, senza quote di esecuzione');
-    expect(descriviMossa({ tipo: 'ingresso_soggetto', soggettoId: 's-delta', ruolo: 'mandante', quote: { 'l1-manutenzione': 1 }, rilevateDa: 's-beta' }, contesto))
-      .toBe('Ingresso di Delta Tecnica S.r.l. come mandante, rilevando 100 % di «Manutenzione e assistenza tecnica» da Beta Service S.r.l.');
+    expect(descriviMossa({ tipo: 'ingresso_soggetto', soggettoId: 's-grossfarma', ruolo: 'mandante', quote: {} }, contesto))
+      .toBe('Ingresso di Grossfarma Centro-Sud S.p.A. come mandante, senza quote di esecuzione');
+    expect(descriviMossa({ tipo: 'ingresso_soggetto', soggettoId: 's-grossfarma', ruolo: 'mandante', quote: { fornitura: 0.25 }, rilevateDa: 's-ospedalia' }, contesto))
+      .toBe('Ingresso di Grossfarma Centro-Sud S.p.A. come mandante, rilevando 25 % di «Fornitura di farmaci, parafarmaci, dispositivi medici e altro, da grossista con consegna veloce» da Ospedalia Forniture S.r.l.');
   });
   it('avvalimento e uscita', () => {
-    expect(descriviMossa({ tipo: 'avvalimento', requisitoId: 'l1-referenze', ausiliariaId: 's-epsilon', ausiliataId: 's-alfa' }, contesto))
-      .toBe('Avvalimento di Epsilon Hospital Supply S.r.l. a favore di Alfa Medical S.p.A. per «Tre forniture analoghe nel quinquennio antecedente la pubblicazione»');
-    expect(descriviMossa({ tipo: 'uscita_soggetto', soggettoId: 's-beta' }, contesto)).toBe('Uscita di Beta Service S.r.l. dal raggruppamento');
+    expect(descriviMossa({ tipo: 'avvalimento', requisitoId: 'fatturato-globale', ausiliariaId: 's-grossfarma', ausiliataId: 's-farmalazio' }, contesto))
+      .toBe("Avvalimento di Grossfarma Centro-Sud S.p.A. a favore di Farmadistribuzione Laziale S.p.A. per «Fatturato globale almeno pari al valore stimato dell'appalto, maturato complessivamente nel triennio 2020/2021/2022»");
+    expect(descriviMossa({ tipo: 'uscita_soggetto', soggettoId: 's-ospedalia' }, contesto)).toBe('Uscita di Ospedalia Forniture S.r.l. dal raggruppamento');
   });
 });
 
 describe('descriviRimedio', () => {
   it('descrive i rimedi non applicabili', () => {
-    expect(descriviRimedio({ tipo: 'rinnovo_documento', soggettoId: 's-beta', requisitoId: 'r', fonte: { documento: 'Fascicolo', riferimento: 'certificato ISO 9001' }, scadutoIl: '2026-04-30' }, contesto))
-      .toBe('Rinnovo di «certificato ISO 9001» di Beta Service S.r.l., scaduto il 30/04/2026');
+    expect(descriviRimedio({ tipo: 'rinnovo_documento', soggettoId: 's-ospedalia', requisitoId: 'r', fonte: { documento: 'Fascicolo', riferimento: 'certificato ISO 9001' }, scadutoIl: '2026-04-30' }, contesto))
+      .toBe('Rinnovo di «certificato ISO 9001» di Ospedalia Forniture S.r.l., scaduto il 30/04/2026');
     expect(descriviRimedio({ tipo: 'profilo_mancante', requisitoId: 'r', criterio: { tipo: 'certificazione', norme: ['ISO 9001'], scope: 'formazione' } }, contesto))
       .toBe('Nessun soggetto disponibile copre questo requisito: serve certificazione ISO 9001 con scope «formazione»');
   });
@@ -82,11 +82,11 @@ describe('descrizioni — il documento che non decide', () => {
 
   it('la richiesta di chiarimenti dice il termine con l’ora e i quesiti', () => {
     expect(descriviRimedio({ tipo: 'richiesta_chiarimenti', requisitoId: 'r', quesiti: ['Chi lo possiede?'], termine: { data: '2023-12-27', ora: '12:00' }, decorso: false }, contesto))
-      .toBe('Chiedi chiarimenti alla stazione appaltante entro le 12:00 del 27/12/2023. Chi lo possiede?');
+      .toBe('Chiedi chiarimenti alla stazione appaltante entro le 12:00 del 27/12/2023: Chi lo possiede?');
   });
   it('a termine decorso lo dice, e l’ambiguità resta a rischio del concorrente', () => {
     expect(descriviRimedio({ tipo: 'richiesta_chiarimenti', requisitoId: 'r', quesiti: ['Chi lo possiede?'], termine: { data: '2023-12-27' }, decorso: true }, contesto))
-      .toBe("Chiedi chiarimenti alla stazione appaltante: il termine (il 27/12/2023) è decorso, l'ambiguità resta a rischio del concorrente. Chi lo possiede?");
+      .toBe("Il termine per i chiarimenti (il 27/12/2023) è decorso: l'ambiguità resta a rischio del concorrente. Il quesito che andava posto: Chi lo possiede?");
     expect(eApplicabile({ tipo: 'richiesta_chiarimenti', requisitoId: 'r', quesiti: [], decorso: false })).toBe(false);
   });
   it('un criterio non determinato si descrive con le parole del documento', () => {
