@@ -3,7 +3,6 @@
   padding: var(--sp-4) var(--sp-5);
   border-radius: var(--raggio);
   background: var(--c-crema);
-  --c-testo-tenue: var(--c-testo-tenue-crema);
 }
 
 .titolo {

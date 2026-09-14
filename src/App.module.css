@@ -23,7 +23,6 @@
   border-radius: var(--raggio);
   background: var(--c-crema);
   color: var(--c-navy);
-  --c-testo-tenue: var(--c-testo-tenue-crema);
 }
 
 .titolo {

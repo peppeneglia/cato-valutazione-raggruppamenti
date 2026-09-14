@@ -36,7 +36,6 @@
 }
 
 .bloccanteVoce {
-  background: var(--c-scoperto-tenue);
   border-left-color: var(--c-scoperto);
   border-left-style: double;
 }
