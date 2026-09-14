@@ -1,0 +1,44 @@
+.elenco {
+  margin: 0;
+  padding-left: var(--sp-4);
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.voce {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.prova {
+  padding: 0 var(--sp-2);
+  border: var(--spessore-bordo) solid var(--c-accento);
+  border-radius: var(--raggio-piccolo);
+  background: var(--c-sfondo);
+  color: var(--c-accento);
+  font-size: var(--testo-xs);
+  font-weight: var(--peso-medio);
+}
+
+.prova:hover {
+  background: var(--c-accento);
+  color: var(--c-accento-testo);
+}
+
+.esterno {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+  font-style: italic;
+}
+
+.attesa,
+.vuoto {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+.attesa {
+  font-style: italic;
+}

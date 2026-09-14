@@ -10,10 +10,13 @@ import type { ParametriValutazione } from './domain';
 import { valutaBase } from './engine';
 import { bando, DATA_RIFERIMENTO, ORIZZONTE_SCADENZE_GIORNI, raggruppamento, soggetti } from './fixture';
 import { trovaLotto } from './engine/indici';
+import { Assunzioni } from './ui/Assunzioni';
 import { Composizione } from './ui/Composizione';
 import { ConfrontoLotti } from './ui/ConfrontoLotti';
 import { IntestazioneBando } from './ui/IntestazioneBando';
+import { legendaAssunzioni } from './ui/legenda';
 import { Storia } from './ui/Storia';
+import { TabellaEsito } from './ui/TabellaEsito';
 import { Verdetto } from './ui/Verdetto';
 import { useValutazioneDifferita } from './ui/useValutazioneDifferita';
 import styles from './App.module.css';
@@ -50,6 +53,11 @@ export default function App() {
   const precedente = composizionePrimaDellUltimaProva(lavoro)?.raggruppamento;
   const differita = useValutazioneDifferita(parametri, precedente);
   const lotto = trovaLotto(bando, lavoro.lottoId);
+  const legenda = useMemo(() => legendaAssunzioni(esito.requisiti), [esito]);
+  const rimediPerRequisito = useMemo(
+    () => (differita.stato === 'pronto' ? new Map(differita.esito.requisiti.map((r) => [r.requisitoId, r.rimedi])) : ('in_calcolo' as const)),
+    [differita],
+  );
 
   return (
     <main className={styles.pagina}>
@@ -72,6 +80,20 @@ export default function App() {
 
       <Composizione lotto={lotto} raggruppamento={lavoro.raggruppamento} soggetti={soggetti} contesto={CONTESTO} dispatch={dispatch} />
       <Storia storia={lavoro.storia} onAnnulla={() => dispatch({ tipo: 'annulla' })} />
+
+      {lotto ? (
+        <TabellaEsito
+          lotto={lotto}
+          requisiti={esito.requisiti}
+          rimediPerRequisito={rimediPerRequisito}
+          membri={lavoro.raggruppamento.membri}
+          legenda={legenda}
+          contesto={CONTESTO}
+          dispatch={dispatch}
+        />
+      ) : null}
+
+      <Assunzioni legenda={legenda} />
     </main>
   );
 }

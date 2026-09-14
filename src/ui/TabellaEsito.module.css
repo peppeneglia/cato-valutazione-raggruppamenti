@@ -1,0 +1,128 @@
+.sezione {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.scorrimento {
+  overflow-x: auto;
+}
+
+.tabella th,
+.tabella td {
+  padding: var(--sp-2);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+  vertical-align: top;
+}
+
+.tabella thead th {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo-forte);
+}
+
+.didascalia {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+  padding-bottom: var(--sp-2);
+}
+
+.famiglia th {
+  padding-top: var(--sp-3);
+  font-size: var(--testo-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-testo-tenue);
+  background: var(--c-superficie);
+}
+
+/* Terzo segnale di stato: il bordo sinistro cambia stile, non solo colore. */
+.riga > td:first-child {
+  border-left: var(--spessore-bordo-forte) solid transparent;
+}
+
+.coperto > td:first-child {
+  border-left-color: var(--c-coperto);
+  border-left-style: solid;
+}
+
+.scoperto > td:first-child {
+  border-left-color: var(--c-scoperto);
+  border-left-style: double;
+}
+
+.da_verificare > td:first-child {
+  border-left-color: var(--c-da-verificare);
+  border-left-style: dashed;
+}
+
+.stato {
+  white-space: nowrap;
+}
+
+.requisito {
+  min-width: 20em;
+  max-width: 34em;
+}
+
+.descrizione {
+  font-weight: var(--peso-medio);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+}
+
+.nonVincolante,
+.avvalibile {
+  padding: 0 var(--sp-1);
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio-piccolo);
+}
+
+.dettagli {
+  margin-top: var(--sp-1);
+  font-size: var(--testo-sm);
+}
+
+.dettagli summary {
+  color: var(--c-accento);
+}
+
+.motivazione {
+  margin: var(--sp-1) 0 var(--sp-2);
+}
+
+.contributo {
+  min-width: 11em;
+}
+
+.intestazioneMembro {
+  display: table-cell;
+}
+
+.ruoloTenue {
+  display: block;
+  font-size: var(--testo-xs);
+  font-weight: var(--peso-normale);
+}
+
+.cifra {
+  font-family: var(--font-numeri);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.delta {
+  color: var(--c-scoperto);
+  font-weight: var(--peso-forte);
+  font-size: var(--testo-lg);
+}
+
+.vuoto {
+  color: var(--c-testo-tenue);
+}

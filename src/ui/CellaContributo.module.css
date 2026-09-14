@@ -1,0 +1,45 @@
+.cella {
+  display: grid;
+  gap: 2px;
+  font-size: var(--testo-sm);
+}
+
+.nonConteggiato > :first-child {
+  color: var(--c-testo-tenue);
+}
+
+.nonConta {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+  font-style: italic;
+}
+
+.nonConsiderato {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+}
+
+.cifra {
+  font-family: var(--font-numeri);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.coperto { color: var(--c-coperto); font-weight: var(--peso-medio); }
+.scoperto { color: var(--c-scoperto); font-weight: var(--peso-medio); }
+.daVerificare { color: var(--c-da-verificare); font-weight: var(--peso-medio); }
+
+.dettagli {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+}
+
+.dettagli summary {
+  cursor: pointer;
+}
+
+.nota {
+  margin: var(--sp-1) 0;
+  color: var(--c-testo);
+  max-width: 36em;
+}

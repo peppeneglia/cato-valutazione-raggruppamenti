@@ -6,7 +6,9 @@ import { assertNever } from './assertNever';
 import type {
   Anomalia,
   Bando,
+  CodiceAssunzione,
   Criterio,
+  FamigliaRequisito,
   GravitaAnomalia,
   PrestazioneId,
   RequisitoId,
@@ -77,6 +79,35 @@ export function etichettaRuolo(ruolo: Ruolo): string {
       return 'Ausiliaria (avvalimento)';
     default:
       return assertNever(ruolo);
+  }
+}
+
+/** La famiglia è descrittiva: serve solo a raggruppare le righe a video. */
+export function etichettaFamiglia(famiglia: FamigliaRequisito): string {
+  switch (famiglia) {
+    case 'generale':
+      return 'Requisiti generali';
+    case 'economico':
+      return 'Capacità economico-finanziaria';
+    case 'certificazione':
+      return 'Certificazioni';
+    case 'referenza':
+      return 'Referenze';
+    case 'iscrizione':
+      return 'Iscrizioni';
+    default:
+      return assertNever(famiglia);
+  }
+}
+
+export function etichettaAssunzione(codice: CodiceAssunzione): string {
+  switch (codice) {
+    case 'arrotondamento_minimi':
+      return 'Arrotondamento per eccesso dei minimi per ruolo';
+    case 'classe_cpv':
+      return 'Esclusione dei servizi per classe CPV';
+    default:
+      return assertNever(codice);
   }
 }
 
