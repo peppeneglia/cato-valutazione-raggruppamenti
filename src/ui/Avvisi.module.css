@@ -1,0 +1,57 @@
+.sezione {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.intro,
+.vuoto {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+.elenco {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.avviso {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: var(--sp-1) var(--sp-3);
+  align-items: baseline;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-avviso-tenue);
+  border-left: var(--spessore-bordo-forte) solid var(--c-avviso);
+  font-size: var(--testo-sm);
+}
+
+.primaDelTermine {
+  border-left-style: double;
+}
+
+.entroOrizzonte {
+  border-left-style: dashed;
+}
+
+.etichetta {
+  font-weight: var(--peso-medio);
+  color: var(--c-avviso);
+  white-space: nowrap;
+}
+
+.data {
+  font-family: var(--font-numeri);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.requisiti {
+  color: var(--c-testo-tenue);
+}
+
+.avviso > :last-child {
+  grid-column: 3;
+}

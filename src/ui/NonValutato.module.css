@@ -1,0 +1,23 @@
+.sezione {
+  display: grid;
+  gap: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: var(--spessore-bordo) solid var(--c-bordo);
+}
+
+.elenco {
+  margin: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.voce dt {
+  font-weight: var(--peso-medio);
+}
+
+.voce dd {
+  margin: 2px 0 0;
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+  max-width: 80em;
+}
