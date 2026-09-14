@@ -358,7 +358,8 @@ function anomalieVoce(soggetto: Soggetto, voce: VoceFascicolo): Anomalia[] {
   return anomalie;
 }
 
-function anomalieFascicoli(soggetti: Soggetto[]): Anomalia[] {
+/** Non dipende dal raggruppamento: la ricerca dei rimedi la calcola una volta sola. */
+export function anomalieFascicoli(soggetti: Soggetto[]): Anomalia[] {
   return soggetti.flatMap((s) => s.fascicolo.flatMap((v) => anomalieVoce(s, v)));
 }
 
@@ -377,11 +378,11 @@ function senzaDuplicati(anomalie: Anomalia[]): Anomalia[] {
  * Tutte le anomalie strutturali dell'input. I controlli che dipendono dal
  * lotto vengono saltati se il lotto non esiste: quella è già un'anomalia.
  */
-export function anomalieStrutturali(parametri: ParametriValutazione): Anomalia[] {
-  return senzaDuplicati(raccogliAnomalie(parametri));
+export function anomalieStrutturali(parametri: ParametriValutazione, fascicoliPrecalcolate?: Anomalia[]): Anomalia[] {
+  return senzaDuplicati(raccogliAnomalie(parametri, fascicoliPrecalcolate ?? anomalieFascicoli(parametri.soggetti)));
 }
 
-function raccogliAnomalie(parametri: ParametriValutazione): Anomalia[] {
+function raccogliAnomalie(parametri: ParametriValutazione, anomalieDeiFascicoli: Anomalia[]): Anomalia[] {
   const lotto = trovaLotto(parametri.bando, parametri.lottoId);
   const anomalie = [
     ...anomalieDate(parametri),
@@ -397,6 +398,6 @@ function raccogliAnomalie(parametri: ParametriValutazione): Anomalia[] {
       ...anomalieVincolo(parametri, lotto),
     );
   }
-  anomalie.push(...anomalieFascicoli(parametri.soggetti));
+  anomalie.push(...anomalieDeiFascicoli);
   return anomalie;
 }

@@ -115,10 +115,12 @@ export const bando: Bando = {
           criterio: {
             tipo: 'servizi',
             cpv: '33100000',
-            // Il disciplinare dichiara equivalenti i dispositivi medici vari.
-            cpvEquivalenti: ['33190000'],
-            // Prime due cifre = divisione CPV: fuori da «33» non è analogo (regola del motore, numero del criterio).
-            cifreCpvComuni: 2,
+            // Il disciplinare dichiara equivalenti le apparecchiature per imaging.
+            cpvEquivalenti: ['33110000'],
+            // Prime quattro cifre = classe CPV: fuori da «3310» non è analogo
+            // (la regola è del motore, il numero è del criterio). Gli arredi
+            // 33192000 escono; nel lotto 2, a due cifre, resterebbero dentro.
+            cifreCpvComuni: 4,
             anni: 5,
             ancoraggio: 'pubblicazione',
             numeroMinimo: 3,
@@ -288,7 +290,7 @@ export const soggetti: Soggetto[] = [
       { tipo: 'fatturato', esercizio: 2025, ambito: { tipo: 'specifico', settore: SETTORE }, importo: { valore: 300_000, fonte: F('bilancio 2025') } },
       { tipo: 'servizio', oggetto: 'Fornitura di ventilatori polmonari', cpv: '33100000', committente: 'ASL V', importo: 600_000, periodo: { valore: { da: '2023-02-01', a: '2023-11-30' }, fonte: F('certificato di esecuzione ASL V') } },
       // CPV dichiarato equivalente dal disciplinare del lotto 1: conta come certo.
-      { tipo: 'servizio', oggetto: 'Fornitura di dispositivi medici vari', cpv: '33190000', committente: 'AO U', importo: 380_000, periodo: { valore: { da: '2025-01-10', a: '2025-09-30' }, fonte: F('certificato di esecuzione AO U') } },
+      { tipo: 'servizio', oggetto: 'Fornitura di apparecchiature per imaging', cpv: '33110000', committente: 'AO U', importo: 380_000, periodo: { valore: { da: '2025-01-10', a: '2025-09-30' }, fonte: F('certificato di esecuzione AO U') } },
     ],
   },
 ];

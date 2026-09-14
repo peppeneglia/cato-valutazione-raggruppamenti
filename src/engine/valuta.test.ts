@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bando, certificazione, dichiarazione, esecutore, lotto, parametri, prestazione, raggruppamento, requisito, soggetto } from './prova';
-import { valutaBase } from './valuta';
+import { valuta } from './valuta';
+import { valutaBase } from './valutazione';
 
 const DICHIARAZIONE = { tipo: 'dichiarazione', oggetto: 'Assenza cause di esclusione' } as const;
 const ISO = { tipo: 'certificazione', norma: 'ISO 9001' } as const;
@@ -65,6 +66,39 @@ describe('valutaBase', () => {
     const p = parametri();
     const copia = JSON.stringify(p);
     valutaBase(p);
+    expect(JSON.stringify(p)).toBe(copia);
+  });
+});
+
+describe('valuta', () => {
+  it('riempie i rimedi per requisito e il percorso minimo', () => {
+    const l = lotto({
+      prestazioni: [prestazione('p-1'), prestazione('p-2')],
+      requisiti: [requisito('r-iso', ISO, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' })],
+    });
+    const esito = valuta(parametri({
+      bando: bando([l]),
+      soggetti: [soggetto('s-alfa', [certificazione('ISO 9001', 'x')]), soggetto('s-beta')],
+      raggruppamento: raggruppamento([esecutore('s-alfa', 'mandataria', { 'p-1': 1 }), esecutore('s-beta', 'mandante', { 'p-2': 1 })]),
+    }));
+    expect(esito.verdetto).toBe('non_ammissibile');
+    expect(esito.requisiti[0]?.rimedi.map((r) => r.tipo)).toEqual(['riassegna_quota']);
+    expect(esito.percorsoMinimo).toMatchObject({ esito: 'trovato', verdettoRaggiunto: 'ammissibile' });
+  });
+  it('con anomalie bloccanti non calcola rimedi e il percorso è bloccato', () => {
+    const esito = valuta(parametri({ raggruppamento: raggruppamento([esecutore('s-a', 'mandante', { 'p-1': 1 })]) }));
+    expect(esito.percorsoMinimo).toEqual({ esito: 'bloccato_da_anomalie' });
+    expect(esito.requisiti.every((r) => r.rimedi.length === 0)).toBe(true);
+  });
+  it('non muta gli input nemmeno durante la ricerca', () => {
+    const l = lotto({ prestazioni: [prestazione('p-1'), prestazione('p-2')], requisiti: [requisito('r-iso', ISO, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' })] });
+    const p = parametri({
+      bando: bando([l]),
+      soggetti: [soggetto('s-alfa', [certificazione('ISO 9001', 'x')]), soggetto('s-beta'), soggetto('s-x', [certificazione('ISO 9001', 'x')])],
+      raggruppamento: raggruppamento([esecutore('s-alfa', 'mandataria', { 'p-1': 1 }), esecutore('s-beta', 'mandante', { 'p-2': 1 })]),
+    });
+    const copia = JSON.stringify(p);
+    valuta(p);
     expect(JSON.stringify(p)).toBe(copia);
   });
 });
