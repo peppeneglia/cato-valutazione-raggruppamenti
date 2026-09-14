@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bersaglioAnomalia, descriviCriterio, descriviMossa, descriviRimedio, eApplicabile, etichettaAssunzione, etichettaFamiglia, etichettaRuolo, etichettaStato, etichettaVerdetto, nomePrestazione, nomeRequisito, nomeSoggetto } from './descrizioni';
+import { bersaglioAnomalia, descriviCriterio, descriviIndeterminatezza, descriviMossa, descriviRimedio, eApplicabile, etichettaAssunzione, etichettaFamiglia, etichettaRuolo, etichettaStato, etichettaVerdetto, nomePrestazione, nomeRequisito, nomeSoggetto } from './descrizioni';
 import { creaAnomalia } from './engine/validazione';
 import { bando, soggetti } from './fixture';
 
@@ -74,5 +74,33 @@ describe('bersaglioAnomalia', () => {
     expect(bersaglioAnomalia(creaAnomalia({ codice: 'membro_senza_quote', soggettoId: 's', lottoId: 'l' }))).toEqual({ tipo: 'membro', id: 's' });
     expect(bersaglioAnomalia(creaAnomalia({ codice: 'parametro_requisito_non_valido', requisitoId: 'r', parametro: 'x', valore: 0 }))).toEqual({ tipo: 'requisito', id: 'r' });
     expect(bersaglioAnomalia(creaAnomalia({ codice: 'mandataria_assente' }))).toBeUndefined();
+  });
+});
+
+describe('descrizioni — il documento che non decide', () => {
+  const contesto = { bando: { id: 'b', oggetto: 'o', stazioneAppaltante: 's', terminePresentazione: '2024-01-15', baseAsta: 1, valori: [], fonte: { documento: 'd', riferimento: 'r' }, lotti: [] }, soggetti: [{ id: 's-a', denominazione: 'Alfa', fascicolo: [] }] };
+
+  it('la richiesta di chiarimenti dice il termine con l’ora e i quesiti', () => {
+    expect(descriviRimedio({ tipo: 'richiesta_chiarimenti', requisitoId: 'r', quesiti: ['Chi lo possiede?'], termine: { data: '2023-12-27', ora: '12:00' }, decorso: false }, contesto))
+      .toBe('Chiedi chiarimenti alla stazione appaltante entro le 12:00 del 27/12/2023. Chi lo possiede?');
+  });
+  it('a termine decorso lo dice, e l’ambiguità resta a rischio del concorrente', () => {
+    expect(descriviRimedio({ tipo: 'richiesta_chiarimenti', requisitoId: 'r', quesiti: ['Chi lo possiede?'], termine: { data: '2023-12-27' }, decorso: true }, contesto))
+      .toBe("Chiedi chiarimenti alla stazione appaltante: il termine (il 27/12/2023) è decorso, l'ambiguità resta a rischio del concorrente. Chi lo possiede?");
+    expect(eApplicabile({ tipo: 'richiesta_chiarimenti', requisitoId: 'r', quesiti: [], decorso: false })).toBe(false);
+  });
+  it('un criterio non determinato si descrive con le parole del documento', () => {
+    expect(descriviCriterio({ tipo: 'non_determinato', testo: 'registri o albi se prescritti' })).toBe('«registri o albi se prescritti», che il disciplinare non determina');
+    expect(descriviCriterio({ tipo: 'certificazione', norme: ['ISO 9001', 'ISO 13485'] })).toBe('certificazione ISO 9001 o ISO 13485');
+    expect(descriviCriterio({ tipo: 'fatturato', ambito: { tipo: 'globale' }, periodo: { tipo: 'esercizi', anni: [2020, 2021, 2022] }, soglia: 750_000 })).toContain('negli esercizi 2020, 2021, 2022');
+  });
+  it('ogni indeterminatezza ha una frase per chi legge la riga', () => {
+    expect(descriviIndeterminatezza({ tipo: 'regola_non_dichiarata' }, contesto)).toBe('Il disciplinare non dice chi debba possederlo nel raggruppamento.');
+    expect(descriviIndeterminatezza({ tipo: 'giudizio_richiesto', soggettoId: 's-a', oggetto: 'equivalenza tra «x» e «y»' }, contesto)).toBe('Per Alfa decide una persona: equivalenza tra «x» e «y».');
+    expect(descriviIndeterminatezza({ tipo: 'letture_discordanti', esiti: [{ etichetta: 'A', stato: 'coperto' }, { etichetta: 'B', stato: 'scoperto' }] }, contesto)).toBe('Il documento ammette più letture con esiti diversi: «A» coperto; «B» scoperto.');
+  });
+  it('le assunzioni nuove hanno un’etichetta', () => {
+    expect(etichettaAssunzione('ancoraggio_termine_presentazione')).toBe('Finestra ancorata al termine di presentazione');
+    expect(etichettaAssunzione('esito_concordante')).toBe('Esito valido con letture concordanti del documento');
   });
 });
