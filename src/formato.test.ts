@@ -5,9 +5,11 @@ describe('formattaNumero', () => {
   it('separa le migliaia con il punto', () => {
     expect(formattaNumero(2_900_000)).toBe('2.900.000');
   });
-  it('usa la virgola per i decimali, solo se servono', () => {
+  it('usa la virgola per i decimali, solo se servono, senza zeri finali', () => {
     expect(formattaNumero(99_999.99)).toBe('99.999,99');
     expect(formattaNumero(100)).toBe('100');
+    expect(formattaNumero(1.2)).toBe('1,2');
+    expect(formattaNumero(0.3)).toBe('0,3');
   });
   it('rispetta i decimali richiesti', () => {
     expect(formattaNumero(1234.5, 2)).toBe('1.234,50');

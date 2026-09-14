@@ -29,13 +29,13 @@ describe('criterio dichiarazione', () => {
   it('è posseduto con la dichiarazione resa e valida, e ne cita la fonte', () => {
     const c = valutaCriterio(criterio, [dichiarazione('assenza cause di esclusione')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'posseduto' });
-    expect(c.fonti).toHaveLength(1);
+    expect(c.usati).toHaveLength(1);
     expect(c.note).toEqual([]);
   });
   it('è assente senza dichiarazione, con la nota che lo dice', () => {
     const c = valutaCriterio(criterio, [dichiarazione('altro')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'assente' });
-    expect(c.fonti).toEqual([]);
+    expect(c.usati).toEqual([]);
     expect(c.note[0]).toContain('nessuna dichiarazione');
   });
 });
@@ -52,13 +52,13 @@ describe('criterio certificazione', () => {
   it('con scope diverso è da verificare, non scoperto: è un giudizio', () => {
     const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001', scope: 'assistenza tecnica' }, [certificazione('ISO 9001', 'erogazione formazione')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'da_verificare' });
-    expect(c.fonti).toHaveLength(1);
-    expect(c.note[0]).toContain('«erogazione formazione» diverso da quello richiesto «assistenza tecnica»');
+    expect(c.usati).toHaveLength(1);
+    expect(c.note).toEqual(['certificazione ISO 9001 con «erogazione formazione» invece di «assistenza tecnica»: equivalenza da valutare']);
   });
   it('tra più certificazioni valide vince quella con lo scope coincidente', () => {
     const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001', scope: 'produzione' }, [certificazione('ISO 9001', 'formazione'), certificazione('ISO 9001', 'produzione')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'posseduto' });
-    expect(c.fonti).toHaveLength(1);
+    expect(c.usati).toHaveLength(1);
   });
   it('senza la norma è assente', () => {
     const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 13485' }, [certificazione('ISO 9001', 'x')], CONTESTO);
@@ -67,7 +67,7 @@ describe('criterio certificazione', () => {
   it('è assente se scaduta, con la data di scadenza nella nota', () => {
     const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001' }, [certificazione('ISO 9001', 'x', '2026-09-13')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'assente' });
-    expect(c.fonti).toEqual([]);
+    expect(c.usati).toEqual([]);
     expect(c.note[0]).toContain('scaduto il 13/09/2026');
   });
   it('vale il giorno stesso della scadenza', () => {
@@ -110,7 +110,7 @@ describe('criterio fatturato', () => {
   it('somma in centesimi gli esercizi nella finestra, con una fonte per esercizio', () => {
     const c = valutaCriterio(specifico, [fatturato(2023, 'dispositivi medici', 1_000_000.5), fatturato(2024, 'dispositivi medici', 0.25), fatturato(2025, 'dispositivi medici', 0.25)], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'misura', certo: 100_000_100, incerto: 0 });
-    expect(c.fonti).toHaveLength(3);
+    expect(c.usati).toHaveLength(3);
     expect(c.note).toEqual([]);
   });
   it('esclude l’anno di ancoraggio e gli esercizi più vecchi della finestra', () => {
@@ -145,7 +145,7 @@ describe('criterio servizi', () => {
   it('conta i servizi con CPV di gara come certi', () => {
     const c = valutaCriterio(criterio, [servizio('33100000', '2023-01-01', '2024-12-31'), servizio('33100000', '2024-03-01', '2025-06-30')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'misura', certo: 2, incerto: 0 });
-    expect(c.fonti).toHaveLength(2);
+    expect(c.usati).toHaveLength(2);
   });
   it('conta un CPV diverso come incerto, con la nota sull’analogia', () => {
     const c = valutaCriterio(criterio, [servizio('33100000', '2023-01-01', '2024-12-31'), servizio('50421000', '2023-06-01', '2025-05-31')], CONTESTO);

@@ -328,11 +328,26 @@ function anomalieFascicoli(soggetti: Soggetto[]): Anomalia[] {
   return soggetti.flatMap((s) => s.fascicolo.flatMap((v) => anomalieVoce(s, v)));
 }
 
+/** La stessa anomalia rilevata da più punti (es. per ogni membro) si riporta una volta. */
+function senzaDuplicati(anomalie: Anomalia[]): Anomalia[] {
+  const viste = new Set<string>();
+  return anomalie.filter((a) => {
+    const chiave = JSON.stringify(a);
+    if (viste.has(chiave)) return false;
+    viste.add(chiave);
+    return true;
+  });
+}
+
 /**
  * Tutte le anomalie strutturali dell'input. I controlli che dipendono dal
  * lotto vengono saltati se il lotto non esiste: quella è già un'anomalia.
  */
 export function anomalieStrutturali(parametri: ParametriValutazione): Anomalia[] {
+  return senzaDuplicati(raccogliAnomalie(parametri));
+}
+
+function raccogliAnomalie(parametri: ParametriValutazione): Anomalia[] {
   const lotto = trovaLotto(parametri.bando, parametri.lottoId);
   const anomalie = [
     ...anomalieDate(parametri),

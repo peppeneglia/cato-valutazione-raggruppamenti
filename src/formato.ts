@@ -13,19 +13,21 @@ function raggruppaMigliaia(interi: string): string {
 
 /**
  * `decimali` fissa le cifre dopo la virgola; se omesso, ne mostra al più
- * due e solo se servono.
+ * due, senza zeri finali: 1,2 e non 1,20.
  */
 export function formattaNumero(valore: number, decimali?: number): string {
   const negativo = valore < 0;
   const assoluto = Math.abs(valore);
-  const fisso = decimali ?? (Number.isInteger(Number(assoluto.toFixed(2))) ? 0 : 2);
-  const [interi, frazione] = assoluto.toFixed(fisso).split('.');
+  const fissato = decimali === undefined ? assoluto.toFixed(2).replace(/\.?0+$/, '') : assoluto.toFixed(decimali);
+  const [interi, frazione] = fissato.split('.');
   const corpo = raggruppaMigliaia(interi ?? '0') + (frazione ? SEPARATORE_DECIMALI + frazione : '');
   return negativo ? `-${corpo}` : corpo;
 }
 
+/** Cifre intere senza decimali; altrimenti sempre i centesimi: 0,50 €. */
 export function formattaEuro(euro: number): string {
-  return `${formattaNumero(euro)}${SPAZIO_STRETTO}€`;
+  const decimali = Number.isInteger(Number(euro.toFixed(2))) ? 0 : 2;
+  return `${formattaNumero(euro, decimali)}${SPAZIO_STRETTO}€`;
 }
 
 /** Da frazione: 0.6 → "60 %", 0.125 → "12,5 %". */

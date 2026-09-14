@@ -27,10 +27,17 @@ export type ContestoCriterio = {
   dataPubblicazione: DataISO;
 };
 
-/** Valore, fonti dei fatti usati e note che spiegano cosa non ha contato. */
+/** Un fatto che ha contato, con la sua fonte e, se può scadere, la scadenza. */
+export type FattoUsato = {
+  descrizione: string;
+  fonte: Fonte;
+  scadeIl?: DataISO;
+};
+
+/** Valore, fatti usati e note che spiegano cosa non ha contato. */
 export type ContributoGrezzo = {
   valore: ValoreContributo;
-  fonti: Fonte[];
+  usati: FattoUsato[];
   note: string[];
 };
 
@@ -97,7 +104,7 @@ function motivoNonValido(fatto: Fatto<unknown>, data: DataISO): string {
 const ASSENTE: ValoreContributo = { tipo: 'possesso', esito: 'assente' };
 
 /** Una voce di possesso: la validità è già stata verificata, o non esiste. */
-type VocePossesso = { voce: VoceFascicolo; fonte: Fonte; attributo?: string };
+type VocePossesso = { voce: VoceFascicolo; usato: FattoUsato; attributo?: string };
 
 /**
  * Possesso con attributo opzionale (scope, attività): posseduto se coincide,
@@ -111,22 +118,22 @@ function componiPossesso(
 ): ContributoGrezzo {
   if (valide.length === 0) {
     const note = noteNonValide.length === 0 ? [`nessuna ${descrizioneRichiesta} nel fascicolo`] : noteNonValide;
-    return { valore: ASSENTE, fonti: [], note };
+    return { valore: ASSENTE, usati: [], note };
   }
 
   if (attributoRichiesto === undefined) {
-    return { valore: { tipo: 'possesso', esito: 'posseduto' }, fonti: valide.map((p) => p.fonte), note: [] };
+    return { valore: { tipo: 'possesso', esito: 'posseduto' }, usati: valide.map((p) => p.usato), note: [] };
   }
 
   const coincidenti = valide.filter((p) => p.attributo !== undefined && coincidono(p.attributo, attributoRichiesto));
   if (coincidenti.length > 0) {
-    return { valore: { tipo: 'possesso', esito: 'posseduto' }, fonti: coincidenti.map((p) => p.fonte), note: [] };
+    return { valore: { tipo: 'possesso', esito: 'posseduto' }, usati: coincidenti.map((p) => p.usato), note: [] };
   }
 
   return {
     valore: { tipo: 'possesso', esito: 'da_verificare' },
-    fonti: valide.map((p) => p.fonte),
-    note: valide.map((p) => `${descriviVoce(p.voce)}: «${p.attributo ?? ''}» diverso da quello richiesto «${attributoRichiesto}», equivalenza da valutare`),
+    usati: valide.map((p) => p.usato),
+    note: valide.map((p) => `${descrizioneRichiesta} con «${p.attributo ?? ''}» invece di «${attributoRichiesto}»: equivalenza da valutare`),
   };
 }
 
@@ -138,7 +145,7 @@ function separaPerValidita(
   const valide: VocePossesso[] = [];
   const noteNonValide: string[] = [];
   for (const { voce, fatto, attributo } of voci) {
-    if (fattoValido(fatto, data)) valide.push({ voce, fonte: fatto.fonte, attributo });
+    if (fattoValido(fatto, data)) valide.push({ voce, usato: { descrizione: descriviVoce(voce), fonte: fatto.fonte, scadeIl: fatto.validoA }, attributo });
     else noteNonValide.push(`${descriviVoce(voce)}: ${motivoNonValido(fatto, data)}`);
   }
   return { valide, noteNonValide };
@@ -148,7 +155,7 @@ function separaPerValidita(
 function valutaDichiarazione(oggetto: string, fascicolo: VoceFascicolo[]): ContributoGrezzo {
   const rese: VocePossesso[] = [];
   for (const voce of fascicolo) {
-    if (voce.tipo === 'dichiarazione' && coincidono(voce.oggetto, oggetto)) rese.push({ voce, fonte: voce.resa.fonte });
+    if (voce.tipo === 'dichiarazione' && coincidono(voce.oggetto, oggetto)) rese.push({ voce, usato: { descrizione: descriviVoce(voce), fonte: voce.resa.fonte } });
   }
   return componiPossesso(rese, [], undefined, `dichiarazione «${oggetto}»`);
 }
@@ -205,7 +212,7 @@ function valutaFatturato(
   const esercizi = Array.from({ length: criterio.esercizi }, (_, i) => annoInizio + i);
 
   let certo: Centesimi = 0;
-  const fonti: Fonte[] = [];
+  const usati: FattoUsato[] = [];
   const note: string[] = [];
   const coperti = new Set<number>();
 
@@ -213,7 +220,7 @@ function valutaFatturato(
     if (voce.tipo !== 'fatturato' || !ambitiCoincidono(criterio.ambito, voce.ambito)) continue;
     if (voce.esercizio < annoInizio || voce.esercizio > annoFine) continue;
     certo += inCentesimi(voce.importo.valore);
-    fonti.push(voce.importo.fonte);
+    usati.push({ descrizione: descriviVoce(voce), fonte: voce.importo.fonte });
     coperti.add(voce.esercizio);
   }
 
@@ -224,7 +231,7 @@ function valutaFatturato(
     note.push(`nessun fatturato nell'ambito ${descriviAmbito(criterio.ambito)} per ${mancanti.length === 1 ? "l'esercizio" : 'gli esercizi'} ${mancanti.join(', ')}`);
   }
 
-  return { valore: { tipo: 'misura', certo, incerto: 0 }, fonti, note };
+  return { valore: { tipo: 'misura', certo, incerto: 0 }, usati, note };
 }
 
 // ─── Servizi ─────────────────────────────────────────────────
@@ -250,7 +257,7 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
 
   let certo = 0;
   let incerto = 0;
-  const fonti: Fonte[] = [];
+  const usati: FattoUsato[] = [];
   const note: string[] = [];
   const fuoriFinestra: string[] = [];
 
@@ -264,7 +271,7 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
       note.push(`${descriviVoce(voce)}: importo ${formattaEuro(voce.importo)} sotto il minimo unitario di ${formattaEuro(criterio.importoMinimoUnitario ?? 0)}`);
       continue;
     }
-    fonti.push(voce.periodo.fonte);
+    usati.push({ descrizione: descriviVoce(voce), fonte: voce.periodo.fonte });
     if (coincidono(voce.cpv, criterio.cpv)) {
       certo += pesoServizio(criterio, voce.importo);
     } else {
@@ -276,11 +283,11 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
   if (fuoriFinestra.length > 0) {
     note.push(`fuori dalla finestra ${formattaData(finestra.da)} – ${formattaData(finestra.a)}: ${fuoriFinestra.join(', ')}`);
   }
-  if (certo === 0 && incerto === 0 && fonti.length === 0 && note.length === 0) {
+  if (certo === 0 && incerto === 0 && usati.length === 0 && note.length === 0) {
     note.push('nessun servizio nel fascicolo');
   }
 
-  return { valore: { tipo: 'misura', certo, incerto }, fonti, note };
+  return { valore: { tipo: 'misura', certo, incerto }, usati, note };
 }
 
 // ─── Ingresso ────────────────────────────────────────────────

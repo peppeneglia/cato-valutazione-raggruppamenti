@@ -65,9 +65,14 @@ describe('anomalieStrutturali — lotto e riferimenti', () => {
     const p = parametri({ raggruppamento: raggruppamento([esecutore('s-ignoto', 'mandataria', { 'p-1': 1 })]) });
     expect(trova(anomalieStrutturali(p), 'riferimento_inesistente')).toMatchObject({ entita: 'soggetto', id: 's-ignoto' });
   });
-  it('segnala una quota su una prestazione che il lotto non ha', () => {
-    const p = parametri({ raggruppamento: raggruppamento([esecutore('s-a', 'mandataria', { 'p-1': 1, 'p-9': 0 })]) });
-    expect(trova(anomalieStrutturali(p), 'riferimento_inesistente')).toMatchObject({ entita: 'prestazione', id: 'p-9' });
+  it('segnala una quota su una prestazione che il lotto non ha, una volta sola anche se la citano più membri', () => {
+    const p = parametri({
+      soggetti: [soggetto('s-a'), soggetto('s-b')],
+      raggruppamento: raggruppamento([esecutore('s-a', 'mandataria', { 'p-1': 1, 'p-9': 0 }), esecutore('s-b', 'mandante', { 'p-1': 0, 'p-9': 0 })]),
+    });
+    const anomalie = anomalieStrutturali(p);
+    expect(anomalie.filter((a) => a.codice === 'riferimento_inesistente')).toHaveLength(1);
+    expect(trova(anomalie, 'riferimento_inesistente')).toMatchObject({ entita: 'prestazione', id: 'p-9' });
   });
   it('segnala un’ausiliaria che indica un requisito inesistente', () => {
     const p = parametri({
