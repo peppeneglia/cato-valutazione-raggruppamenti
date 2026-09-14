@@ -19,7 +19,7 @@
 .tabella th,
 .tabella td {
   padding: var(--sp-2) var(--sp-2);
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
   vertical-align: top;
   font-size: var(--testo-sm);
 }
@@ -27,7 +27,7 @@
 .tabella thead th {
   color: var(--c-testo-tenue);
   font-weight: var(--peso-normale);
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo-forte);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
 }
 
 /* Terzo segnale di stato: il bordo sinistro cambia stile, non solo colore. */
@@ -62,7 +62,7 @@
 .nome {
   display: block;
   font-size: var(--testo-base);
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
   color: var(--c-testo);
 }
 
@@ -74,7 +74,7 @@
 
 .chiarimenti,
 .daValutare {
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
 }
 
 .chiarimenti {
@@ -90,7 +90,7 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--c-scoperto);
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
 }
 
 .da_verificare .manca {
@@ -106,7 +106,7 @@
 .dettagli,
 .apriGruppo {
   padding: var(--sp-1) var(--sp-2);
-  border: var(--spessore-bordo) solid var(--c-bordo-forte);
+  border: var(--spessore-bordo) solid var(--c-bordo);
   border-radius: var(--raggio-piccolo);
   background: var(--c-sfondo);
   font-size: var(--testo-sm);
@@ -119,8 +119,8 @@
 }
 
 .dettagli[aria-expanded='true'] {
-  background: var(--c-navy-tenue);
-  border-color: var(--c-navy);
+  background: var(--c-superficie);
+  border-color: var(--c-accento);
 }
 
 .gruppo td {
@@ -173,13 +173,13 @@
 .membri th,
 .membri td {
   padding: var(--sp-1) var(--sp-2);
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
   background: var(--c-sfondo);
 }
 
 .membri th {
   text-align: left;
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
   white-space: nowrap;
   width: 1%;
 }
@@ -218,7 +218,7 @@
 }
 
 .etichettaVariante {
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
 }
 
 .vuoto {
@@ -239,7 +239,7 @@
   .riga {
     display: grid;
     grid-template-columns: 1fr auto;
-    border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+    border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
   }
 
   .riga > td {

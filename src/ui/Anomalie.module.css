@@ -42,7 +42,7 @@
 }
 
 .segnalazioneVoce {
-  background: var(--c-superficie-alta);
+  background: var(--c-sfondo);
   border-left-color: var(--c-testo-tenue);
   border-left-style: dashed;
 }
@@ -54,5 +54,7 @@
 }
 
 .link {
-  color: var(--c-accento);
+  color: var(--c-navy);
+  text-decoration: underline 2px var(--c-accento);
+  text-underline-offset: 3px;
 }

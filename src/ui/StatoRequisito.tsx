@@ -12,14 +12,14 @@ export function Forma({ stato }: { stato: Stato }) {
       return (
         <svg className={styles.forma} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
           <circle cx="8" cy="8" r="6.5" fill="currentColor" />
-          <path d="M4.5 8.2l2.3 2.3 4.7-4.9" fill="none" stroke="var(--c-testo-inverso)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M4.5 8.2l2.3 2.3 4.7-4.9" fill="none" stroke="var(--c-sfondo)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     case 'scoperto':
       return (
         <svg className={styles.forma} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
           <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" fill="currentColor" />
-          <path d="M5 5l6 6M11 5l-6 6" fill="none" stroke="var(--c-testo-inverso)" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M5 5l6 6M11 5l-6 6" fill="none" stroke="var(--c-sfondo)" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       );
     case 'da_verificare':

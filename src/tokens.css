@@ -1,37 +1,51 @@
 :root {
-  /* ─── Brand Cato ───────────────────────────────────────────
-     Il navy è confermato ed è il colore STRUTTURALE: titoli, filetti,
-     lotto attivo. Accento e font sono PLACEHOLDER: i valori reali del
-     brand si sostituiscono qui e solo qui. */
-  --c-navy: #0E2847;
-  --c-navy-scuro: #09192F;
-  --c-navy-tenue: #E9EEF6;
+  /* ─── Marca — dai token del sito Cato ─────────────────────
+     Il navy è STRUTTURALE: titoli, testo di comando, filetti.
+     L'oro è l'accento e l'accento è SOLO azione: compare esclusivamente
+     su ciò che si può cliccare (bottoni, link, chip del lotto attivo,
+     anello di focus), mai su testo informativo, bordi decorativi o fondi.
+     Il colore saturo dice lo stato, l'oro dice l'azione. */
+  --c-navy: #0F172A;              /* --color-navy */
+  --c-navy-scuro: #0A1729;        /* --color-navy-dark */
+  --c-accento: #E5AA3E;           /* --color-gold — SOLO azione */
+  --c-accento-chiaro: #EABA62;    /* --color-gold-light */
+  --c-accento-testo: var(--c-navy);   /* i due colori di marca uno sull'altro, 8.63:1 */
 
-  --c-accento: #2F6FED;          /* PLACEHOLDER */
-  --c-accento-testo: #FFFFFF;
+  --font-ui: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;   /* PLACEHOLDER */
-
-  /* ─── Superfici e testo ──────────────────────────────────── */
+  /* ─── Superfici ───────────────────────────────────────────
+     Il corpo resta bianco: è una tabella densa. Il crema è la cornice
+     (testata, note del motore): distingue senza aggiungere bordi. */
   --c-sfondo: #FFFFFF;
-  --c-superficie: #F6F7F9;
-  --c-superficie-alta: #EDEFF3;
-  --c-bordo: #E3E6EB;
-  --c-bordo-forte: #B9C0CA;
-  --c-testo: #12161C;
-  --c-testo-tenue: #5A6572;
-  --c-testo-inverso: #FFFFFF;
+  --c-crema: #FAF8F5;             /* --color-bg-cream */
+  --c-superficie: #F1F5F9;        /* --secondary / --muted */
+  --c-badge-caldo: #F5F0EB;       /* --color-badge-warm */
 
-  /* ─── I tre stati: l'unico colore saturo della pagina ─────
+  /* ─── Bordi ───────────────────────────────────────────────
+     tenue dentro le tabelle tra riga e riga, medio tra i blocchi.
+     Il loro terzo livello (--color-border-dark) serve solo su fondo navy:
+     si aggiunge quando arriva un fondo navy. */
+  --c-bordo-tenue: #F0F2F5;       /* --color-border-subtle */
+  --c-bordo: #E2E8F0;             /* --color-border-medium */
+
+  /* ─── Testo ───────────────────────────────────────────────── */
+  --c-testo: #101010;             /* --color-text-primary */
+  --c-testo-tenue: #6D747E;       /* --color-text-secondary */
+  --c-testo-tenue-crema: #5A626D; /* un gradino più scuro: sul crema il tenue base scende a 4.45:1 */
+  --c-testo-muto: #7F868F;        /* --color-text-muted */
+
+  /* ─── I tre stati: l'unico colore saturo oltre all'oro ────
      Tutto il resto (avvisi di scadenza, segnalazioni, note) è tenue,
      altrimenti gli stati non si vedono. Le anomalie bloccanti usano il
-     colore di "scoperto" perché hanno lo stesso effetto sul verdetto. */
-  --c-coperto: #1B7F4B;
-  --c-coperto-tenue: #E6F4EC;
-  --c-scoperto: #B3261E;
-  --c-scoperto-tenue: #FBEAE8;
-  --c-da-verificare: #9A6200;
-  --c-da-verificare-tenue: #FBF1DF;
+     colore di "scoperto" perché hanno lo stesso effetto sul verdetto.
+     "Da verificare" è indaco: domanda aperta, non allarme attenuato,
+     e non compete con l'oro. */
+  --c-coperto: #15803D;
+  --c-coperto-tenue: #F0FDF4;
+  --c-scoperto: #B91C1C;          /* stessa famiglia del loro --destructive #EF4444, più scuro per il contrasto sul testo piccolo */
+  --c-scoperto-tenue: #FEF2F2;
+  --c-da-verificare: #4338CA;
+  --c-da-verificare-tenue: #EEF2FF;
 
   /* ─── Scala tipografica ───────────────────────────────────
      Una famiglia sola. Pochi livelli, usati con decisione: il verdetto
@@ -48,8 +62,11 @@
   --interlinea-mossa: 1.35;
   --interlinea-verdetto: 1.15;
 
+  /* Nel bundle ci sono solo i pesi 400, 600 e 700 di Manrope (main.tsx):
+     un peso che non è tra questi il browser lo arrotonda da solo, quindi
+     ogni livello punta a un file che esiste. La gerarchia la fa la
+     dimensione: al corpo bastano due pesi. */
   --peso-normale: 400;
-  --peso-medio: 500;
   --peso-forte: 600;
   --peso-verdetto: 700;
 
@@ -68,9 +85,10 @@
   --spessore-bordo: 1px;
   --spessore-bordo-forte: 3px;
   --spessore-filetto-verdetto: 4px;
-  --raggio: 6px;
-  --raggio-piccolo: 3px;
-  --anello-focus: 2px solid var(--c-accento);
+  --raggio: 8px;                  /* il loro --radius: 0.5rem */
+  --raggio-piccolo: calc(var(--raggio) - 4px);   /* controlli piccoli, derivato come il loro radius-sm */
+  /* Navy, non oro: il focus non è un'azione, è dove si trova il cursore. */
+  --anello-focus: 2px solid var(--c-navy);
   --anello-focus-distanza: 2px;
 
   /* ─── Layout ──────────────────────────────────────────────

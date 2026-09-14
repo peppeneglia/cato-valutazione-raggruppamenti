@@ -1,7 +1,7 @@
 .tabella th,
 .tabella td {
   padding: var(--sp-1) var(--sp-2);
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
   vertical-align: middle;
 }
 
@@ -19,16 +19,18 @@
 
 .selezionato {
   background: var(--c-superficie);
-  box-shadow: inset var(--spessore-bordo-forte) 0 0 var(--c-accento);
+  box-shadow: inset var(--spessore-bordo-forte) 0 0 var(--c-navy);
 }
 
+/* L'oro sul segno del link, il testo in navy: oro su bianco come testo non si legge. */
 .scelta {
   background: none;
   border: none;
   padding: 0;
   text-align: left;
-  color: var(--c-accento);
-  text-decoration: underline;
+  color: var(--c-navy);
+  text-decoration: underline 2px var(--c-accento);
+  text-underline-offset: 3px;
 }
 
 .scelta[aria-pressed='true'] {

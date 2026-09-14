@@ -16,7 +16,7 @@
 }
 
 .voce dt {
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
 }
 
 .voce dd {
@@ -28,7 +28,7 @@
 .sigla {
   display: inline-block;
   padding: 0 var(--sp-1);
-  border: var(--spessore-bordo) solid var(--c-bordo-forte);
+  border: var(--spessore-bordo) solid var(--c-bordo);
   border-radius: var(--raggio-piccolo);
   font-variant-numeric: tabular-nums;
   font-size: var(--testo-xs);

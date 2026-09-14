@@ -4,7 +4,7 @@
   display: grid;
   gap: var(--sp-3);
   padding: var(--sp-4) 0 var(--sp-4) var(--sp-5);
-  border-left: var(--spessore-filetto-verdetto) solid var(--c-bordo-forte);
+  border-left: var(--spessore-filetto-verdetto) solid var(--c-bordo);
   max-width: 62em;
 }
 
@@ -111,10 +111,10 @@
   background: var(--c-accento);
   color: var(--c-accento-testo);
   font-size: var(--testo-sm);
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
 }
 
 .prova:hover {
-  background: var(--c-sfondo);
-  color: var(--c-accento);
+  background: var(--c-accento-chiaro);
+  border-color: var(--c-accento-chiaro);
 }

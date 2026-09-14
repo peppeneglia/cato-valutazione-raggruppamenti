@@ -17,9 +17,9 @@
   border: var(--spessore-bordo) solid var(--c-accento);
   border-radius: var(--raggio-piccolo);
   background: var(--c-sfondo);
-  color: var(--c-accento);
+  color: var(--c-navy);
   font-size: var(--testo-xs);
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
 }
 
 .prova:hover {

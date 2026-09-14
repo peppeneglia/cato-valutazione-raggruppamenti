@@ -24,9 +24,9 @@
   white-space: nowrap;
 }
 
-.coperto { color: var(--c-coperto); font-weight: var(--peso-medio); }
-.scoperto { color: var(--c-scoperto); font-weight: var(--peso-medio); }
-.daVerificare { color: var(--c-da-verificare); font-weight: var(--peso-medio); }
+.coperto { color: var(--c-coperto); font-weight: var(--peso-forte); }
+.scoperto { color: var(--c-scoperto); font-weight: var(--peso-forte); }
+.daVerificare { color: var(--c-da-verificare); font-weight: var(--peso-forte); }
 
 .dettagli {
   font-size: var(--testo-xs);

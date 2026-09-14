@@ -15,7 +15,7 @@
 
 .annulla {
   padding: var(--sp-1) var(--sp-2);
-  border: var(--spessore-bordo) solid var(--c-bordo-forte);
+  border: var(--spessore-bordo) solid var(--c-bordo);
   border-radius: var(--raggio-piccolo);
   background: var(--c-sfondo);
   font-size: var(--testo-sm);

@@ -21,11 +21,11 @@
   display: grid;
   gap: var(--sp-2);
   padding: var(--sp-3) 0;
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
 }
 
 .membro:first-child {
-  border-top: var(--spessore-bordo) solid var(--c-bordo-forte);
+  border-top: var(--spessore-bordo) solid var(--c-bordo);
 }
 
 .testata {
@@ -37,7 +37,7 @@
 
 .nome {
   font-size: var(--testo-base);
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
   color: var(--c-testo);
 }
 
@@ -50,7 +50,7 @@
 
 .select {
   padding: var(--sp-1) var(--sp-2);
-  border: var(--spessore-bordo) solid var(--c-bordo-forte);
+  border: var(--spessore-bordo) solid var(--c-bordo);
   border-radius: var(--raggio-piccolo);
   background: var(--c-sfondo);
   font-size: var(--testo-sm);
@@ -103,7 +103,9 @@
 }
 
 .modulo > summary {
-  color: var(--c-accento);
+  color: var(--c-navy);
+  text-decoration: underline 2px var(--c-accento);
+  text-underline-offset: 3px;
   width: max-content;
 }
 

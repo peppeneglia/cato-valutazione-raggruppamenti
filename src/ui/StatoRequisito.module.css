@@ -2,7 +2,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-forte);
   white-space: nowrap;
 }
 
