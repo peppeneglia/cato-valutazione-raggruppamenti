@@ -347,6 +347,8 @@ export type DettaglioAnomalia =
       id: string;
     }
   | { codice: 'regola_somma_su_criterio_di_possesso'; requisitoId: RequisitoId }
+  /** Soglie e finestre ≤ 0, minimi per ruolo fuori da 0–1: una soglia zero è coperta da chiunque. */
+  | { codice: 'parametro_requisito_non_valido'; requisitoId: RequisitoId; parametro: string; valore: number }
   | { codice: 'avvalimento_su_requisito_non_avvalibile'; soggettoId: SoggettoId; requisitoId: RequisitoId }
   | { codice: 'data_malformata'; origine: 'parametri' | 'bando' | 'fascicolo'; dove: string; valore: string }
   | { codice: 'periodo_invertito'; soggettoId: SoggettoId; dove: string }

@@ -8,6 +8,7 @@ import type {
   GravitaAnomalia,
   Lotto,
   ParametriValutazione,
+  Requisito,
   Soggetto,
   VoceFascicolo,
 } from '../domain';
@@ -28,6 +29,7 @@ function gravitaDi(dettaglio: DettaglioAnomalia): GravitaAnomalia {
     case 'prestazione_senza_esecutore':
     case 'riferimento_inesistente':
     case 'regola_somma_su_criterio_di_possesso':
+    case 'parametro_requisito_non_valido':
     case 'avvalimento_su_requisito_non_avvalibile':
     case 'vincolo_senza_prestazione_principale':
     case 'vincolo_prestazione_principale_violato':
@@ -63,6 +65,8 @@ function messaggioDi(dettaglio: DettaglioAnomalia): string {
       return `Riferimento a ${dettaglio.entita} inesistente: ${dettaglio.id}.`;
     case 'regola_somma_su_criterio_di_possesso':
       return `Il requisito ${dettaglio.requisitoId} ha una regola di somma ma un criterio di possesso, che non ha una soglia.`;
+    case 'parametro_requisito_non_valido':
+      return `Il requisito ${dettaglio.requisitoId} ha un parametro non valido: ${dettaglio.parametro} = ${String(dettaglio.valore)}.`;
     case 'avvalimento_su_requisito_non_avvalibile':
       return `${dettaglio.soggettoId} è indicata come ausiliaria per il requisito ${dettaglio.requisitoId}, che il disciplinare non dichiara avvalibile.`;
     case 'data_malformata':
@@ -190,11 +194,61 @@ function anomalieAvvalimenti(parametri: ParametriValutazione, lotto: Lotto): Ano
   return anomalie;
 }
 
+/** Parametri numerici del criterio e della regola: positivi dove serve, frazioni dove serve. */
+function anomalieParametri(requisito: Requisito): Anomalia[] {
+  const { criterio, regola } = requisito;
+  const controlli: { parametro: string; valore: number | undefined; valido: (v: number) => boolean }[] = [];
+  const positivo = (v: number) => Number.isFinite(v) && v > 0;
+  const nonNegativo = (v: number) => Number.isFinite(v) && v >= 0;
+  const frazione = (v: number) => Number.isFinite(v) && v >= 0 && v <= 1;
+
+  switch (criterio.tipo) {
+    case 'fatturato':
+      controlli.push({ parametro: 'criterio.esercizi', valore: criterio.esercizi, valido: positivo });
+      controlli.push({ parametro: 'criterio.soglia', valore: criterio.soglia, valido: positivo });
+      break;
+    case 'servizi':
+      controlli.push({ parametro: 'criterio.anni', valore: criterio.anni, valido: positivo });
+      controlli.push({ parametro: 'criterio.numeroMinimo', valore: criterio.numeroMinimo, valido: positivo });
+      controlli.push({ parametro: 'criterio.importoMinimoUnitario', valore: criterio.importoMinimoUnitario, valido: nonNegativo });
+      break;
+    case 'servizi_importo':
+      controlli.push({ parametro: 'criterio.anni', valore: criterio.anni, valido: positivo });
+      controlli.push({ parametro: 'criterio.soglia', valore: criterio.soglia, valido: positivo });
+      controlli.push({ parametro: 'criterio.importoMinimoUnitario', valore: criterio.importoMinimoUnitario, valido: nonNegativo });
+      break;
+    case 'dichiarazione':
+    case 'certificazione':
+    case 'iscrizione':
+      break;
+    default:
+      assertNever(criterio);
+  }
+
+  switch (regola.tipo) {
+    case 'somma_membri':
+      controlli.push({ parametro: 'regola.minimoMandataria', valore: regola.minimoMandataria, valido: frazione });
+      controlli.push({ parametro: 'regola.minimoMandante', valore: regola.minimoMandante, valido: frazione });
+      break;
+    case 'ciascun_membro':
+    case 'esecutore_prestazione':
+    case 'almeno_un_membro':
+      break;
+    default:
+      assertNever(regola);
+  }
+
+  return controlli
+    .filter((c): c is { parametro: string; valore: number; valido: (v: number) => boolean } => c.valore !== undefined && !c.valido(c.valore))
+    .map((c) => creaAnomalia({ codice: 'parametro_requisito_non_valido', requisitoId: requisito.id, parametro: c.parametro, valore: c.valore }));
+}
+
 function anomalieRequisiti(lotto: Lotto): Anomalia[] {
   const prestazioni = indicizza(lotto.prestazioni);
   const anomalie: Anomalia[] = [];
   for (const requisito of lotto.requisiti) {
     const { regola, criterio } = requisito;
+    anomalie.push(...anomalieParametri(requisito));
     switch (regola.tipo) {
       case 'somma_membri':
         if (criterio.tipo === 'dichiarazione' || criterio.tipo === 'certificazione' || criterio.tipo === 'iscrizione') {

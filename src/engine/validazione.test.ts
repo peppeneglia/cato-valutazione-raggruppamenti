@@ -179,6 +179,48 @@ describe('anomalieStrutturali — requisiti e avvalimenti', () => {
   });
 });
 
+describe('anomalieStrutturali — parametri del requisito', () => {
+  const servizi = { tipo: 'servizi', cpv: '1', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3 } as const;
+  const fatturato = { tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 1 } as const;
+
+  it('segnala come bloccante una soglia zero, nominando requisito e parametro', () => {
+    const l = lotto({ requisiti: [requisito('r-1', { ...fatturato, soglia: 0 }, { tipo: 'somma_membri' })] });
+    const a = trova(anomalieStrutturali(parametri({ bando: bando([l]) })), 'parametro_requisito_non_valido');
+    expect(a).toMatchObject({ requisitoId: 'r-1', parametro: 'criterio.soglia', valore: 0, gravita: 'bloccante' });
+    expect(a.messaggio).toBe('Il requisito r-1 ha un parametro non valido: criterio.soglia = 0.');
+  });
+  it('segnala esercizi e anni non positivi', () => {
+    const l = lotto({ requisiti: [
+      requisito('r-1', { ...fatturato, esercizi: 0 }, { tipo: 'somma_membri' }),
+      requisito('r-2', { ...servizi, anni: -1 }, { tipo: 'somma_membri' }),
+    ] });
+    const anomalie = anomalieStrutturali(parametri({ bando: bando([l]) }));
+    expect(anomalie.filter((a) => a.codice === 'parametro_requisito_non_valido').map((a) => a.codice === 'parametro_requisito_non_valido' && a.parametro))
+      .toEqual(['criterio.esercizi', 'criterio.anni']);
+  });
+  it('segnala il numero minimo zero e l’importo minimo unitario negativo', () => {
+    const l = lotto({ requisiti: [
+      requisito('r-1', { ...servizi, numeroMinimo: 0 }, { tipo: 'somma_membri' }),
+      requisito('r-2', { ...servizi, importoMinimoUnitario: -1 }, { tipo: 'somma_membri' }),
+    ] });
+    const anomalie = anomalieStrutturali(parametri({ bando: bando([l]) }));
+    expect(codici(anomalie).filter((c) => c === 'parametro_requisito_non_valido')).toHaveLength(2);
+  });
+  it('accetta l’importo minimo unitario zero', () => {
+    const l = lotto({ requisiti: [requisito('r-1', { ...servizi, importoMinimoUnitario: 0 }, { tipo: 'somma_membri' })] });
+    expect(anomalieStrutturali(parametri({ bando: bando([l]) }))).toEqual([]);
+  });
+  it('segnala i minimi per ruolo fuori da 0–1', () => {
+    const l = lotto({ requisiti: [requisito('r-1', fatturato, { tipo: 'somma_membri', minimoMandataria: 1.5, minimoMandante: -0.1 })] });
+    const anomalie = anomalieStrutturali(parametri({ bando: bando([l]) }));
+    expect(anomalie.map((a) => a.codice === 'parametro_requisito_non_valido' && a.parametro)).toEqual(['regola.minimoMandataria', 'regola.minimoMandante']);
+  });
+  it('accetta i minimi per ruolo agli estremi 0 e 1', () => {
+    const l = lotto({ requisiti: [requisito('r-1', fatturato, { tipo: 'somma_membri', minimoMandataria: 1, minimoMandante: 0 })] });
+    expect(anomalieStrutturali(parametri({ bando: bando([l]) }))).toEqual([]);
+  });
+});
+
 describe('anomalieStrutturali — vincolo della prestazione principale', () => {
   const vincolo = { esecutore: 'mandataria', quotaMinima: 0.6, fonte: { documento: 'Disciplinare', riferimento: 'rif.' } } as const;
 
