@@ -11,6 +11,7 @@ import type {
   FamigliaRequisito,
   GravitaAnomalia,
   Indeterminatezza,
+  LottoId,
   PrestazioneId,
   RequisitoId,
   Rimedio,
@@ -41,6 +42,27 @@ export function nomeRequisito(id: RequisitoId, contesto: ContestoDescrizioni): s
 }
 
 // ─── Etichette ───────────────────────────────────────────────
+
+/** "Lotto 1", "Lotto 2": la posizione nel bando, mai l'identificativo. Con un lotto solo, "Lotto unico". */
+export function nomeLotto(bando: Bando, lottoId: LottoId): string {
+  if (bando.lotti.length === 1) return 'Lotto unico';
+  const posizione = bando.lotti.findIndex((l) => l.id === lottoId);
+  return posizione < 0 ? 'Lotto' : `Lotto ${posizione + 1}`;
+}
+
+/** Il verdetto usa le forme dei requisiti: una sola grammatica visiva. */
+export function formaDelVerdetto(verdetto: Verdetto): StatoRequisito {
+  switch (verdetto) {
+    case 'ammissibile':
+      return 'coperto';
+    case 'ammissibile_con_riserva':
+      return 'da_verificare';
+    case 'non_ammissibile':
+      return 'scoperto';
+    default:
+      return assertNever(verdetto);
+  }
+}
 
 export function etichettaStato(stato: StatoRequisito): string {
   switch (stato) {

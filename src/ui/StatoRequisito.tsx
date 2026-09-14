@@ -2,11 +2,11 @@
 // colore dai token. Nessuno dei tre è da solo.
 
 import { assertNever } from '../assertNever';
-import { etichettaStato, etichettaVerdetto } from '../descrizioni';
+import { etichettaStato, etichettaVerdetto, formaDelVerdetto } from '../descrizioni';
 import type { StatoRequisito as Stato, Verdetto } from '../domain';
 import styles from './StatoRequisito.module.css';
 
-function Forma({ stato }: { stato: Stato }) {
+export function Forma({ stato }: { stato: Stato }) {
   switch (stato) {
     case 'coperto':
       return (
@@ -43,22 +43,8 @@ export function StatoRequisito({ stato }: { stato: Stato }) {
   );
 }
 
-/** Il verdetto usa le stesse forme dei requisiti: una sola grammatica visiva. */
-function statoDelVerdetto(verdetto: Verdetto): Stato {
-  switch (verdetto) {
-    case 'ammissibile':
-      return 'coperto';
-    case 'ammissibile_con_riserva':
-      return 'da_verificare';
-    case 'non_ammissibile':
-      return 'scoperto';
-    default:
-      return assertNever(verdetto);
-  }
-}
-
 export function VerdettoBadge({ verdetto }: { verdetto: Verdetto }) {
-  const stato = statoDelVerdetto(verdetto);
+  const stato = formaDelVerdetto(verdetto);
   return (
     <span className={`${styles.stato} ${styles.verdetto} ${styles[stato]}`}>
       <Forma stato={stato} />

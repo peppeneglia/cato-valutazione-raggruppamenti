@@ -39,7 +39,7 @@ describe('pagina — avvio', () => {
   });
   it('elenca il lotto unico e dichiara la classifica in calcolo finché il motore non risponde', async () => {
     render(<App />);
-    const lotti = regione('Lotti');
+    const lotti = screen.getByRole('navigation', { name: 'Lotti' });
     expect(within(lotti).getAllByRole('button')).toHaveLength(1);
     expect(within(lotti).getAllByText('Calcolo in corso…').length).toBeGreaterThan(0);
     expect(await within(lotti).findByText('Ammissibile con riserva', undefined, LENTO)).toBeTruthy();
