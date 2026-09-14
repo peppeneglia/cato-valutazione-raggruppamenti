@@ -77,9 +77,9 @@ describe('valutaRequisito — contributi', () => {
       [esecutore('s-a', 'mandataria', { 'p-1': 1 }), esecutore('s-b', 'mandante', { 'p-1': 0 })],
     );
     const { esito } = valutaRequisito(r, c);
-    expect(esito.assunzioni).toHaveLength(2);
-    expect(esito.assunzioni[0]).toContain('prime 2 cifre con 33100000');
-    expect(esito.assunzioni[1]).toContain('arrotondato per eccesso a 2 referenze');
+    expect(esito.assunzioni.map((a) => a.codice)).toEqual(['classe_cpv', 'arrotondamento_minimi']);
+    expect(esito.assunzioni[0]?.testo).toContain('prime 2 cifre con 33100000');
+    expect(esito.assunzioni[1]?.testo).toContain('arrotondato per eccesso a 2 referenze');
     expect(esito.motivazione).not.toContain('regola del motore');
   });
   it('senza regole del motore in gioco le assunzioni sono vuote', () => {

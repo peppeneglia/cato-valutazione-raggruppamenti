@@ -8,6 +8,7 @@ import { assertNever } from '../assertNever';
 import type {
   AmbitoFatturato,
   Ancoraggio,
+  Assunzione,
   Criterio,
   DataISO,
   Fatto,
@@ -48,7 +49,7 @@ export type ContributoGrezzo = {
   scaduti: FattoScaduto[];
   note: string[];
   /** Regole del motore, non del disciplinare, che hanno inciso: dichiarate a chi legge. */
-  assunzioni: string[];
+  assunzioni: Assunzione[];
 };
 
 // ─── Proprietà del criterio ──────────────────────────────────
@@ -325,11 +326,14 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
     }
   }
 
-  const assunzioni: string[] = [];
+  const assunzioni: Assunzione[] = [];
   if (nonAnaloghi.length > 0) {
     note.push(`non analoghi per classe CPV, non contati: ${nonAnaloghi.join(', ')}`);
     const ammessi = [criterio.cpv, ...(criterio.cpvEquivalenti ?? [])].join(' o ');
-    assunzioni.push(`I servizi il cui CPV non condivide le prime ${criterio.cifreCpvComuni ?? 0} cifre con ${ammessi} sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare.`);
+    assunzioni.push({
+      codice: 'classe_cpv',
+      testo: `I servizi il cui CPV non condivide le prime ${criterio.cifreCpvComuni ?? 0} cifre con ${ammessi} sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare.`,
+    });
   }
   if (fuoriFinestra.length > 0) {
     note.push(`fuori dalla finestra ${formattaData(finestra.da)} – ${formattaData(finestra.a)}: ${fuoriFinestra.join(', ')}`);

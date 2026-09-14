@@ -189,6 +189,27 @@ export const bando: Bando = {
           fonte: DISCIPLINARE,
         },
         {
+          // Fatturato complessivo sui servizi: unità euro, somma degli importi dei
+          // servizi che contano. Il disciplinare dichiara equivalenti agli arredi le
+          // apparecchiature mediche: forniture di dispositivi contano come certe.
+          id: 'l2-servizi-importo',
+          famiglia: 'referenza',
+          descrizione: 'Forniture di arredi o apparecchiature sanitarie nel quinquennio per un importo complessivo non inferiore a 800.000 €',
+          criterio: {
+            tipo: 'servizi_importo',
+            cpv: '33192000',
+            cpvEquivalenti: ['33100000'],
+            cifreCpvComuni: 2,
+            anni: 5,
+            ancoraggio: 'pubblicazione',
+            soglia: 800_000,
+          },
+          regola: { tipo: 'somma_membri' },
+          avvalibile: true,
+          vincolante: true,
+          fonte: DISCIPLINARE,
+        },
+        {
           // Servizio di punta: è l'idioma `numeroMinimo: 1` + `importoMinimoUnitario`.
           // "Una fornitura analoga di importo non inferiore a 300.000 €": i servizi
           // sotto l'importo non contano, poi se ne conta almeno uno.
@@ -799,7 +820,10 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Somma dei contributi certi: 2 forniture analoghe su una soglia di 3 forniture analoghe: mancano 1 fornitura analoga. Contributi: Alfa Medical S.p.A. 2 forniture analoghe (non analoghi per classe CPV, non contati: «Fornitura di arredi per reparto di degenza» (CPV 33192000)); Beta Service S.r.l. 0 forniture analoghe (non analoghi per classe CPV, non contati: «Manutenzione di apparecchiature elettromedicali» (CPV 50421000)); Gamma Formazione S.r.l. 0 forniture analoghe (non analoghi per classe CPV, non contati: «Formazione del personale infermieristico» (CPV 80500000)).",
         "assunzioni": [
-          "I servizi il cui CPV non condivide le prime 4 cifre con 33100000 o 33110000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
+          {
+            "codice": "classe_cpv",
+            "testo": "I servizi il cui CPV non condivide le prime 4 cifre con 33100000 o 33110000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
+          }
         ],
         "rimedi": [
           {
@@ -1105,6 +1129,75 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         "rimedi": []
       },
       {
+        "requisitoId": "l2-servizi-importo",
+        "stato": "coperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "misura",
+              "certo": 1800000,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato di esecuzione ASL X"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato di esecuzione AO Y"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato di esecuzione AO Y — arredi"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "misura",
+              "certo": 0,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [],
+            "nota": "non analoghi per classe CPV, non contati: «Manutenzione di apparecchiature elettromedicali» (CPV 50421000)"
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "misura",
+              "certo": 0,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [],
+            "nota": "non analoghi per classe CPV, non contati: «Formazione del personale infermieristico» (CPV 80500000)"
+          }
+        ],
+        "motivazione": "Somma dei contributi certi: 1.800.000 € su una soglia di 800.000 €: soglia raggiunta. Contributi: Alfa Medical S.p.A. 1.800.000 €; Beta Service S.r.l. 0 € (non analoghi per classe CPV, non contati: «Manutenzione di apparecchiature elettromedicali» (CPV 50421000)); Gamma Formazione S.r.l. 0 € (non analoghi per classe CPV, non contati: «Formazione del personale infermieristico» (CPV 80500000)).",
+        "assunzioni": [
+          {
+            "codice": "classe_cpv",
+            "testo": "I servizi il cui CPV non condivide le prime 2 cifre con 33192000 o 33100000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
+          }
+        ],
+        "rimedi": [],
+        "misurazione": {
+          "unita": {
+            "tipo": "euro"
+          },
+          "soglia": 800000,
+          "raggiunto": 1800000,
+          "massimo": 1800000,
+          "delta": 0,
+          "minimiRuolo": []
+        }
+      },
+      {
         "requisitoId": "l2-punta",
         "stato": "coperto",
         "contributi": [
@@ -1157,7 +1250,10 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Basta un membro con almeno 1 fornitura: il migliore è Alfa Medical S.p.A. con 1 fornitura.",
         "assunzioni": [
-          "I servizi il cui CPV non condivide le prime 2 cifre con 33192000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
+          {
+            "codice": "classe_cpv",
+            "testo": "I servizi il cui CPV non condivide le prime 2 cifre con 33192000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
+          }
         ],
         "rimedi": [],
         "misurazione": {

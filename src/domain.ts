@@ -326,18 +326,26 @@ export type Misurazione = {
   minimiRuolo: MinimoRuolo[];
 };
 
+/**
+ * Regole del motore, non del disciplinare, che possono incidere su un
+ * esito. Il codice permette alla UI di raccoglierle in una legenda unica
+ * e referenziarle dalle righe; il testo dice cosa è stato assunto qui.
+ */
+export type CodiceAssunzione = 'arrotondamento_minimi' | 'classe_cpv';
+
+export type Assunzione = {
+  codice: CodiceAssunzione;
+  testo: string;
+};
+
 export type EsitoRequisito = {
   requisitoId: RequisitoId;
   stato: StatoRequisito;
   contributi: Contributo[];
   misurazione?: Misurazione;
   motivazione: string;
-  /**
-   * Regole del motore, non del disciplinare, che hanno inciso su questo
-   * esito (arrotondamento dei minimi, struttura del CPV). Dichiarate una
-   * volta, qui, perché la persona sappia cosa è stato assunto.
-   */
-  assunzioni: string[];
+  /** Dichiarate una volta per requisito, anche se hanno inciso su più membri. */
+  assunzioni: Assunzione[];
   rimedi: Rimedio[];
 };
 

@@ -3,7 +3,7 @@
 // minimi, dichiara ciò che è un'assunzione del motore.
 
 import { assertNever } from '../assertNever';
-import type { RegolaComposizione, RuoloEsecutore, SoggettoId, StatoRequisito, Unita, ValoreContributo } from '../domain';
+import type { Assunzione, RegolaComposizione, RuoloEsecutore, SoggettoId, StatoRequisito, Unita, ValoreContributo } from '../domain';
 import { formattaConUnita, formattaNumero, formattaPercentuale } from '../formato';
 import { inEuro } from './importi';
 import { frazioneMinima, type MisurazioneGrezza } from './operatori';
@@ -267,17 +267,20 @@ export function componiMotivazione(dati: DatiMotivazione): string {
 }
 
 /** L'arrotondamento per eccesso dei minimi per ruolo è una regola del motore: va dichiarata. */
-export function assunzioniArrotondamento(dati: DatiMotivazione): string[] {
+export function assunzioniArrotondamento(dati: DatiMotivazione): Assunzione[] {
   const { regola, soglia, unita } = dati;
   if (regola.tipo !== 'somma_membri') return [];
   const fmt = (v: number) => formattaValore(v, unita);
-  const assunzioni: string[] = [];
+  const assunzioni: Assunzione[] = [];
   const dichiara = (frazione: number | undefined, ruolo: string) => {
     if (frazione === undefined) return;
     const grezzo = soglia * frazione;
     const richiesto = frazioneMinima(soglia, frazione);
     if (Math.abs(grezzo - richiesto) <= 1e-9) return;
-    assunzioni.push(`Il minimo ${ruolo} (${formattaPercentuale(frazione)} di ${fmt(soglia)} = ${fmt(grezzo)}) è stato arrotondato per eccesso a ${fmt(richiesto)}: in uno strumento di verifica si sbaglia dalla parte che costa meno. È un'assunzione del motore, non del disciplinare.`);
+    assunzioni.push({
+      codice: 'arrotondamento_minimi',
+      testo: `Il minimo ${ruolo} (${formattaPercentuale(frazione)} di ${fmt(soglia)} = ${fmt(grezzo)}) è stato arrotondato per eccesso a ${fmt(richiesto)}: in uno strumento di verifica si sbaglia dalla parte che costa meno. È un'assunzione del motore, non del disciplinare.`,
+    });
   };
   dichiara(regola.minimoMandataria, 'della mandataria');
   dichiara(regola.minimoMandante, 'di ciascuna mandante');

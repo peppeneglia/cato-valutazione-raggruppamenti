@@ -187,7 +187,7 @@ describe('criterio servizi', () => {
     expect(c.valore).toEqual({ tipo: 'misura', certo: 0, incerto: 0 });
     expect(c.usati).toEqual([]);
     expect(c.note).toEqual(['non analoghi per classe CPV, non contati: «Servizio 80500000» (CPV 80500000)']);
-    expect(c.assunzioni).toEqual(['I servizi il cui CPV non condivide le prime 2 cifre con 33100000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare.']);
+    expect(c.assunzioni).toEqual([{ codice: 'classe_cpv', testo: 'I servizi il cui CPV non condivide le prime 2 cifre con 33100000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare.' }]);
   });
   it('la divisione si confronta anche con i CPV equivalenti', () => {
     const c = valutaCriterio({ ...criterio, cpvEquivalenti: ['50400000'], cifreCpvComuni: 2 }, [servizio('50421000', '2024-01-01', '2024-12-31')], CONTESTO);
