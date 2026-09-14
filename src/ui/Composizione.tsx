@@ -5,6 +5,7 @@
 import type { Azione } from '../lavoro';
 import { etichettaRuolo, nomeRequisito, nomeSoggetto, type ContestoDescrizioni } from '../descrizioni';
 import type { Lotto, Membro, Raggruppamento, RuoloEsecutore, Soggetto } from '../domain';
+import { AggiungiAusiliaria } from './AggiungiAusiliaria';
 import { AggiungiMembro } from './AggiungiMembro';
 import { InputQuota } from './InputQuota';
 import styles from './Composizione.module.css';
@@ -102,6 +103,7 @@ export function Composizione({ lotto, raggruppamento, soggetti, contesto, dispat
       ) : null}
       {raggruppamento.membri.length === 0 ? <p className={styles.vuoto}>Il raggruppamento è vuoto: aggiungi almeno una mandataria.</p> : null}
       <AggiungiMembro raggruppamento={raggruppamento} soggetti={soggetti} dispatch={dispatch} />
+      {lotto ? <AggiungiAusiliaria lotto={lotto} raggruppamento={raggruppamento} soggetti={soggetti} contesto={contesto} dispatch={dispatch} /> : null}
     </section>
   );
 }
