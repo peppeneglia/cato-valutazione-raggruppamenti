@@ -89,8 +89,8 @@ export function parametri(extra: Partial<ParametriValutazione> = {}): ParametriV
 
 // ─── Voci di fascicolo ───────────────────────────────────────
 
-export function dichiarazione(oggetto: string, validoA?: string): VoceFascicolo {
-  return { tipo: 'dichiarazione', oggetto, resa: { valore: true, fonte: FONTE, validoA } };
+export function dichiarazione(oggetto: string): VoceFascicolo {
+  return { tipo: 'dichiarazione', oggetto, resa: { valore: true, fonte: FONTE } };
 }
 
 export function certificazione(norma: string, scope: string, validoA?: string): VoceFascicolo {

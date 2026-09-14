@@ -247,14 +247,16 @@ function anomalieVoce(soggetto: Soggetto, voce: VoceFascicolo): Anomalia[] {
     creaAnomalia({ codice: 'data_malformata', origine: 'fascicolo', dove: `${dove} · ${campo}`, valore });
 
   const fatto = fattoDiVoce(voce);
-  if (fatto.validoDa !== undefined && !dataValida(fatto.validoDa)) anomalie.push(malformata('validoDa', fatto.validoDa));
-  if (fatto.validoA !== undefined && !dataValida(fatto.validoA)) anomalie.push(malformata('validoA', fatto.validoA));
-  if (
-    fatto.validoDa !== undefined && fatto.validoA !== undefined &&
-    dataValida(fatto.validoDa) && dataValida(fatto.validoA) &&
-    confrontaDate(fatto.validoDa, fatto.validoA) > 0
-  ) {
-    anomalie.push(creaAnomalia({ codice: 'periodo_invertito', soggettoId: soggetto.id, dove: `${dove} · validità` }));
+  if (fatto) {
+    if (fatto.validoDa !== undefined && !dataValida(fatto.validoDa)) anomalie.push(malformata('validoDa', fatto.validoDa));
+    if (fatto.validoA !== undefined && !dataValida(fatto.validoA)) anomalie.push(malformata('validoA', fatto.validoA));
+    if (
+      fatto.validoDa !== undefined && fatto.validoA !== undefined &&
+      dataValida(fatto.validoDa) && dataValida(fatto.validoA) &&
+      confrontaDate(fatto.validoDa, fatto.validoA) > 0
+    ) {
+      anomalie.push(creaAnomalia({ codice: 'periodo_invertito', soggettoId: soggetto.id, dove: `${dove} · validità` }));
+    }
   }
 
   if (voce.tipo === 'servizio') {

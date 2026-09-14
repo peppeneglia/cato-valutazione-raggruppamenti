@@ -96,65 +96,79 @@ function motivoNonValido(fatto: Fatto<unknown>, data: DataISO): string {
 
 const ASSENTE: ValoreContributo = { tipo: 'possesso', esito: 'assente' };
 
-type VocePossesso = { voce: VoceFascicolo; fatto: Fatto<true>; attributo?: string };
+/** Una voce di possesso: la validità è già stata verificata, o non esiste. */
+type VocePossesso = { voce: VoceFascicolo; fonte: Fonte; attributo?: string };
 
 /**
  * Possesso con attributo opzionale (scope, attività): posseduto se coincide,
  * da verificare se diverso, assente se nessuna voce valida.
  */
 function componiPossesso(
-  pertinenti: VocePossesso[],
+  valide: VocePossesso[],
+  noteNonValide: string[],
   attributoRichiesto: string | undefined,
   descrizioneRichiesta: string,
-  data: DataISO,
 ): ContributoGrezzo {
-  const valide = pertinenti.filter((p) => fattoValido(p.fatto, data));
-
   if (valide.length === 0) {
-    const note = pertinenti.length === 0
-      ? [`nessuna ${descrizioneRichiesta} nel fascicolo`]
-      : pertinenti.map((p) => `${descriviVoce(p.voce)}: ${motivoNonValido(p.fatto, data)}`);
+    const note = noteNonValide.length === 0 ? [`nessuna ${descrizioneRichiesta} nel fascicolo`] : noteNonValide;
     return { valore: ASSENTE, fonti: [], note };
   }
 
   if (attributoRichiesto === undefined) {
-    return { valore: { tipo: 'possesso', esito: 'posseduto' }, fonti: valide.map((p) => p.fatto.fonte), note: [] };
+    return { valore: { tipo: 'possesso', esito: 'posseduto' }, fonti: valide.map((p) => p.fonte), note: [] };
   }
 
   const coincidenti = valide.filter((p) => p.attributo !== undefined && coincidono(p.attributo, attributoRichiesto));
   if (coincidenti.length > 0) {
-    return { valore: { tipo: 'possesso', esito: 'posseduto' }, fonti: coincidenti.map((p) => p.fatto.fonte), note: [] };
+    return { valore: { tipo: 'possesso', esito: 'posseduto' }, fonti: coincidenti.map((p) => p.fonte), note: [] };
   }
 
   return {
     valore: { tipo: 'possesso', esito: 'da_verificare' },
-    fonti: valide.map((p) => p.fatto.fonte),
+    fonti: valide.map((p) => p.fonte),
     note: valide.map((p) => `${descriviVoce(p.voce)}: «${p.attributo ?? ''}» diverso da quello richiesto «${attributoRichiesto}», equivalenza da valutare`),
   };
 }
 
-function valutaDichiarazione(oggetto: string, fascicolo: VoceFascicolo[], data: DataISO): ContributoGrezzo {
-  const pertinenti: VocePossesso[] = [];
-  for (const voce of fascicolo) {
-    if (voce.tipo === 'dichiarazione' && coincidono(voce.oggetto, oggetto)) pertinenti.push({ voce, fatto: voce.resa });
+/** Separa le voci valide alla data da quelle scadute o non ancora valide. */
+function separaPerValidita(
+  voci: { voce: VoceFascicolo; fatto: Fatto<true>; attributo?: string }[],
+  data: DataISO,
+): { valide: VocePossesso[]; noteNonValide: string[] } {
+  const valide: VocePossesso[] = [];
+  const noteNonValide: string[] = [];
+  for (const { voce, fatto, attributo } of voci) {
+    if (fattoValido(fatto, data)) valide.push({ voce, fonte: fatto.fonte, attributo });
+    else noteNonValide.push(`${descriviVoce(voce)}: ${motivoNonValido(fatto, data)}`);
   }
-  return componiPossesso(pertinenti, undefined, `dichiarazione «${oggetto}»`, data);
+  return { valide, noteNonValide };
+}
+
+/** Una dichiarazione non ha validità: o è resa, o non c'è. */
+function valutaDichiarazione(oggetto: string, fascicolo: VoceFascicolo[]): ContributoGrezzo {
+  const rese: VocePossesso[] = [];
+  for (const voce of fascicolo) {
+    if (voce.tipo === 'dichiarazione' && coincidono(voce.oggetto, oggetto)) rese.push({ voce, fonte: voce.resa.fonte });
+  }
+  return componiPossesso(rese, [], undefined, `dichiarazione «${oggetto}»`);
 }
 
 function valutaCertificazione(norma: string, scope: string | undefined, fascicolo: VoceFascicolo[], data: DataISO): ContributoGrezzo {
-  const pertinenti: VocePossesso[] = [];
+  const pertinenti = [];
   for (const voce of fascicolo) {
     if (voce.tipo === 'certificazione' && coincidono(voce.norma, norma)) pertinenti.push({ voce, fatto: voce.possesso, attributo: voce.scope });
   }
-  return componiPossesso(pertinenti, scope, `certificazione ${norma}`, data);
+  const { valide, noteNonValide } = separaPerValidita(pertinenti, data);
+  return componiPossesso(valide, noteNonValide, scope, `certificazione ${norma}`);
 }
 
 function valutaIscrizione(registro: string, attivita: string | undefined, fascicolo: VoceFascicolo[], data: DataISO): ContributoGrezzo {
-  const pertinenti: VocePossesso[] = [];
+  const pertinenti = [];
   for (const voce of fascicolo) {
     if (voce.tipo === 'iscrizione' && coincidono(voce.registro, registro)) pertinenti.push({ voce, fatto: voce.possesso, attributo: voce.attivita });
   }
-  return componiPossesso(pertinenti, attivita, `iscrizione ${registro}`, data);
+  const { valide, noteNonValide } = separaPerValidita(pertinenti, data);
+  return componiPossesso(valide, noteNonValide, attivita, `iscrizione ${registro}`);
 }
 
 // ─── Fatturato ───────────────────────────────────────────────
@@ -198,10 +212,6 @@ function valutaFatturato(
   for (const voce of fascicolo) {
     if (voce.tipo !== 'fatturato' || !ambitiCoincidono(criterio.ambito, voce.ambito)) continue;
     if (voce.esercizio < annoInizio || voce.esercizio > annoFine) continue;
-    if (!fattoValido(voce.importo, contesto.dataRiferimento)) {
-      note.push(`${descriviVoce(voce)}: ${motivoNonValido(voce.importo, contesto.dataRiferimento)}`);
-      continue;
-    }
     certo += inCentesimi(voce.importo.valore);
     fonti.push(voce.importo.fonte);
     coperti.add(voce.esercizio);
@@ -246,10 +256,6 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
 
   for (const voce of fascicolo) {
     if (voce.tipo !== 'servizio') continue;
-    if (!fattoValido(voce.periodo, contesto.dataRiferimento)) {
-      note.push(`${descriviVoce(voce)}: ${motivoNonValido(voce.periodo, contesto.dataRiferimento)}`);
-      continue;
-    }
     if (!siSovrappongono(voce.periodo.valore, finestra)) {
       fuoriFinestra.push(`«${voce.oggetto}» (${formattaData(voce.periodo.valore.da)} – ${formattaData(voce.periodo.valore.a)})`);
       continue;
@@ -282,7 +288,7 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
 export function valutaCriterio(criterio: Criterio, fascicolo: VoceFascicolo[], contesto: ContestoCriterio): ContributoGrezzo {
   switch (criterio.tipo) {
     case 'dichiarazione':
-      return valutaDichiarazione(criterio.oggetto, fascicolo, contesto.dataRiferimento);
+      return valutaDichiarazione(criterio.oggetto, fascicolo);
     case 'certificazione':
       return valutaCertificazione(criterio.norma, criterio.scope, fascicolo, contesto.dataRiferimento);
     case 'iscrizione':

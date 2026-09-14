@@ -1,11 +1,11 @@
-// Accesso uniforme alle voci di fascicolo: ogni voce porta esattamente un
-// fatto con finestra di validità; qui si dice quale, in un posto solo.
+// Accesso uniforme alle voci di fascicolo, in un posto solo.
 
 import { assertNever } from '../assertNever';
-import type { Fatto, VoceFascicolo } from '../domain';
+import type { Dato, Fatto, VoceFascicolo } from '../domain';
 import { formattaEuro } from '../formato';
 
-export function fattoDiVoce(voce: VoceFascicolo): Fatto<unknown> {
+/** Il dato con provenienza che ogni voce porta. */
+export function datoDiVoce(voce: VoceFascicolo): Dato<unknown> {
   switch (voce.tipo) {
     case 'fatturato':
       return voce.importo;
@@ -17,6 +17,21 @@ export function fattoDiVoce(voce: VoceFascicolo): Fatto<unknown> {
       return voce.possesso;
     case 'dichiarazione':
       return voce.resa;
+    default:
+      return assertNever(voce);
+  }
+}
+
+/** Il fatto con validità, solo per le voci che possono scadere. */
+export function fattoDiVoce(voce: VoceFascicolo): Fatto<unknown> | undefined {
+  switch (voce.tipo) {
+    case 'certificazione':
+    case 'iscrizione':
+      return voce.possesso;
+    case 'fatturato':
+    case 'servizio':
+    case 'dichiarazione':
+      return undefined;
     default:
       return assertNever(voce);
   }

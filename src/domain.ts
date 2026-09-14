@@ -33,12 +33,19 @@ export type Fonte = {
   pagina?: number;
 };
 
-/** Un fatto: un valore, la sua fonte, una finestra di validità opzionale. */
-export type Fatto<T> = {
+/** Un dato con provenienza e basta. Un bilancio non scade. */
+export type Dato<T> = {
   valore: T;
   fonte: Fonte;
+};
+
+/**
+ * Un fatto che può scadere: solo certificazioni e iscrizioni.
+ * Estremi inclusi; oltre `validoA` il fatto non conta.
+ */
+export type Fatto<T> = Dato<T> & {
   validoDa?: DataISO;
-  validoA?: DataISO;      // oltre questa data il fatto non conta
+  validoA?: DataISO;
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -190,7 +197,7 @@ export type Requisito = {
 
 /** Il fascicolo è una lista di fatti tipizzati, non un insieme di campi. */
 export type VoceFascicolo =
-  | { tipo: 'fatturato'; esercizio: number; ambito: AmbitoFatturato; importo: Fatto<number> }
+  | { tipo: 'fatturato'; esercizio: number; ambito: AmbitoFatturato; importo: Dato<number> }
   | { tipo: 'certificazione'; norma: string; scope: string; possesso: Fatto<true> }
   | {
       tipo: 'servizio';
@@ -198,11 +205,12 @@ export type VoceFascicolo =
       cpv: string;
       committente: string;
       importo: number;    // euro
-      periodo: Fatto<{ da: DataISO; a: DataISO }>;
+      /** Il periodo di esecuzione è un periodo, non una finestra di validità. */
+      periodo: Dato<{ da: DataISO; a: DataISO }>;
     }
   | { tipo: 'iscrizione'; registro: string; attivita: string; possesso: Fatto<true> }
   /** Requisiti generali: non c'è un fatto positivo, c'è una dichiarazione. */
-  | { tipo: 'dichiarazione'; oggetto: string; resa: Fatto<true> };
+  | { tipo: 'dichiarazione'; oggetto: string; resa: Dato<true> };
 
 export type Soggetto = {
   id: SoggettoId;

@@ -38,15 +38,6 @@ describe('criterio dichiarazione', () => {
     expect(c.fonti).toEqual([]);
     expect(c.note[0]).toContain('nessuna dichiarazione');
   });
-  it('è assente se la dichiarazione è scaduta, con la data di scadenza', () => {
-    const c = valutaCriterio(criterio, [dichiarazione('Assenza cause di esclusione', '2026-09-13')], CONTESTO);
-    expect(c.valore).toEqual({ tipo: 'possesso', esito: 'assente' });
-    expect(c.note[0]).toContain('scaduto il 13/09/2026');
-  });
-  it('vale il giorno stesso della scadenza', () => {
-    const c = valutaCriterio(criterio, [dichiarazione('Assenza cause di esclusione', '2026-09-14')], CONTESTO);
-    expect(c.valore).toEqual({ tipo: 'possesso', esito: 'posseduto' });
-  });
 });
 
 describe('criterio certificazione', () => {
@@ -72,6 +63,23 @@ describe('criterio certificazione', () => {
   it('senza la norma è assente', () => {
     const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 13485' }, [certificazione('ISO 9001', 'x')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'assente' });
+  });
+  it('è assente se scaduta, con la data di scadenza nella nota', () => {
+    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001' }, [certificazione('ISO 9001', 'x', '2026-09-13')], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'possesso', esito: 'assente' });
+    expect(c.fonti).toEqual([]);
+    expect(c.note[0]).toContain('scaduto il 13/09/2026');
+  });
+  it('vale il giorno stesso della scadenza', () => {
+    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001' }, [certificazione('ISO 9001', 'x', '2026-09-14')], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'possesso', esito: 'posseduto' });
+  });
+  it('non vale prima dell’inizio della validità', () => {
+    const voce = certificazione('ISO 9001', 'x');
+    if (voce.tipo === 'certificazione') voce.possesso.validoDa = '2026-10-01';
+    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001' }, [voce], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'possesso', esito: 'assente' });
+    expect(c.note[0]).toContain('valido solo dal 01/10/2026');
   });
   it('lo stesso fascicolo valutato a due date dà esiti diversi', () => {
     const fascicolo = [certificazione('ISO 9001', 'x', '2026-04-30')];
