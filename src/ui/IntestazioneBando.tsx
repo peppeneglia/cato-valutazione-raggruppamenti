@@ -12,6 +12,8 @@ function etichettaNatura(natura: NaturaPrestazione): string {
       return 'Principale';
     case 'scorporabile':
       return 'Scorporabile';
+    case 'indivisibile':
+      return 'Indivisibile';
     default:
       return assertNever(natura);
   }
@@ -23,7 +25,7 @@ export function IntestazioneBando({ bando, lotto }: { bando: Bando; lotto: Lotto
       <h2 id="titolo-bando" className={styles.titolo}>{bando.oggetto}</h2>
       <dl className={styles.dati}>
         <div><dt>Stazione appaltante</dt><dd>{bando.stazioneAppaltante}</dd></div>
-        <div><dt>Pubblicazione</dt><dd>{formattaData(bando.dataPubblicazione)}</dd></div>
+        <div><dt>Pubblicazione</dt><dd>{bando.dataPubblicazione === undefined ? 'non indicata nel documento' : formattaData(bando.dataPubblicazione)}</dd></div>
         <div><dt>Termine di presentazione</dt><dd>{formattaData(bando.terminePresentazione)}</dd></div>
         <div><dt>Base d'asta</dt><dd className={styles.cifra}>{formattaEuro(bando.baseAsta)}</dd></div>
         <div><dt>Fonte</dt><dd><Fonte fonte={bando.fonte} /></dd></div>

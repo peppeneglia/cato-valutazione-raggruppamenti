@@ -4,7 +4,7 @@ import { valuta } from './valuta';
 import { valutaBase } from './valutazione';
 
 const DICHIARAZIONE = { tipo: 'dichiarazione', oggetto: 'Assenza cause di esclusione' } as const;
-const ISO = { tipo: 'certificazione', norma: 'ISO 9001' } as const;
+const ISO = { tipo: 'certificazione', norme: ['ISO 9001'] } as const;
 
 describe('valutaBase', () => {
   it('valuta ogni requisito del lotto e produce il verdetto', () => {

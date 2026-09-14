@@ -5,6 +5,7 @@ import type {
   Bando,
   Criterio,
   Fonte,
+  Lettura,
   Lotto,
   Membro,
   ParametriValutazione,
@@ -32,13 +33,18 @@ export function prestazione(id: string, extra: Partial<Prestazione> = {}): Prest
   return { id, descrizione: `Prestazione ${id}`, importo: 100_000, natura: 'scorporabile', fonte: FONTE, ...extra };
 }
 
+/** Un requisito con una lettura sola: il caso comune. Più letture passano da `extra.letture`. */
 export function requisito(
   id: string,
   criterio: Criterio,
   regola: RegolaComposizione,
   extra: Partial<Requisito> = {},
 ): Requisito {
-  return { id, famiglia: 'generale', descrizione: `Requisito ${id}`, criterio, regola, avvalibile: false, vincolante: true, fonte: FONTE, ...extra };
+  return { id, famiglia: 'generale', descrizione: `Requisito ${id}`, letture: [{ criterio }], regola, avvalibile: false, vincolante: true, fonte: FONTE, ...extra };
+}
+
+export function lettura(testo: string, criterio: Criterio): Lettura {
+  return { testo, criterio };
 }
 
 export function lotto(extra: Partial<Lotto> = {}): Lotto {
@@ -53,6 +59,7 @@ export function bando(lotti: Lotto[], extra: Partial<Bando> = {}): Bando {
     dataPubblicazione: DATA_PUBBLICAZIONE,
     terminePresentazione: TERMINE_PRESENTAZIONE,
     baseAsta: 100_000,
+    valori: [],
     fonte: FONTE,
     lotti,
     ...extra,

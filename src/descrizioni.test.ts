@@ -46,7 +46,7 @@ describe('descriviRimedio', () => {
   it('descrive i rimedi non applicabili', () => {
     expect(descriviRimedio({ tipo: 'rinnovo_documento', soggettoId: 's-beta', requisitoId: 'r', fonte: { documento: 'Fascicolo', riferimento: 'certificato ISO 9001' }, scadutoIl: '2026-04-30' }, contesto))
       .toBe('Rinnovo di «certificato ISO 9001» di Beta Service S.r.l., scaduto il 30/04/2026');
-    expect(descriviRimedio({ tipo: 'profilo_mancante', requisitoId: 'r', criterio: { tipo: 'certificazione', norma: 'ISO 9001', scope: 'formazione' } }, contesto))
+    expect(descriviRimedio({ tipo: 'profilo_mancante', requisitoId: 'r', criterio: { tipo: 'certificazione', norme: ['ISO 9001'], scope: 'formazione' } }, contesto))
       .toBe('Nessun soggetto disponibile copre questo requisito: serve certificazione ISO 9001 con scope «formazione»');
   });
   it('distingue applicabili e non', () => {
@@ -57,7 +57,7 @@ describe('descriviRimedio', () => {
 
 describe('descriviCriterio', () => {
   it('descrive ogni variante in parole con i numeri formattati', () => {
-    expect(descriviCriterio({ tipo: 'fatturato', ambito: { tipo: 'specifico', settore: 'dispositivi' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 3_000_000 }))
+    expect(descriviCriterio({ tipo: 'fatturato', ambito: { tipo: 'specifico', settore: 'dispositivi' }, periodo: { tipo: 'a_ritroso', esercizi: 3, ancoraggio: 'riferimento' }, soglia: 3_000_000 }))
       .toBe('fatturato nel settore «dispositivi» di almeno 3.000.000 € negli ultimi 3 esercizi');
     expect(descriviCriterio({ tipo: 'servizi', cpv: '33100000', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 1, importoMinimoUnitario: 300_000, sostantivo: { singolare: 'fornitura', plurale: 'forniture' } }))
       .toBe('almeno 1 fornitura con CPV 33100000 negli ultimi 5 anni, ciascuna da almeno 300.000 €');

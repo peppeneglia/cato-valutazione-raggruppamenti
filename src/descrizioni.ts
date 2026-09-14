@@ -7,9 +7,10 @@ import type {
   Anomalia,
   Bando,
   CodiceAssunzione,
-  Criterio,
+  CriterioRisolto,
   FamigliaRequisito,
   GravitaAnomalia,
+  Indeterminatezza,
   PrestazioneId,
   RequisitoId,
   Rimedio,
@@ -106,6 +107,10 @@ export function etichettaAssunzione(codice: CodiceAssunzione): string {
       return 'Arrotondamento per eccesso dei minimi per ruolo';
     case 'classe_cpv':
       return 'Esclusione dei servizi per classe CPV';
+    case 'ancoraggio_termine_presentazione':
+      return 'Finestra ancorata al termine di presentazione';
+    case 'esito_concordante':
+      return 'Esito valido con letture concordanti del documento';
     default:
       return assertNever(codice);
   }
@@ -125,24 +130,49 @@ export function etichettaGravita(gravita: GravitaAnomalia): string {
 // ─── Criteri ─────────────────────────────────────────────────
 
 /** Il profilo che manca, in parole: usato dal rimedio `profilo_mancante`. */
-export function descriviCriterio(criterio: Criterio): string {
+export function descriviCriterio(criterio: CriterioRisolto): string {
   switch (criterio.tipo) {
     case 'dichiarazione':
       return `dichiarazione «${criterio.oggetto}»`;
-    case 'certificazione':
-      return criterio.scope === undefined ? `certificazione ${criterio.norma}` : `certificazione ${criterio.norma} con scope «${criterio.scope}»`;
+    case 'certificazione': {
+      const norme = criterio.norme.join(' o ');
+      return criterio.scope === undefined ? `certificazione ${norme}` : `certificazione ${norme} con scope «${criterio.scope}»`;
+    }
     case 'iscrizione':
       return criterio.attivita === undefined ? `iscrizione ${criterio.registro}` : `iscrizione ${criterio.registro} per «${criterio.attivita}»`;
     case 'fatturato': {
       const ambito = criterio.ambito.tipo === 'globale' ? 'fatturato globale' : `fatturato nel settore «${criterio.ambito.settore}»`;
-      return `${ambito} di almeno ${formattaEuro(criterio.soglia)} negli ultimi ${criterio.esercizi} esercizi`;
+      const periodo = criterio.periodo.tipo === 'a_ritroso' ? `negli ultimi ${criterio.periodo.esercizi} esercizi` : `negli esercizi ${criterio.periodo.anni.join(', ')}`;
+      return `${ambito} di almeno ${formattaEuro(criterio.soglia)} ${periodo}`;
     }
     case 'servizi':
       return `almeno ${formattaConUnita(criterio.numeroMinimo, { tipo: 'conteggio', sostantivo: criterio.sostantivo })} con CPV ${criterio.cpv} negli ultimi ${criterio.anni} anni${criterio.importoMinimoUnitario === undefined ? '' : `, ciascuna da almeno ${formattaEuro(criterio.importoMinimoUnitario)}`}`;
     case 'servizi_importo':
       return `servizi con CPV ${criterio.cpv} negli ultimi ${criterio.anni} anni per almeno ${formattaEuro(criterio.soglia)} complessivi`;
+    case 'non_determinato':
+      return `«${criterio.testo}», che il disciplinare non determina`;
     default:
       return assertNever(criterio);
+  }
+}
+
+// ─── Indeterminatezze ────────────────────────────────────────
+
+/** Perché il motore non decide, in una frase per chi legge la riga. */
+export function descriviIndeterminatezza(i: Indeterminatezza, contesto: ContestoDescrizioni): string {
+  switch (i.tipo) {
+    case 'regola_non_dichiarata':
+      return 'Il disciplinare non dice chi debba possederlo nel raggruppamento.';
+    case 'criterio_non_determinato':
+      return `Il disciplinare non dice cosa lo soddisfi: «${i.testo}».`;
+    case 'letture_discordanti':
+      return `Il documento ammette più letture con esiti diversi: ${i.esiti.map((e) => `«${e.etichetta}» ${etichettaStato(e.stato).toLowerCase()}`).join('; ')}.`;
+    case 'valore_contraddittorio':
+      return `Il bando scrive «${i.nome}» in più modi, con esiti diversi: ${i.esiti.map((e) => `${e.etichetta} → ${etichettaStato(e.stato).toLowerCase()}`).join('; ')}.`;
+    case 'giudizio_richiesto':
+      return `Per ${nomeSoggetto(i.soggettoId, contesto)} decide una persona: ${i.oggetto}.`;
+    default:
+      return assertNever(i);
   }
 }
 
@@ -168,6 +198,11 @@ export function descriviMossa(mossa: RimedioApplicabile, contesto: ContestoDescr
   }
 }
 
+/** "entro le 12:00 del 27/12/2023" / "entro il 27/12/2023". */
+export function descriviTermine(termine: { data: string; ora?: string }): string {
+  return termine.ora === undefined ? `entro il ${formattaData(termine.data)}` : `entro le ${termine.ora} del ${formattaData(termine.data)}`;
+}
+
 export function descriviRimedio(rimedio: Rimedio, contesto: ContestoDescrizioni): string {
   switch (rimedio.tipo) {
     case 'riassegna_quota':
@@ -179,6 +214,10 @@ export function descriviRimedio(rimedio: Rimedio, contesto: ContestoDescrizioni)
       return `Nessun soggetto disponibile copre questo requisito: serve ${descriviCriterio(rimedio.criterio)}`;
     case 'rinnovo_documento':
       return `Rinnovo di «${rimedio.fonte.riferimento}» di ${nomeSoggetto(rimedio.soggettoId, contesto)}, scaduto il ${formattaData(rimedio.scadutoIl)}`;
+    case 'richiesta_chiarimenti': {
+      const quando = rimedio.termine === undefined ? '' : rimedio.decorso ? `: il termine (${descriviTermine(rimedio.termine).replace(/^entro /, '')}) è decorso, l'ambiguità resta a rischio del concorrente` : ` ${descriviTermine(rimedio.termine)}`;
+      return `Chiedi chiarimenti alla stazione appaltante${quando}. ${rimedio.quesiti.join(' ')}`;
+    }
     default:
       return assertNever(rimedio);
   }
@@ -193,6 +232,7 @@ export function eApplicabile(rimedio: Rimedio): rimedio is RimedioApplicabile {
       return true;
     case 'profilo_mancante':
     case 'rinnovo_documento':
+    case 'richiesta_chiarimenti':
       return false;
     default:
       return assertNever(rimedio);
@@ -221,9 +261,13 @@ export function bersaglioAnomalia(anomalia: Anomalia): BersaglioAnomalia | undef
     case 'quote_non_totali':
     case 'prestazione_senza_esecutore':
     case 'vincolo_prestazione_principale_violato':
+    case 'prestazione_indivisibile_non_unica':
       return { tipo: 'prestazione', id: anomalia.prestazioneId };
     case 'regola_somma_su_criterio_di_possesso':
     case 'parametro_requisito_non_valido':
+    case 'rinvio_a_valore_inesistente':
+    case 'ancoraggio_a_pubblicazione_senza_data':
+    case 'requisito_senza_letture':
       return { tipo: 'requisito', id: anomalia.requisitoId };
     case 'riferimento_inesistente':
       return anomalia.entita === 'prestazione' ? { tipo: 'prestazione', id: anomalia.id } : anomalia.entita === 'requisito' ? { tipo: 'requisito', id: anomalia.id } : undefined;
@@ -233,6 +277,7 @@ export function bersaglioAnomalia(anomalia: Anomalia): BersaglioAnomalia | undef
     case 'data_malformata':
     case 'termine_presentazione_decorso':
     case 'vincolo_senza_prestazione_principale':
+    case 'valore_bando_senza_candidati':
       return undefined;
     default:
       return assertNever(anomalia);

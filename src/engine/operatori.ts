@@ -2,6 +2,11 @@
 // Lavorano su valori già calcolati per soggetto (in unità interne) e non
 // sanno né quale criterio li ha prodotti né a quale famiglia appartiene
 // il requisito.
+//
+// Il quinto caso non è un operatore: la regola NON DICHIARATA dal
+// disciplinare (ASL Roma 6, §6.4 p. 14, muto su tre requisiti su sei)
+// non compone niente. Conta tutti i membri, non misura, ed esce da
+// verificare. Nessun default "in mancanza si assume che…".
 
 import { assertNever } from '../assertNever';
 import type {
@@ -32,7 +37,8 @@ export type MisurazioneGrezza = Omit<Misurazione, 'unita'>;
 export type EsitoOperatore = {
   stato: StatoRequisito;
   conteggi: Conteggio[];
-  misurazione: MisurazioneGrezza;
+  /** Assente quando non c'è una regola che misuri: nessun numero è meglio di un numero inventato. */
+  misurazione?: MisurazioneGrezza;
 };
 
 // ─── Copertura di un singolo valore ──────────────────────────
@@ -173,6 +179,11 @@ function almenoUnMembro(partecipanti: Partecipante[], soglia: number): EsitoOper
   };
 }
 
+/** Nessuna regola: tutti contano, niente si misura, si chiede. */
+function nonDichiarata(partecipanti: Partecipante[]): EsitoOperatore {
+  return { stato: 'da_verificare', conteggi: tuttiConteggiati(partecipanti) };
+}
+
 // ─── Ingresso ────────────────────────────────────────────────
 
 /**
@@ -200,6 +211,8 @@ export function componi(
       );
     case 'almeno_un_membro':
       return almenoUnMembro(partecipanti, soglia);
+    case 'non_dichiarata':
+      return nonDichiarata(partecipanti);
     default:
       return assertNever(regola);
   }

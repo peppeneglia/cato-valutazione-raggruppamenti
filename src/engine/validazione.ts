@@ -5,6 +5,7 @@ import { assertNever } from '../assertNever';
 import type {
   Anomalia,
   Bando,
+  Criterio,
   DettaglioAnomalia,
   GravitaAnomalia,
   Lotto,
@@ -19,6 +20,7 @@ import { confrontaDate, dataValida } from './date';
 import { indicizza, trovaLotto } from './indici';
 import { ausiliarieDi, esecutoriDi, mandatarieDi } from './membri';
 import { quotaAlmeno, quotaValida, quoteAzzerate, quoteTotalizzano, sommaQuote } from './quote';
+import { varianti } from './varianti';
 import { descriviVoce, fattoDiVoce } from './voci';
 
 function gravitaDi(dettaglio: DettaglioAnomalia): GravitaAnomalia {
@@ -36,6 +38,11 @@ function gravitaDi(dettaglio: DettaglioAnomalia): GravitaAnomalia {
     case 'avvalimento_su_requisito_non_avvalibile':
     case 'vincolo_senza_prestazione_principale':
     case 'vincolo_prestazione_principale_violato':
+    case 'rinvio_a_valore_inesistente':
+    case 'valore_bando_senza_candidati':
+    case 'ancoraggio_a_pubblicazione_senza_data':
+    case 'prestazione_indivisibile_non_unica':
+    case 'requisito_senza_letture':
       return 'bloccante';
     case 'data_malformata':
       return dettaglio.origine === 'fascicolo' ? 'segnalazione' : 'bloccante';
@@ -84,6 +91,16 @@ function messaggioDi(dettaglio: DettaglioAnomalia): string {
       return 'Il lotto dichiara un vincolo di esecuzione della prestazione principale ma nessuna prestazione è principale.';
     case 'vincolo_prestazione_principale_violato':
       return `La prestazione principale ${dettaglio.prestazioneId} richiede al ruolo «${dettaglio.esecutore}» almeno ${formattaPercentuale(dettaglio.quotaMinima)}; eseguita al ${formattaPercentuale(dettaglio.quotaEffettiva)}.`;
+    case 'rinvio_a_valore_inesistente':
+      return `Il requisito ${dettaglio.requisitoId} rinvia al valore «${dettaglio.nome}», che il bando non nomina.`;
+    case 'valore_bando_senza_candidati':
+      return `Il valore «${dettaglio.nome}» del bando non ha nessun candidato: non c'è un numero su cui calcolare.`;
+    case 'ancoraggio_a_pubblicazione_senza_data':
+      return `Il requisito ${dettaglio.requisitoId} ancora una finestra alla data di pubblicazione, che il bando non scrive.`;
+    case 'prestazione_indivisibile_non_unica':
+      return `La prestazione ${dettaglio.prestazioneId} è indivisibile ma il lotto ${dettaglio.lottoId} ne dichiara altre: una prestazione indivisibile è l'unica del lotto.`;
+    case 'requisito_senza_letture':
+      return `Il requisito ${dettaglio.requisitoId} non ha nessuna lettura: non si può valutare.`;
     default:
       return assertNever(dettaglio);
   }
@@ -105,11 +122,15 @@ function anomalieDate(parametri: ParametriValutazione): Anomalia[] {
   if (!dataValida(dataRiferimento)) {
     anomalie.push(creaAnomalia({ codice: 'data_malformata', origine: 'parametri', dove: 'dataRiferimento', valore: dataRiferimento }));
   }
-  if (!dataValida(bando.dataPubblicazione)) {
+  // Assente non è malformata: il documento può non scriverla.
+  if (bando.dataPubblicazione !== undefined && !dataValida(bando.dataPubblicazione)) {
     anomalie.push(creaAnomalia({ codice: 'data_malformata', origine: 'bando', dove: 'dataPubblicazione', valore: bando.dataPubblicazione }));
   }
   if (!dataValida(bando.terminePresentazione)) {
     anomalie.push(creaAnomalia({ codice: 'data_malformata', origine: 'bando', dove: 'terminePresentazione', valore: bando.terminePresentazione }));
+  }
+  if (bando.termineChiarimenti !== undefined && !dataValida(bando.termineChiarimenti.data)) {
+    anomalie.push(creaAnomalia({ codice: 'data_malformata', origine: 'bando', dove: 'termineChiarimenti', valore: bando.termineChiarimenti.data }));
   }
   if (anomalie.length === 0 && confrontaDate(dataRiferimento, bando.terminePresentazione) > 0) {
     anomalie.push(creaAnomalia({ codice: 'termine_presentazione_decorso', terminePresentazione: bando.terminePresentazione }));
@@ -170,6 +191,11 @@ function anomalieIdentificativi(bando: Bando): Anomalia[] {
   return anomalie;
 }
 
+/** Un valore nominato senza candidati non serve a nessun rinvio. */
+function anomalieValori(bando: Bando): Anomalia[] {
+  return bando.valori.filter((v) => v.candidati.length === 0).map((v) => creaAnomalia({ codice: 'valore_bando_senza_candidati', nome: v.nome }));
+}
+
 /**
  * Le quote sono una proprietà del raggruppamento sull'intera gara: una
  * quota su una prestazione di un altro lotto è irrilevante qui, non un
@@ -209,6 +235,14 @@ function anomalieQuote(parametri: ParametriValutazione, lotto: Lotto): Anomalia[
   return anomalie;
 }
 
+/** Una prestazione indivisibile copre l'intero lotto: non può convivere con altre. */
+function anomaliePrestazioni(lotto: Lotto): Anomalia[] {
+  if (lotto.prestazioni.length <= 1) return [];
+  return lotto.prestazioni
+    .filter((p) => p.natura === 'indivisibile')
+    .map((p) => creaAnomalia({ codice: 'prestazione_indivisibile_non_unica', lottoId: lotto.id, prestazioneId: p.id }));
+}
+
 function anomalieAvvalimenti(parametri: ParametriValutazione, lotto: Lotto): Anomalia[] {
   const requisiti = indicizza(lotto.requisiti);
   const anomalie: Anomalia[] = [];
@@ -225,67 +259,104 @@ function anomalieAvvalimenti(parametri: ParametriValutazione, lotto: Lotto): Ano
   return anomalie;
 }
 
-/** Parametri numerici del criterio e della regola: positivi dove serve, frazioni dove serve. */
-function anomalieParametri(requisito: Requisito): Anomalia[] {
-  const { criterio, regola } = requisito;
-  const controlli: { parametro: string; valore: number | undefined; valido: (v: number) => boolean }[] = [];
-  const positivo = (v: number) => Number.isFinite(v) && v > 0;
-  const nonNegativo = (v: number) => Number.isFinite(v) && v >= 0;
-  const frazione = (v: number) => Number.isFinite(v) && v >= 0 && v <= 1;
-  const interoPositivo = (v: number) => Number.isInteger(v) && v > 0;
+type Controllo = { parametro: string; valore: number | undefined; valido: (v: number) => boolean };
 
+const positivo = (v: number) => Number.isFinite(v) && v > 0;
+const nonNegativo = (v: number) => Number.isFinite(v) && v >= 0;
+const frazione = (v: number) => Number.isFinite(v) && v >= 0 && v <= 1;
+const interoPositivo = (v: number) => Number.isInteger(v) && v > 0;
+
+/** I numeri di un criterio: i rinvii si controllano altrove, quando si risolvono. */
+function controlliCriterio(criterio: Criterio, prefisso: string): Controllo[] {
+  const controlli: Controllo[] = [];
+  const numerico = (importo: number | { rinvio: string } | undefined) => (typeof importo === 'number' ? importo : undefined);
   switch (criterio.tipo) {
     case 'fatturato':
-      controlli.push({ parametro: 'criterio.esercizi', valore: criterio.esercizi, valido: positivo });
-      controlli.push({ parametro: 'criterio.soglia', valore: criterio.soglia, valido: positivo });
+      switch (criterio.periodo.tipo) {
+        case 'a_ritroso':
+          controlli.push({ parametro: `${prefisso}.periodo.esercizi`, valore: criterio.periodo.esercizi, valido: positivo });
+          break;
+        case 'esercizi':
+          controlli.push({ parametro: `${prefisso}.periodo.anni`, valore: criterio.periodo.anni.length, valido: positivo });
+          controlli.push(...criterio.periodo.anni.map((anno, i) => ({ parametro: `${prefisso}.periodo.anni[${i}]`, valore: anno, valido: interoPositivo })));
+          break;
+        default:
+          assertNever(criterio.periodo);
+      }
+      controlli.push({ parametro: `${prefisso}.soglia`, valore: numerico(criterio.soglia), valido: positivo });
       break;
     case 'servizi':
-      controlli.push({ parametro: 'criterio.anni', valore: criterio.anni, valido: positivo });
-      controlli.push({ parametro: 'criterio.numeroMinimo', valore: criterio.numeroMinimo, valido: positivo });
-      controlli.push({ parametro: 'criterio.importoMinimoUnitario', valore: criterio.importoMinimoUnitario, valido: nonNegativo });
-      controlli.push({ parametro: 'criterio.cifreCpvComuni', valore: criterio.cifreCpvComuni, valido: interoPositivo });
+      controlli.push({ parametro: `${prefisso}.anni`, valore: criterio.anni, valido: positivo });
+      controlli.push({ parametro: `${prefisso}.numeroMinimo`, valore: criterio.numeroMinimo, valido: positivo });
+      controlli.push({ parametro: `${prefisso}.importoMinimoUnitario`, valore: numerico(criterio.importoMinimoUnitario), valido: nonNegativo });
+      controlli.push({ parametro: `${prefisso}.cifreCpvComuni`, valore: criterio.cifreCpvComuni, valido: interoPositivo });
       break;
     case 'servizi_importo':
-      controlli.push({ parametro: 'criterio.anni', valore: criterio.anni, valido: positivo });
-      controlli.push({ parametro: 'criterio.soglia', valore: criterio.soglia, valido: positivo });
-      controlli.push({ parametro: 'criterio.importoMinimoUnitario', valore: criterio.importoMinimoUnitario, valido: nonNegativo });
-      controlli.push({ parametro: 'criterio.cifreCpvComuni', valore: criterio.cifreCpvComuni, valido: interoPositivo });
+      controlli.push({ parametro: `${prefisso}.anni`, valore: criterio.anni, valido: positivo });
+      controlli.push({ parametro: `${prefisso}.soglia`, valore: numerico(criterio.soglia), valido: positivo });
+      controlli.push({ parametro: `${prefisso}.importoMinimoUnitario`, valore: numerico(criterio.importoMinimoUnitario), valido: nonNegativo });
+      controlli.push({ parametro: `${prefisso}.cifreCpvComuni`, valore: criterio.cifreCpvComuni, valido: interoPositivo });
       break;
     case 'dichiarazione':
     case 'certificazione':
     case 'iscrizione':
+    case 'non_determinato':
       break;
     default:
       assertNever(criterio);
   }
+  return controlli;
+}
 
-  switch (regola.tipo) {
+/** Parametri numerici delle letture e della regola: positivi dove serve, frazioni dove serve. */
+function anomalieParametri(requisito: Requisito): Anomalia[] {
+  const controlli: Controllo[] = requisito.letture.flatMap((l, i) => controlliCriterio(l.criterio, `letture[${i}].criterio`));
+
+  switch (requisito.regola.tipo) {
     case 'somma_membri':
-      controlli.push({ parametro: 'regola.minimoMandataria', valore: regola.minimoMandataria, valido: frazione });
-      controlli.push({ parametro: 'regola.minimoMandante', valore: regola.minimoMandante, valido: frazione });
+      controlli.push({ parametro: 'regola.minimoMandataria', valore: requisito.regola.minimoMandataria, valido: frazione });
+      controlli.push({ parametro: 'regola.minimoMandante', valore: requisito.regola.minimoMandante, valido: frazione });
       break;
     case 'ciascun_membro':
     case 'esecutore_prestazione':
     case 'almeno_un_membro':
+    case 'non_dichiarata':
       break;
     default:
-      assertNever(regola);
+      assertNever(requisito.regola);
   }
 
   return controlli
-    .filter((c): c is { parametro: string; valore: number; valido: (v: number) => boolean } => c.valore !== undefined && !c.valido(c.valore))
+    .filter((c): c is Controllo & { valore: number } => c.valore !== undefined && !c.valido(c.valore))
     .map((c) => creaAnomalia({ codice: 'parametro_requisito_non_valido', requisitoId: requisito.id, parametro: c.parametro, valore: c.valore }));
 }
 
-function anomalieRequisiti(lotto: Lotto): Anomalia[] {
+function ePossesso(criterio: Criterio): boolean {
+  switch (criterio.tipo) {
+    case 'dichiarazione':
+    case 'certificazione':
+    case 'iscrizione':
+    case 'non_determinato':
+      return true;
+    case 'fatturato':
+    case 'servizi':
+    case 'servizi_importo':
+      return false;
+    default:
+      return assertNever(criterio);
+  }
+}
+
+function anomalieRequisiti(lotto: Lotto, bando: Bando): Anomalia[] {
   const prestazioni = indicizza(lotto.prestazioni);
   const anomalie: Anomalia[] = [];
   for (const requisito of lotto.requisiti) {
-    const { regola, criterio } = requisito;
+    const { regola } = requisito;
     anomalie.push(...anomalieParametri(requisito));
+    anomalie.push(...varianti(requisito, bando).anomalie.map(creaAnomalia));
     switch (regola.tipo) {
       case 'somma_membri':
-        if (criterio.tipo === 'dichiarazione' || criterio.tipo === 'certificazione' || criterio.tipo === 'iscrizione') {
+        if (requisito.letture.some((l) => ePossesso(l.criterio))) {
           anomalie.push(creaAnomalia({ codice: 'regola_somma_su_criterio_di_possesso', requisitoId: requisito.id }));
         }
         break;
@@ -296,6 +367,7 @@ function anomalieRequisiti(lotto: Lotto): Anomalia[] {
         break;
       case 'ciascun_membro':
       case 'almeno_un_membro':
+      case 'non_dichiarata':
         break;
       default:
         assertNever(regola);
@@ -387,14 +459,16 @@ function raccogliAnomalie(parametri: ParametriValutazione, anomalieDeiFascicoli:
   const anomalie = [
     ...anomalieDate(parametri),
     ...anomalieIdentificativi(parametri.bando),
+    ...anomalieValori(parametri.bando),
     ...(lotto ? [] : [creaAnomalia({ codice: 'riferimento_inesistente', entita: 'lotto', id: parametri.lottoId })]),
     ...anomalieMembri(parametri),
   ];
   if (lotto) {
     anomalie.push(
+      ...anomaliePrestazioni(lotto),
       ...anomalieQuote(parametri, lotto),
       ...anomalieAvvalimenti(parametri, lotto),
-      ...anomalieRequisiti(lotto),
+      ...anomalieRequisiti(lotto, parametri.bando),
       ...anomalieVincolo(parametri, lotto),
     );
   }

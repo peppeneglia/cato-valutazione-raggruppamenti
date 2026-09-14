@@ -8,6 +8,12 @@
 //
 // Ogni parametro normativo è un dato: soglie, finestre temporali, minimi per
 // ruolo, avvalibilità, vincoli di esecuzione. Nulla è dedotto dal codice.
+//
+// E quando il documento NON dice — non dice come si compone un requisito,
+// non dice quale registro, scrive due valori diversi per la stessa cosa —
+// il modello lo rappresenta invece di scegliere in silenzio. Il caso reale
+// che ha imposto ogni variante è citato nel suo commento: disciplinare ASL
+// Roma 6, gara n. 9445747 (fornitura di farmaci e dispositivi da grossista).
 
 // ─────────────────────────────────────────────────────────────
 // Identificativi e date
@@ -52,8 +58,15 @@ export type Fatto<T> = Dato<T> & {
 // Bando, lotti, prestazioni
 // ─────────────────────────────────────────────────────────────
 
-/** Dichiarata dal disciplinare: serve ai raggruppamenti verticali. */
-export type NaturaPrestazione = 'principale' | 'scorporabile';
+/**
+ * Dichiarata dal disciplinare: serve ai raggruppamenti verticali.
+ * `indivisibile`: la gara non scompone l'appalto e chiede "la percentuale
+ * in caso di servizio/forniture indivisibili" (ASL Roma 6, §15.4 pp. 24–25).
+ * Il lotto ha allora una prestazione sola per l'intero importo, e le quote
+ * dei membri sono quella percentuale. È la parola del documento, non una
+ * convenzione nostra.
+ */
+export type NaturaPrestazione = 'principale' | 'scorporabile' | 'indivisibile';
 
 /** Le parti in cui si scompone l'oggetto del lotto. Servono per le quote. */
 export type Prestazione = {
@@ -87,14 +100,50 @@ export type Lotto = {
   vincoloPrestazionePrincipale?: VincoloPrestazionePrincipale;
 };
 
+/**
+ * Un valore del bando a cui i criteri possono rinviare per nome ("valore
+ * stimato dell'appalto", "importo a base d'asta"). Ha uno o più candidati,
+ * ciascuno con la propria fonte: più di uno significa che il documento lo
+ * scrive in modi diversi, e noi lo rappresentiamo invece di scegliere.
+ * Caso reale: ASL Roma 6, art. 3.2 p. 10 — € 966.144,50 nel testo,
+ * € 1.025.000,00 nella tabella sottostante.
+ */
+export type ValoreBando = {
+  nome: string;
+  candidati: Dato<number>[];   // euro; vuoto = anomalia bloccante
+};
+
+/**
+ * Il termine per chiedere chiarimenti alla stazione appaltante. È la data
+ * che conta quando un requisito è indeterminato: oltre, l'ambiguità resta
+ * a rischio del concorrente. L'ora è un dato mostrato, non calcolato: le
+ * date del modello sono giornaliere. Caso reale: ASL Roma 6, §2.2 p. 7,
+ * "ore 12:00 del 27/12/2023", risposte entro il 04/01/2024.
+ */
+export type TermineChiarimenti = {
+  data: DataISO;
+  ora?: string;
+  fonte: Fonte;
+  risposteEntro?: Dato<DataISO>;
+};
+
 export type Bando = {
   id: BandoId;
   oggetto: string;
   stazioneAppaltante: string;
-  dataPubblicazione: DataISO;
+  /**
+   * Opzionale perché può mancare nel documento, non per comodità: il
+   * disciplinare ASL Roma 6 (art. 1 p. 4) dice che il bando è stato
+   * "inviato per la pubblicazione" senza mai scrivere la data. Diventa
+   * un'anomalia solo se un criterio la richiede come ancoraggio.
+   */
+  dataPubblicazione?: DataISO;
   terminePresentazione: DataISO;
+  termineChiarimenti?: TermineChiarimenti;
   /** Dichiarata dal bando: NON è la somma dei lotti per definizione. */
   baseAsta: number;
+  /** I valori nominati a cui le soglie possono rinviare. */
+  valori: ValoreBando[];
   fonte: Fonte;
   /** Un bando monolotto è un bando con un lotto. Nessun caso speciale. */
   lotti: Lotto[];
@@ -119,8 +168,14 @@ export type Unita =
   | { tipo: 'euro' }
   | { tipo: 'conteggio'; sostantivo: Sostantivo };
 
-/** Da dove parte una finestra temporale "a ritroso": lo dice il disciplinare. */
-export type Ancoraggio = 'pubblicazione' | 'riferimento';
+/**
+ * Da dove parte una finestra temporale "a ritroso": lo dice il disciplinare.
+ * `non_dichiarato`: il documento dice "nell'ultimo triennio" senza dire da
+ * quando (ASL Roma 6, §6.3 b p. 14). Il motore usa allora l'unica data
+ * certa del bando, il termine di presentazione, e lo dichiara come
+ * assunzione con codice proprio.
+ */
+export type Ancoraggio = 'pubblicazione' | 'riferimento' | 'non_dichiarato';
 
 /** Un'unione, non una convenzione: "Globale" con la maiuscola non esiste. */
 export type AmbitoFatturato =
@@ -128,22 +183,48 @@ export type AmbitoFatturato =
   | { tipo: 'specifico'; settore: string };
 
 /**
+ * Una soglia in euro è un numero, oppure un rinvio per nome a un valore del
+ * bando: "almeno pari al valore stimato dell'appalto" (ASL Roma 6, §6.2 a
+ * p. 13), "non inferiore all'importo a base d'asta" (§6.3 b p. 14). Il
+ * rinvio si risolve sui candidati del valore: uno o più.
+ */
+export type Importo = number | { rinvio: string };
+
+/**
+ * Il periodo del fatturato: esercizi a ritroso da un ancoraggio, oppure
+ * anni di calendario fissati dal documento — "maturato complessivamente
+ * nel triennio 2020/2021/2022" (ASL Roma 6, §6.2 a p. 13).
+ */
+export type PeriodoFatturato =
+  | { tipo: 'a_ritroso'; esercizi: number; ancoraggio: Ancoraggio }
+  | { tipo: 'esercizi'; anni: number[] };
+
+/**
  * Quali fatti del fascicolo soddisfano il requisito.
  * La misura (soglia) sta nel criterio: l'unità discende dal tipo.
  * Criteri di possesso: dichiarazione, certificazione, iscrizione.
  * Criteri misurati: fatturato (euro), servizi (conteggio), servizi_importo (euro).
+ * `non_determinato`: il documento chiede qualcosa senza dire cosa lo
+ * soddisfi — "iscrizione in registri o albi se prescritta dalla
+ * legislazione vigente", senza nominare né il registro né la legge
+ * (ASL Roma 6, §6.1 b p. 13). Esce sempre da verificare, senza contributi.
+ *
+ * Il parametro `I` distingue il criterio come è scritto (soglie anche per
+ * rinvio) da quello risolto su cui il motore calcola (`CriterioRisolto`).
  */
-export type Criterio =
+export type Criterio<I = Importo> =
   | { tipo: 'dichiarazione'; oggetto: string }
   | {
       tipo: 'fatturato';
       ambito: AmbitoFatturato;
-      /** Esercizi da considerare a ritroso, escluso l'anno di ancoraggio. */
-      esercizi: number;
-      ancoraggio: Ancoraggio;
-      soglia: number;     // euro
+      periodo: PeriodoFatturato;
+      soglia: I;          // euro
     }
-  | { tipo: 'certificazione'; norma: string; scope?: string }
+  /**
+   * Più norme in alternativa: ne basta una. "UNI EN ISO 9001:2015 … e/o
+   * certificazione ISO 13485" (ASL Roma 6, §6.3 a pp. 13–14).
+   */
+  | { tipo: 'certificazione'; norme: readonly string[]; scope?: string }
   | {
       tipo: 'servizi';
       cpv: string;
@@ -160,7 +241,7 @@ export type Criterio =
       anni: number;
       ancoraggio: Ancoraggio;
       /** Filtro: i servizi sotto questo importo non contano. */
-      importoMinimoUnitario?: number;
+      importoMinimoUnitario?: I;
       numeroMinimo: number;
       /** Servizio di punta: `numeroMinimo: 1` con `importoMinimoUnitario`. */
       sostantivo: Sostantivo;
@@ -172,14 +253,38 @@ export type Criterio =
       cifreCpvComuni?: number;
       anni: number;
       ancoraggio: Ancoraggio;
-      importoMinimoUnitario?: number;
-      soglia: number;     // euro, somma degli importi dei servizi che contano
+      importoMinimoUnitario?: I;
+      soglia: I;          // euro, somma degli importi dei servizi che contano
     }
-  | { tipo: 'iscrizione'; registro: string; attivita?: string };
+  | { tipo: 'iscrizione'; registro: string; attivita?: string }
+  | { tipo: 'non_determinato'; testo: string };
+
+/** Il criterio su cui il motore calcola: ogni rinvio è già un numero. */
+export type CriterioRisolto = Criterio<number>;
+
+/**
+ * Una lettura del requisito: un criterio con, se le letture sono più di
+ * una, il testo che dice come si è letto il documento. Le forniture
+ * analoghe "di importo non inferiore all'importo a base d'asta" (ASL Roma
+ * 6, §6.3 b p. 14) ammettono due letture: un solo contratto sopra soglia,
+ * oppure la somma. Si usa quando il testo ammette letteralmente due letture
+ * ed entrambe sono esprimibili nei criteri; un dubbio non esprimibile è
+ * un'ambiguità dichiarata, non una lettura.
+ */
+export type Lettura = {
+  testo?: string;
+  criterio: Criterio;
+};
 
 /**
  * Come il requisito si compone quando i soggetti sono più di uno.
  * Letta dal disciplinare, MAI dedotta dal codice.
+ * `non_dichiarata`: il documento non lo dice. Il §6.4 (p. 14) del
+ * disciplinare ASL Roma 6 copre tre requisiti su sei: sui requisiti
+ * generali per i RTI, sui registri di settore e sulla certificazione ISO
+ * — a pena di esclusione — non dice chi debba possederli. Nessun operatore
+ * di default: il motore valuta ogni membro, mostra i contributi ed esce
+ * da verificare.
  */
 export type RegolaComposizione =
   /** Ogni membro deve soddisfarlo. Se manca a uno, salta tutto. */
@@ -194,13 +299,15 @@ export type RegolaComposizione =
   /** Lo devono possedere tutti i membri con quota > 0 su quella prestazione. */
   | { tipo: 'esecutore_prestazione'; prestazioneId: PrestazioneId }
   /** Basta che almeno un membro lo soddisfi. */
-  | { tipo: 'almeno_un_membro' };
+  | { tipo: 'almeno_un_membro' }
+  | { tipo: 'non_dichiarata' };
 
 export type Requisito = {
   id: RequisitoId;
   famiglia: FamigliaRequisito;
   descrizione: string;
-  criterio: Criterio;
+  /** Sempre una lista, anche quando è una: il motore cicla sempre. Vuota = anomalia. */
+  letture: Lettura[];
   regola: RegolaComposizione;
   /** Dato del disciplinare, non deduzione di legge. */
   avvalibile: boolean;
@@ -277,9 +384,8 @@ export type Raggruppamento = {
 
 /**
  * Tre stati, non due. "da_verificare" non è incertezza del motore: è il
- * motore che dichiara di non poter decidere perché servirebbe un giudizio
- * semantico (analogia di CPV, scope di una certificazione, attività di
- * un'iscrizione). Regola: scoperto se nemmeno il massimo raggiunge la
+ * motore che dichiara di non poter decidere, e dice perché nelle
+ * `indeterminatezze`. Regola: scoperto se nemmeno il massimo raggiunge la
  * soglia; coperto se bastano i certi; altrimenti da verificare.
  */
 export type StatoRequisito = 'coperto' | 'scoperto' | 'da_verificare';
@@ -330,12 +436,44 @@ export type Misurazione = {
  * Regole del motore, non del disciplinare, che possono incidere su un
  * esito. Il codice permette alla UI di raccoglierle in una legenda unica
  * e referenziarle dalle righe; il testo dice cosa è stato assunto qui.
+ * - `ancoraggio_termine_presentazione`: finestra "a ritroso" senza dies a
+ *   quo, ancorata al termine di presentazione.
+ * - `esito_concordante`: letture o candidati diversi nel testo ma
+ *   concordanti nell'esito: l'esito vale anche se il documento è ambiguo.
  */
-export type CodiceAssunzione = 'arrotondamento_minimi' | 'classe_cpv';
+export type CodiceAssunzione = 'arrotondamento_minimi' | 'classe_cpv' | 'ancoraggio_termine_presentazione' | 'esito_concordante';
 
 export type Assunzione = {
   codice: CodiceAssunzione;
   testo: string;
+};
+
+/** Lo stato di una variante, per nome: serve alle indeterminatezze discordanti. */
+export type EsitoVariante = { etichetta: string; stato: StatoRequisito };
+
+/**
+ * Perché il motore non può decidere. Due famiglie, due azioni:
+ * - il DOCUMENTO non lo dice (regola non dichiarata, criterio non
+ *   determinato, letture discordanti, valore contraddittorio): si chiedono
+ *   chiarimenti alla stazione appaltante, entro il termine;
+ * - serve un GIUDIZIO (scope, attività, CPV che non coincidono): una
+ *   persona legge il disciplinare e decide.
+ * Un requisito può averle entrambe: sulla gara ASL Roma 6 la ISO ha la
+ * regola non dichiarata e, per un membro, uno scope da valutare.
+ */
+export type Indeterminatezza =
+  | { tipo: 'regola_non_dichiarata' }
+  | { tipo: 'criterio_non_determinato'; testo: string }
+  | { tipo: 'letture_discordanti'; esiti: EsitoVariante[] }
+  | { tipo: 'valore_contraddittorio'; nome: string; esiti: EsitoVariante[] }
+  | { tipo: 'giudizio_richiesto'; soggettoId: SoggettoId; oggetto: string };
+
+/** L'esito di una variante (lettura × candidati), quando le varianti sono più di una. */
+export type EsitoVarianteCompleto = {
+  etichetta: string;
+  stato: StatoRequisito;
+  misurazione?: Misurazione;
+  motivazione: string;
 };
 
 export type EsitoRequisito = {
@@ -346,6 +484,9 @@ export type EsitoRequisito = {
   motivazione: string;
   /** Dichiarate una volta per requisito, anche se hanno inciso su più membri. */
   assunzioni: Assunzione[];
+  indeterminatezze: Indeterminatezza[];
+  /** Presente solo se le varianti sono più di una: trasparenza sulla fusione. */
+  varianti?: EsitoVarianteCompleto[];
   rimedi: Rimedio[];
 };
 
@@ -395,7 +536,17 @@ export type DettaglioAnomalia =
       esecutore: RuoloEsecutore;
       quotaMinima: number;
       quotaEffettiva: number;
-    };
+    }
+  /** Una soglia rinvia a un valore che il bando non nomina. */
+  | { codice: 'rinvio_a_valore_inesistente'; requisitoId: RequisitoId; nome: string }
+  /** Un valore nominato senza nemmeno un candidato: non c'è niente su cui calcolare. */
+  | { codice: 'valore_bando_senza_candidati'; nome: string }
+  /** Un criterio ancorato alla pubblicazione, ma il bando non ne scrive la data. */
+  | { codice: 'ancoraggio_a_pubblicazione_senza_data'; requisitoId: RequisitoId }
+  /** Una prestazione indivisibile è, per definizione, l'unica del lotto. */
+  | { codice: 'prestazione_indivisibile_non_unica'; lottoId: LottoId; prestazioneId: PrestazioneId }
+  /** Un requisito senza letture non si può valutare. */
+  | { codice: 'requisito_senza_letture'; requisitoId: RequisitoId };
 
 export type CodiceAnomalia = DettaglioAnomalia['codice'];
 
@@ -458,7 +609,8 @@ export type RimedioNonApplicabile =
   | {
       tipo: 'profilo_mancante';
       requisitoId: RequisitoId;
-      criterio: Criterio;
+      /** Della prima lettura, risolta: il profilo che manca in parole. */
+      criterio: CriterioRisolto;
       /** Nell'unità del criterio, se misurato. */
       mancante?: number;
     }
@@ -468,6 +620,21 @@ export type RimedioNonApplicabile =
       requisitoId: RequisitoId;
       fonte: Fonte;
       scadutoIl: DataISO;
+    }
+  /**
+   * Il documento non dice: si chiede alla stazione appaltante, un quesito
+   * per ogni indeterminatezza del documento, entro il termine del bando.
+   * Se il termine è decorso lo si dice, e il requisito resta da verificare:
+   * l'ambiguità va risolta a rischio del concorrente. Sulla gara ASL Roma 6
+   * (§2.2 p. 7) si applica a quattro requisiti su sei.
+   */
+  | {
+      tipo: 'richiesta_chiarimenti';
+      requisitoId: RequisitoId;
+      quesiti: string[];
+      termine?: { data: DataISO; ora?: string };
+      /** Vero se la data di riferimento è oltre il giorno del termine. Falso se il bando non lo fissa. */
+      decorso: boolean;
     };
 
 export type Rimedio = RimedioApplicabile | RimedioNonApplicabile;
@@ -475,11 +642,24 @@ export type Rimedio = RimedioApplicabile | RimedioNonApplicabile;
 export type VerdettoRaggiungibile = Exclude<Verdetto, 'non_ammissibile'>;
 
 /**
+ * Una mossa che non cambia il verdetto ma toglie una domanda aperta:
+ * rende coperto almeno un requisito residuo senza peggiorare il resto.
+ * Verificata per rivalutazione come ogni rimedio.
+ */
+export type Miglioramento = {
+  mossa: RimedioApplicabile;
+  requisitiRisolti: RequisitoId[];
+};
+
+/**
  * La sequenza più breve di mosse applicabili. Prima verso `ammissibile`;
  * se non esiste, verso `ammissibile_con_riserva` dichiarando i residui.
+ * Quando il verdetto massimo è già raggiunto ma qualche residuo si può
+ * togliere, i `miglioramenti` lo dicono: il percorso non deve sembrare
+ * inerte quando non lo è.
  */
 export type PercorsoMinimo =
-  | { esito: 'gia_ammissibile'; verdetto: VerdettoRaggiungibile; residui: RequisitoId[] }
+  | { esito: 'gia_ammissibile'; verdetto: VerdettoRaggiungibile; residui: RequisitoId[]; miglioramenti: Miglioramento[] }
   | {
       esito: 'trovato';
       mosse: RimedioApplicabile[];

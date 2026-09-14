@@ -6,10 +6,16 @@
 // Le mosse candidate sono finite e in ordine di invasività:
 // riassegnazione di quota, uscita, ingresso, avvalimento; a parità,
 // ordine alfabetico degli identificativi.
+//
+// Quando il documento non decide, il rimedio è chiederglielo: la
+// richiesta di chiarimenti non si verifica per rivalutazione, perché non
+// cambia i dati; dice però se il termine per chiederli è già decorso.
 
 import { assertNever } from '../assertNever';
 import type {
+  Bando,
   EsitoRequisito,
+  Indeterminatezza,
   Lotto,
   Membro,
   ParametriValutazione,
@@ -23,13 +29,14 @@ import type {
   StatoRequisito,
   VoceFascicolo,
 } from '../domain';
-import { valutaCriterio } from './criteri';
+import { confrontaDate } from './date';
 import { indicizza } from './indici';
 import { ausiliarieDi, esecutoriDi, type MembroEsecutore } from './membri';
 import { quotaPositiva, quotaSu } from './quote';
-import type { FattoScadutoDi } from './requisito';
+import { contributoDi, type FattoScadutoDi } from './requisito';
 import { eBloccante } from './validazione';
 import { valutaBase, type EsitoBase, type Memo } from './valutazione';
+import { variantiDi } from './varianti';
 import { fattoDiVoce } from './voci';
 
 export type Mossa = RimedioApplicabile;
@@ -88,20 +95,27 @@ function mosseIngresso(lotto: Lotto, esecutori: MembroEsecutore[], esterni: Sogg
   return mosse;
 }
 
-/** Il candidato copre davvero il requisito nel proprio fascicolo, con certezza. */
-function copreDaSolo(candidato: Soggetto, requisito: Requisito, parametri: ParametriValutazione): boolean {
-  const valore = valutaCriterio(requisito.criterio, candidato.fascicolo, {
-    dataRiferimento: parametri.dataRiferimento,
-    dataPubblicazione: parametri.bando.dataPubblicazione,
-  }).valore;
-  switch (valore.tipo) {
-    case 'possesso':
-      return valore.esito === 'posseduto';
-    case 'misura':
-      return valore.certo > 0;
-    default:
-      return assertNever(valore);
-  }
+/** Il candidato copre davvero il requisito nel proprio fascicolo, con certezza, sotto ogni variante. */
+function copreDaSolo(candidato: Soggetto, requisito: Requisito, parametri: ParametriValutazione, memo: Memo | undefined): boolean {
+  const { varianti } = variantiDi(requisito, parametri.bando, memo?.varianti);
+  if (varianti.length === 0) return false;
+  const contesto = {
+    criterio: { dataRiferimento: parametri.dataRiferimento, dataPubblicazione: parametri.bando.dataPubblicazione, terminePresentazione: parametri.bando.terminePresentazione },
+    memo: memo?.criteri,
+  };
+  return varianti.every((variante) => {
+    const grezzo = contributoDi(variante, candidato, contesto);
+    if (!grezzo) return false; // criterio non determinato: nessuno lo copre
+    const { valore } = grezzo;
+    switch (valore.tipo) {
+      case 'possesso':
+        return valore.esito === 'posseduto';
+      case 'misura':
+        return valore.certo > 0;
+      default:
+        return assertNever(valore);
+    }
+  });
 }
 
 /** A favore di chi va l'avvalimento: il membro la cui mancanza causa lo scoperto, altrimenti la mandataria. */
@@ -123,13 +137,14 @@ function ausiliateDi(requisito: Requisito, esitoRequisito: EsitoRequisito, esecu
       return sottoMinimo.length > 0 ? sottoMinimo : predefinita;
     }
     case 'almeno_un_membro':
+    case 'non_dichiarata':
       return predefinita;
     default:
       return assertNever(requisito.regola);
   }
 }
 
-function mosseAvvalimento(parametri: ParametriValutazione, lotto: Lotto, esito: EsitoBase, esterni: Soggetto[]): Mossa[] {
+function mosseAvvalimento(parametri: ParametriValutazione, lotto: Lotto, esito: EsitoBase, esterni: Soggetto[], memo: Memo | undefined): Mossa[] {
   const esecutori = esecutoriDi(parametri.raggruppamento);
   const ausiliarie = ausiliarieDi(parametri.raggruppamento);
   const esiti = new Map(esito.requisiti.map((r) => [r.requisitoId, r]));
@@ -151,7 +166,7 @@ function mosseAvvalimento(parametri: ParametriValutazione, lotto: Lotto, esito: 
     ];
 
     for (const { soggetto, soloPer } of perId(candidate.map((c) => ({ id: c.soggetto.id, ...c })))) {
-      if (!copreDaSolo(soggetto, requisito, parametri)) continue;
+      if (!copreDaSolo(soggetto, requisito, parametri, memo)) continue;
       for (const ausiliataId of ausiliate) {
         if (soloPer !== undefined && soloPer !== ausiliataId) continue;
         mosse.push({ tipo: 'avvalimento', requisitoId: requisito.id, ausiliariaId: soggetto.id, ausiliataId });
@@ -162,14 +177,14 @@ function mosseAvvalimento(parametri: ParametriValutazione, lotto: Lotto, esito: 
 }
 
 /** Tutte le mosse applicabili allo stato attuale, nell'ordine di invasività. */
-export function mosseCandidate(parametri: ParametriValutazione, lotto: Lotto, esito: EsitoBase): Mossa[] {
+export function mosseCandidate(parametri: ParametriValutazione, lotto: Lotto, esito: EsitoBase, memo?: Memo): Mossa[] {
   const esecutori = perSoggettoId(esecutoriDi(parametri.raggruppamento));
   const esterni = candidatiEsterni(parametri);
   return [
     ...mosseRiassegnazione(lotto, esecutori),
     ...mosseUscita(esecutori),
     ...mosseIngresso(lotto, esecutori, esterni),
-    ...mosseAvvalimento(parametri, lotto, esito, esterni),
+    ...mosseAvvalimento(parametri, lotto, esito, esterni, memo),
   ];
 }
 
@@ -278,6 +293,55 @@ function conFattoRinnovato(soggetti: Soggetto[], scaduto: FattoScadutoDi): Sogge
   });
 }
 
+// ─── Chiarimenti (non applicabile: il documento non decide) ──
+
+/** Le indeterminatezze che dipendono dal documento, non dal fascicolo. */
+export function delDocumento(i: Indeterminatezza): boolean {
+  switch (i.tipo) {
+    case 'regola_non_dichiarata':
+    case 'criterio_non_determinato':
+    case 'letture_discordanti':
+    case 'valore_contraddittorio':
+      return true;
+    case 'giudizio_richiesto':
+      return false;
+    default:
+      return assertNever(i);
+  }
+}
+
+/** Il quesito da porre alla stazione appaltante, in una frase. */
+export function quesitoDi(requisito: Requisito, indeterminatezza: Indeterminatezza): string {
+  const nome = `«${requisito.descrizione}»`;
+  switch (indeterminatezza.tipo) {
+    case 'regola_non_dichiarata':
+      return `In caso di raggruppamento temporaneo, da chi deve essere posseduto il requisito ${nome}: da ciascun componente, dalla sola mandataria o dal raggruppamento nel complesso?`;
+    case 'criterio_non_determinato':
+      return `Cosa soddisfa il requisito ${nome}, che il disciplinare formula come «${indeterminatezza.testo}» senza nominare un registro, una norma o un documento?`;
+    case 'letture_discordanti':
+      return `Per il requisito ${nome}, quale lettura vale: ${indeterminatezza.esiti.map((e) => `«${e.etichetta}»`).join(' oppure ')}?`;
+    case 'valore_contraddittorio':
+      return `Quale valore di «${indeterminatezza.nome}» vale per il requisito ${nome}: ${indeterminatezza.esiti.map((e) => e.etichetta).join(' oppure ')}?`;
+    case 'giudizio_richiesto':
+      return `Per il requisito ${nome}, è ammessa l'${indeterminatezza.oggetto}?`;
+    default:
+      return assertNever(indeterminatezza);
+  }
+}
+
+function richiestaChiarimenti(requisito: Requisito, esitoRequisito: EsitoRequisito, bando: Bando, dataRiferimento: string): Rimedio[] {
+  const quesiti = esitoRequisito.indeterminatezze.filter(delDocumento).map((i) => quesitoDi(requisito, i));
+  if (quesiti.length === 0) return [];
+  const termine = bando.termineChiarimenti;
+  return [{
+    tipo: 'richiesta_chiarimenti',
+    requisitoId: requisito.id,
+    quesiti,
+    ...(termine ? { termine: { data: termine.data, ...(termine.ora === undefined ? {} : { ora: termine.ora }) } } : {}),
+    decorso: termine !== undefined && confrontaDate(dataRiferimento, termine.data) > 0,
+  }];
+}
+
 // ─── Rimedi per requisito ────────────────────────────────────
 
 export type ScadutiPerRequisito = ReadonlyMap<RequisitoId, FattoScadutoDi[]>;
@@ -285,7 +349,9 @@ export type ScadutiPerRequisito = ReadonlyMap<RequisitoId, FattoScadutoDi[]>;
 /**
  * Per ogni requisito non coperto: le mosse che, applicate da sole, lo
  * rendono coperto senza peggiorare il resto; i rinnovi che, simulati,
- * lo coprirebbero; il profilo mancante se nessuna mossa esiste.
+ * lo coprirebbero; la richiesta di chiarimenti se il documento non
+ * decide; il profilo mancante se nessuna mossa esiste e il documento
+ * è chiaro.
  */
 export function rimediPerRequisito(
   parametri: ParametriValutazione,
@@ -296,7 +362,7 @@ export function rimediPerRequisito(
 ): Map<RequisitoId, Rimedio[]> {
   const requisiti = indicizza(lotto.requisiti);
   const risultato = new Map<RequisitoId, Rimedio[]>();
-  const mosse = mosseCandidate(parametri, lotto, esito);
+  const mosse = mosseCandidate(parametri, lotto, esito, memo);
   const esitiDopo = mosse.map((mossa) => ({ mossa, dopo: valutaDopo(parametri, mossa, memo) }));
 
   for (const esitoRequisito of esito.requisiti) {
@@ -321,11 +387,14 @@ export function rimediPerRequisito(
         scadutoIl: scaduto.fatto.scadutoIl,
       }));
 
-    const profilo: Rimedio[] = applicabili.length === 0
-      ? [{ tipo: 'profilo_mancante', requisitoId: requisito.id, criterio: requisito.criterio, mancante: esitoRequisito.misurazione?.delta }]
+    const chiarimenti = richiestaChiarimenti(requisito, esitoRequisito, parametri.bando, parametri.dataRiferimento);
+
+    const criterio = variantiDi(requisito, parametri.bando, memo?.varianti).varianti[0]?.criterio;
+    const profilo: Rimedio[] = applicabili.length === 0 && chiarimenti.length === 0 && criterio !== undefined
+      ? [{ tipo: 'profilo_mancante', requisitoId: requisito.id, criterio, mancante: esitoRequisito.misurazione?.delta }]
       : [];
 
-    risultato.set(requisito.id, [...applicabili, ...rinnovi, ...profilo]);
+    risultato.set(requisito.id, [...applicabili, ...rinnovi, ...chiarimenti, ...profilo]);
   }
   return risultato;
 }

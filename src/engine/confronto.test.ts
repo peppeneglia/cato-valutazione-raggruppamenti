@@ -3,14 +3,14 @@ import type { Esito, PercorsoMinimo } from '../domain';
 import { classifica, confrontaLotti, confrontaRaggruppamenti } from './confronto';
 import { bando, certificazione, esecutore, lotto, parametri, prestazione, raggruppamento, requisito, soggetto } from './prova';
 
-const ISO = { tipo: 'certificazione', norma: 'ISO 9001' } as const;
+const ISO = { tipo: 'certificazione', norme: ['ISO 9001'] } as const;
 
 function esito(verdetto: Esito['verdetto'], percorso: Esito['percorsoMinimo'], scoperti = 0): Esito {
-  const requisiti = Array.from({ length: scoperti }, (_, i) => ({ requisitoId: `r-${i}`, stato: 'scoperto' as const, contributi: [], motivazione: '', assunzioni: [], rimedi: [] }));
+  const requisiti = Array.from({ length: scoperti }, (_, i) => ({ requisitoId: `r-${i}`, stato: 'scoperto' as const, contributi: [], motivazione: '', assunzioni: [], indeterminatezze: [], rimedi: [] }));
   return { lottoId: 'l', valutatoAl: '2026-09-14', verdetto, requisiti, anomalie: [], avvisiScadenza: [], percorsoMinimo: percorso };
 }
 
-const GIA: PercorsoMinimo = { esito: 'gia_ammissibile', verdetto: 'ammissibile', residui: [] };
+const GIA: PercorsoMinimo = { esito: 'gia_ammissibile', verdetto: 'ammissibile', residui: [], miglioramenti: [] };
 const UNA_MOSSA: PercorsoMinimo = { esito: 'trovato', mosse: [{ tipo: 'uscita_soggetto', soggettoId: 's' }], verdettoRaggiunto: 'ammissibile', residui: [], segnalazioni: 0 };
 const DUE_MOSSE: PercorsoMinimo = { esito: 'trovato', mosse: [{ tipo: 'uscita_soggetto', soggettoId: 's' }, { tipo: 'uscita_soggetto', soggettoId: 't' }], verdettoRaggiunto: 'ammissibile', residui: [], segnalazioni: 0 };
 const INESISTENTE: PercorsoMinimo = { esito: 'inesistente', restanoScoperti: ['r'] };

@@ -1,30 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import type { Criterio } from '../domain';
-import { dataAncoraggio, sogliaInterna, unitaDi, valutaCriterio, type ContestoCriterio } from './criteri';
+
+import { dataAncoraggio, sogliaInterna, unitaDi, valutaCriterio, type ContestoCriterio, type CriterioValutabile } from './criteri';
 import { certificazione, dichiarazione, fatturato, fatturatoGlobale, iscrizione, REFERENZE, servizio } from './prova';
 
-const CONTESTO: ContestoCriterio = { dataRiferimento: '2026-09-14', dataPubblicazione: '2026-09-01' };
+const CONTESTO: ContestoCriterio = { dataRiferimento: '2026-09-14', dataPubblicazione: '2026-09-01', terminePresentazione: '2026-11-14' };
 
 describe('proprietà del criterio', () => {
   it('l’unità discende dal tipo', () => {
-    expect(unitaDi({ tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 1 })).toEqual({ tipo: 'euro' });
+    expect(unitaDi({ tipo: 'fatturato', ambito: { tipo: 'globale' }, periodo: { tipo: 'a_ritroso', esercizi: 3, ancoraggio: 'riferimento' }, soglia: 1 })).toEqual({ tipo: 'euro' });
     expect(unitaDi({ tipo: 'servizi', cpv: '1', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3, sostantivo: REFERENZE })).toEqual({ tipo: 'conteggio', sostantivo: REFERENZE });
     expect(unitaDi({ tipo: 'servizi_importo', cpv: '1', anni: 5, ancoraggio: 'riferimento', soglia: 1 })).toEqual({ tipo: 'euro' });
-    expect(unitaDi({ tipo: 'certificazione', norma: 'ISO 9001' })).toBeUndefined();
+    expect(unitaDi({ tipo: 'certificazione', norme: ['ISO 9001'] })).toBeUndefined();
   });
   it('la soglia interna è in centesimi per gli euro e 1 per il possesso', () => {
-    expect(sogliaInterna({ tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 3_000_000 })).toBe(300_000_000);
+    expect(sogliaInterna({ tipo: 'fatturato', ambito: { tipo: 'globale' }, periodo: { tipo: 'a_ritroso', esercizi: 3, ancoraggio: 'riferimento' }, soglia: 3_000_000 })).toBe(300_000_000);
     expect(sogliaInterna({ tipo: 'servizi', cpv: '1', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3, sostantivo: REFERENZE })).toBe(3);
     expect(sogliaInterna({ tipo: 'dichiarazione', oggetto: 'x' })).toBe(1);
   });
   it('l’ancoraggio sceglie tra pubblicazione e riferimento', () => {
-    expect(dataAncoraggio('pubblicazione', CONTESTO)).toBe('2026-09-01');
-    expect(dataAncoraggio('riferimento', CONTESTO)).toBe('2026-09-14');
+    expect(dataAncoraggio('pubblicazione', CONTESTO, 'finestra').data).toBe('2026-09-01');
+    expect(dataAncoraggio('riferimento', CONTESTO, 'finestra').data).toBe('2026-09-14');
   });
 });
 
 describe('criterio dichiarazione', () => {
-  const criterio: Criterio = { tipo: 'dichiarazione', oggetto: 'Assenza cause di esclusione' };
+  const criterio: CriterioValutabile = { tipo: 'dichiarazione', oggetto: 'Assenza cause di esclusione' };
 
   it('è posseduto con la dichiarazione resa e valida, e ne cita la fonte', () => {
     const c = valutaCriterio(criterio, [dichiarazione('assenza cause di esclusione')], CONTESTO);
@@ -42,48 +42,48 @@ describe('criterio dichiarazione', () => {
 
 describe('criterio certificazione', () => {
   it('senza scope richiesto basta la norma valida', () => {
-    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001' }, [certificazione('ISO 9001', 'qualsiasi')], CONTESTO);
+    const c = valutaCriterio({ tipo: 'certificazione', norme: ['ISO 9001'] }, [certificazione('ISO 9001', 'qualsiasi')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'posseduto' });
   });
   it('con scope coincidente è posseduto', () => {
-    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001', scope: 'assistenza tecnica' }, [certificazione('ISO 9001', 'Assistenza  tecnica')], CONTESTO);
+    const c = valutaCriterio({ tipo: 'certificazione', norme: ['ISO 9001'], scope: 'assistenza tecnica' }, [certificazione('ISO 9001', 'Assistenza  tecnica')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'posseduto' });
   });
   it('con scope diverso è da verificare, non scoperto: è un giudizio', () => {
-    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001', scope: 'assistenza tecnica' }, [certificazione('ISO 9001', 'erogazione formazione')], CONTESTO);
+    const c = valutaCriterio({ tipo: 'certificazione', norme: ['ISO 9001'], scope: 'assistenza tecnica' }, [certificazione('ISO 9001', 'erogazione formazione')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'da_verificare' });
     expect(c.usati).toHaveLength(1);
     expect(c.note).toEqual(['certificazione ISO 9001 con «erogazione formazione» invece di «assistenza tecnica»: equivalenza da valutare']);
   });
   it('tra più certificazioni valide vince quella con lo scope coincidente', () => {
-    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001', scope: 'produzione' }, [certificazione('ISO 9001', 'formazione'), certificazione('ISO 9001', 'produzione')], CONTESTO);
+    const c = valutaCriterio({ tipo: 'certificazione', norme: ['ISO 9001'], scope: 'produzione' }, [certificazione('ISO 9001', 'formazione'), certificazione('ISO 9001', 'produzione')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'posseduto' });
     expect(c.usati).toHaveLength(1);
   });
   it('senza la norma è assente', () => {
-    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 13485' }, [certificazione('ISO 9001', 'x')], CONTESTO);
+    const c = valutaCriterio({ tipo: 'certificazione', norme: ['ISO 13485'] }, [certificazione('ISO 9001', 'x')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'assente' });
   });
   it('è assente se scaduta, con la data di scadenza nella nota', () => {
-    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001' }, [certificazione('ISO 9001', 'x', '2026-09-13')], CONTESTO);
+    const c = valutaCriterio({ tipo: 'certificazione', norme: ['ISO 9001'] }, [certificazione('ISO 9001', 'x', '2026-09-13')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'assente' });
     expect(c.usati).toEqual([]);
     expect(c.note[0]).toContain('scaduto il 13/09/2026');
   });
   it('vale il giorno stesso della scadenza', () => {
-    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001' }, [certificazione('ISO 9001', 'x', '2026-09-14')], CONTESTO);
+    const c = valutaCriterio({ tipo: 'certificazione', norme: ['ISO 9001'] }, [certificazione('ISO 9001', 'x', '2026-09-14')], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'posseduto' });
   });
   it('non vale prima dell’inizio della validità', () => {
     const voce = certificazione('ISO 9001', 'x');
     if (voce.tipo === 'certificazione') voce.possesso.validoDa = '2026-10-01';
-    const c = valutaCriterio({ tipo: 'certificazione', norma: 'ISO 9001' }, [voce], CONTESTO);
+    const c = valutaCriterio({ tipo: 'certificazione', norme: ['ISO 9001'] }, [voce], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'possesso', esito: 'assente' });
     expect(c.note[0]).toContain('valido solo dal 01/10/2026');
   });
   it('lo stesso fascicolo valutato a due date dà esiti diversi', () => {
     const fascicolo = [certificazione('ISO 9001', 'x', '2026-04-30')];
-    const criterio: Criterio = { tipo: 'certificazione', norma: 'ISO 9001' };
+    const criterio: CriterioValutabile = { tipo: 'certificazione', norme: ['ISO 9001'] };
     expect(valutaCriterio(criterio, fascicolo, { ...CONTESTO, dataRiferimento: '2026-04-30' }).valore).toEqual({ tipo: 'possesso', esito: 'posseduto' });
     expect(valutaCriterio(criterio, fascicolo, { ...CONTESTO, dataRiferimento: '2026-05-01' }).valore).toEqual({ tipo: 'possesso', esito: 'assente' });
   });
@@ -105,7 +105,7 @@ describe('criterio iscrizione', () => {
 });
 
 describe('criterio fatturato', () => {
-  const specifico: Criterio = { tipo: 'fatturato', ambito: { tipo: 'specifico', settore: 'dispositivi medici' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 3_000_000 };
+  const specifico: CriterioValutabile = { tipo: 'fatturato', ambito: { tipo: 'specifico', settore: 'dispositivi medici' }, periodo: { tipo: 'a_ritroso', esercizi: 3, ancoraggio: 'riferimento' }, soglia: 3_000_000 };
 
   it('somma in centesimi gli esercizi nella finestra, con una fonte per esercizio', () => {
     const c = valutaCriterio(specifico, [fatturato(2023, 'dispositivi medici', 1_000_000.5), fatturato(2024, 'dispositivi medici', 0.25), fatturato(2025, 'dispositivi medici', 0.25)], CONTESTO);
@@ -127,20 +127,20 @@ describe('criterio fatturato', () => {
     expect(c.note).toEqual(['nessun fatturato nell\'ambito «dispositivi medici» per gli esercizi 2023–2025']);
   });
   it('l’ambito globale non si soddisfa con un fatturato specifico, e viceversa', () => {
-    const globale: Criterio = { ...specifico, ambito: { tipo: 'globale' } };
+    const globale: CriterioValutabile = { ...specifico, ambito: { tipo: 'globale' } };
     expect(valutaCriterio(globale, [fatturato(2025, 'dispositivi medici', 1)], CONTESTO).valore).toEqual({ tipo: 'misura', certo: 0, incerto: 0 });
     expect(valutaCriterio(globale, [fatturatoGlobale(2025, 1)], CONTESTO).valore).toEqual({ tipo: 'misura', certo: 100, incerto: 0 });
     expect(valutaCriterio(specifico, [fatturatoGlobale(2025, 1)], CONTESTO).valore).toEqual({ tipo: 'misura', certo: 0, incerto: 0 });
   });
   it('con ancoraggio alla pubblicazione la finestra parte da quell’anno', () => {
-    const contesto: ContestoCriterio = { dataRiferimento: '2027-01-10', dataPubblicazione: '2026-12-20' };
-    const c = valutaCriterio({ ...specifico, ancoraggio: 'pubblicazione', esercizi: 1 }, [fatturato(2025, 'dispositivi medici', 1), fatturato(2026, 'dispositivi medici', 2)], contesto);
+    const contesto: ContestoCriterio = { dataRiferimento: '2027-01-10', dataPubblicazione: '2026-12-20', terminePresentazione: '2026-11-14' };
+    const c = valutaCriterio({ ...specifico, periodo: { tipo: 'a_ritroso', esercizi: 1, ancoraggio: 'pubblicazione' } }, [fatturato(2025, 'dispositivi medici', 1), fatturato(2026, 'dispositivi medici', 2)], contesto);
     expect(c.valore).toEqual({ tipo: 'misura', certo: 100, incerto: 0 });
   });
 });
 
 describe('criterio servizi', () => {
-  const criterio: Criterio = { tipo: 'servizi', cpv: '33100000', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3, sostantivo: REFERENZE };
+  const criterio: CriterioValutabile = { tipo: 'servizi', cpv: '33100000', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3, sostantivo: REFERENZE };
 
   it('conta i servizi con CPV di gara come certi', () => {
     const c = valutaCriterio(criterio, [servizio('33100000', '2023-01-01', '2024-12-31'), servizio('33100000', '2024-03-01', '2025-06-30')], CONTESTO);
@@ -200,7 +200,7 @@ describe('criterio servizi', () => {
 });
 
 describe('criterio servizi_importo', () => {
-  const criterio: Criterio = { tipo: 'servizi_importo', cpv: '33100000', anni: 5, ancoraggio: 'riferimento', soglia: 1_000_000 };
+  const criterio: CriterioValutabile = { tipo: 'servizi_importo', cpv: '33100000', anni: 5, ancoraggio: 'riferimento', soglia: 1_000_000 };
 
   it('somma gli importi in centesimi, separando certi e incerti per CPV', () => {
     const c = valutaCriterio(criterio, [servizio('33100000', '2024-01-01', '2024-12-31', 900_000), servizio('50421000', '2024-01-01', '2024-12-31', 300_000.5)], CONTESTO);

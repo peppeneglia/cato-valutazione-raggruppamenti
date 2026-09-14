@@ -37,6 +37,7 @@ export const bando: Bando = {
   dataPubblicazione: '2026-09-01',
   terminePresentazione: '2026-11-14',
   baseAsta: 3_400_000,
+  valori: [],
   fonte: { documento: 'Bando di gara', riferimento: '[sezione da leggere]' },
   lotti: [
     {
@@ -55,7 +56,7 @@ export const bando: Bando = {
           id: 'l1-generale',
           famiglia: 'generale',
           descrizione: 'Assenza delle cause di esclusione',
-          criterio: { tipo: 'dichiarazione', oggetto: 'Assenza cause di esclusione' },
+          letture: [{ criterio: { tipo: 'dichiarazione', oggetto: 'Assenza cause di esclusione' } }],
           regola: { tipo: 'ciascun_membro' },
           avvalibile: false,
           vincolante: true,
@@ -65,7 +66,7 @@ export const bando: Bando = {
           id: 'l1-cciaa',
           famiglia: 'iscrizione',
           descrizione: 'Iscrizione al registro delle imprese (CCIAA)',
-          criterio: { tipo: 'iscrizione', registro: 'CCIAA' },
+          letture: [{ criterio: { tipo: 'iscrizione', registro: 'CCIAA' } }],
           regola: { tipo: 'ciascun_membro' },
           avvalibile: false,
           vincolante: true,
@@ -75,7 +76,7 @@ export const bando: Bando = {
           id: 'l1-fatturato',
           famiglia: 'economico',
           descrizione: 'Fatturato specifico nel settore oggetto di gara, ultimi tre esercizi',
-          criterio: { tipo: 'fatturato', ambito: { tipo: 'specifico', settore: SETTORE }, esercizi: 3, ancoraggio: 'pubblicazione', soglia: 3_000_000 },
+          letture: [{ criterio: { tipo: 'fatturato', ambito: { tipo: 'specifico', settore: SETTORE }, periodo: { tipo: 'a_ritroso', esercizi: 3, ancoraggio: 'pubblicazione' }, soglia: 3_000_000 } }],
           regola: { tipo: 'somma_membri', minimoMandataria: 0.4 },
           avvalibile: true,
           vincolante: true,
@@ -85,7 +86,7 @@ export const bando: Bando = {
           id: 'l1-iso-13485',
           famiglia: 'certificazione',
           descrizione: 'ISO 13485 per chi esegue la fornitura',
-          criterio: { tipo: 'certificazione', norma: 'ISO 13485' },
+          letture: [{ criterio: { tipo: 'certificazione', norme: ['ISO 13485'] } }],
           regola: { tipo: 'esecutore_prestazione', prestazioneId: 'l1-fornitura' },
           avvalibile: false,
           vincolante: true,
@@ -95,7 +96,7 @@ export const bando: Bando = {
           id: 'l1-iso-9001-manutenzione',
           famiglia: 'certificazione',
           descrizione: 'ISO 9001 con scope di assistenza tecnica per chi esegue la manutenzione',
-          criterio: { tipo: 'certificazione', norma: 'ISO 9001', scope: 'assistenza tecnica su apparecchiature elettromedicali' },
+          letture: [{ criterio: { tipo: 'certificazione', norme: ['ISO 9001'], scope: 'assistenza tecnica su apparecchiature elettromedicali' } }],
           regola: { tipo: 'esecutore_prestazione', prestazioneId: 'l1-manutenzione' },
           avvalibile: false,
           vincolante: true,
@@ -105,7 +106,7 @@ export const bando: Bando = {
           id: 'l1-iso-9001-formazione',
           famiglia: 'certificazione',
           descrizione: 'ISO 9001 con scope di formazione sanitaria per chi esegue la formazione',
-          criterio: { tipo: 'certificazione', norma: 'ISO 9001', scope: 'progettazione ed erogazione di formazione in ambito sanitario' },
+          letture: [{ criterio: { tipo: 'certificazione', norme: ['ISO 9001'], scope: 'progettazione ed erogazione di formazione in ambito sanitario' } }],
           regola: { tipo: 'esecutore_prestazione', prestazioneId: 'l1-formazione' },
           avvalibile: false,
           vincolante: true,
@@ -115,7 +116,7 @@ export const bando: Bando = {
           id: 'l1-referenze',
           famiglia: 'referenza',
           descrizione: 'Tre forniture analoghe nel quinquennio antecedente la pubblicazione',
-          criterio: {
+          letture: [{ criterio: {
             tipo: 'servizi',
             cpv: '33100000',
             // Il disciplinare dichiara equivalenti le apparecchiature per imaging.
@@ -129,7 +130,7 @@ export const bando: Bando = {
             ancoraggio: 'pubblicazione',
             numeroMinimo: 3,
             sostantivo: { singolare: 'fornitura analoga', plurale: 'forniture analoghe' },
-          },
+          } }],
           regola: { tipo: 'somma_membri' },
           avvalibile: true,
           vincolante: true,
@@ -152,7 +153,7 @@ export const bando: Bando = {
           id: 'l2-generale',
           famiglia: 'generale',
           descrizione: 'Assenza delle cause di esclusione',
-          criterio: { tipo: 'dichiarazione', oggetto: 'Assenza cause di esclusione' },
+          letture: [{ criterio: { tipo: 'dichiarazione', oggetto: 'Assenza cause di esclusione' } }],
           regola: { tipo: 'ciascun_membro' },
           avvalibile: false,
           vincolante: true,
@@ -162,7 +163,7 @@ export const bando: Bando = {
           id: 'l2-cciaa',
           famiglia: 'iscrizione',
           descrizione: 'Iscrizione CCIAA per il commercio di articoli medicali, per chi esegue la fornitura',
-          criterio: { tipo: 'iscrizione', registro: 'CCIAA', attivita: "commercio all'ingrosso di articoli medicali e ortopedici" },
+          letture: [{ criterio: { tipo: 'iscrizione', registro: 'CCIAA', attivita: "commercio all'ingrosso di articoli medicali e ortopedici" } }],
           regola: { tipo: 'esecutore_prestazione', prestazioneId: 'l2-fornitura' },
           avvalibile: false,
           vincolante: true,
@@ -172,7 +173,7 @@ export const bando: Bando = {
           id: 'l2-fatturato-globale',
           famiglia: 'economico',
           descrizione: 'Fatturato globale, ultimi tre esercizi',
-          criterio: { tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'pubblicazione', soglia: 1_800_000 },
+          letture: [{ criterio: { tipo: 'fatturato', ambito: { tipo: 'globale' }, periodo: { tipo: 'a_ritroso', esercizi: 3, ancoraggio: 'pubblicazione' }, soglia: 1_800_000 } }],
           regola: { tipo: 'somma_membri' },
           avvalibile: true,
           vincolante: true,
@@ -182,7 +183,7 @@ export const bando: Bando = {
           id: 'l2-iso-9001',
           famiglia: 'certificazione',
           descrizione: 'ISO 9001 per chi esegue la fornitura',
-          criterio: { tipo: 'certificazione', norma: 'ISO 9001' },
+          letture: [{ criterio: { tipo: 'certificazione', norme: ['ISO 9001'] } }],
           regola: { tipo: 'esecutore_prestazione', prestazioneId: 'l2-fornitura' },
           avvalibile: false,
           vincolante: true,
@@ -195,7 +196,7 @@ export const bando: Bando = {
           id: 'l2-servizi-importo',
           famiglia: 'referenza',
           descrizione: 'Forniture di arredi o apparecchiature sanitarie nel quinquennio per un importo complessivo non inferiore a 800.000 €',
-          criterio: {
+          letture: [{ criterio: {
             tipo: 'servizi_importo',
             cpv: '33192000',
             cpvEquivalenti: ['33100000'],
@@ -203,7 +204,7 @@ export const bando: Bando = {
             anni: 5,
             ancoraggio: 'pubblicazione',
             soglia: 800_000,
-          },
+          } }],
           regola: { tipo: 'somma_membri' },
           avvalibile: true,
           vincolante: true,
@@ -216,7 +217,7 @@ export const bando: Bando = {
           id: 'l2-punta',
           famiglia: 'referenza',
           descrizione: 'Una fornitura di arredi sanitari di importo non inferiore a 300.000 € nel quinquennio',
-          criterio: {
+          letture: [{ criterio: {
             tipo: 'servizi',
             cpv: '33192000',
             // Due cifre = divisione CPV (33 «apparecchiature mediche e vari»).
@@ -229,7 +230,7 @@ export const bando: Bando = {
             importoMinimoUnitario: 300_000,
             numeroMinimo: 1,
             sostantivo: { singolare: 'fornitura', plurale: 'forniture' },
-          },
+          } }],
           regola: { tipo: 'almeno_un_membro' },
           avvalibile: true,
           vincolante: true,
@@ -399,6 +400,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Richiesto a ciascun membro: tutti e 3 i membri lo possiedono.",
         "assunzioni": [],
+        "indeterminatezze": [],
         "rimedi": []
       },
       {
@@ -450,6 +452,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Richiesto a ciascun membro: tutti e 3 i membri lo possiedono.",
         "assunzioni": [],
+        "indeterminatezze": [],
         "rimedi": []
       },
       {
@@ -528,6 +531,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Somma dei contributi certi: 2.900.000 € su una soglia di 3.000.000 €: mancano 100.000 €. Contributi: Alfa Medical S.p.A. 2.100.000 €; Beta Service S.r.l. 600.000 €; Gamma Formazione S.r.l. 200.000 €. Minimo della mandataria: 40 % di 3.000.000 € = 1.200.000 €; Alfa Medical S.p.A. raggiunge 2.100.000 €.",
         "assunzioni": [],
+        "indeterminatezze": [],
         "rimedi": [
           {
             "tipo": "ingresso_soggetto",
@@ -641,6 +645,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Richiesto a chi esegue «Fornitura dispositivi elettromedicali», cioè Alfa Medical S.p.A. (100 %): Alfa Medical S.p.A. lo possiede.",
         "assunzioni": [],
+        "indeterminatezze": [],
         "rimedi": []
       },
       {
@@ -690,6 +695,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Richiesto a chi esegue «Manutenzione e assistenza tecnica», cioè Beta Service S.r.l. (100 %): manca a Beta Service S.r.l. (certificazione ISO 9001 — assistenza tecnica su apparecchiature elettromedicali: scaduto il 30/04/2026).",
         "assunzioni": [],
+        "indeterminatezze": [],
         "rimedi": [
           {
             "tipo": "ingresso_soggetto",
@@ -759,13 +765,22 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Richiesto a chi esegue «Formazione del personale sanitario», cioè Gamma Formazione S.r.l. (100 %): Gamma Formazione S.r.l. (certificazione ISO 9001 con «progettazione ed erogazione di corsi di formazione professionale» invece di «progettazione ed erogazione di formazione in ambito sanitario»: equivalenza da valutare) lo possiede con riserva. Il confronto che manca è un giudizio semantico: decide una persona, non il motore.",
         "assunzioni": [],
+        "indeterminatezze": [
+          {
+            "tipo": "giudizio_richiesto",
+            "soggettoId": "s-gamma",
+            "oggetto": "equivalenza tra «progettazione ed erogazione di corsi di formazione professionale» e «progettazione ed erogazione di formazione in ambito sanitario» (certificazione ISO 9001)"
+          }
+        ],
         "rimedi": [
           {
             "tipo": "profilo_mancante",
             "requisitoId": "l1-iso-9001-formazione",
             "criterio": {
               "tipo": "certificazione",
-              "norma": "ISO 9001",
+              "norme": [
+                "ISO 9001"
+              ],
               "scope": "progettazione ed erogazione di formazione in ambito sanitario"
             }
           }
@@ -825,6 +840,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
             "testo": "I servizi il cui CPV non condivide le prime 4 cifre con 33100000 o 33110000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
           }
         ],
+        "indeterminatezze": [],
         "rimedi": [
           {
             "tipo": "ingresso_soggetto",
@@ -961,6 +977,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Richiesto a ciascun membro: tutti e 3 i membri lo possiedono.",
         "assunzioni": [],
+        "indeterminatezze": [],
         "rimedi": []
       },
       {
@@ -1014,6 +1031,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Richiesto a chi esegue «Fornitura arredi sanitari», cioè Alfa Medical S.p.A. (100 %): Alfa Medical S.p.A. lo possiede.",
         "assunzioni": [],
+        "indeterminatezze": [],
         "rimedi": []
       },
       {
@@ -1068,6 +1086,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Somma dei contributi certi: 3.000.000 € su una soglia di 1.800.000 €: soglia raggiunta. Contributi: Alfa Medical S.p.A. 3.000.000 €; Beta Service S.r.l. 0 € (nessun fatturato nell'ambito globale per gli esercizi 2023–2025); Gamma Formazione S.r.l. 0 € (nessun fatturato nell'ambito globale per gli esercizi 2023–2025).",
         "assunzioni": [],
+        "indeterminatezze": [],
         "rimedi": [],
         "misurazione": {
           "unita": {
@@ -1126,6 +1145,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
         ],
         "motivazione": "Richiesto a chi esegue «Fornitura arredi sanitari», cioè Alfa Medical S.p.A. (100 %): Alfa Medical S.p.A. lo possiede. Gamma Formazione S.r.l. lo possiede ma non esegue la prestazione.",
         "assunzioni": [],
+        "indeterminatezze": [],
         "rimedi": []
       },
       {
@@ -1185,6 +1205,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
             "testo": "I servizi il cui CPV non condivide le prime 2 cifre con 33192000 o 33100000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
           }
         ],
+        "indeterminatezze": [],
         "rimedi": [],
         "misurazione": {
           "unita": {
@@ -1255,6 +1276,7 @@ export const esitoAtteso: Record<LottoId, Esito> = {
             "testo": "I servizi il cui CPV non condivide le prime 2 cifre con 33192000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
           }
         ],
+        "indeterminatezze": [],
         "rimedi": [],
         "misurazione": {
           "unita": {
@@ -1292,7 +1314,8 @@ export const esitoAtteso: Record<LottoId, Esito> = {
     "percorsoMinimo": {
       "esito": "gia_ammissibile",
       "verdetto": "ammissibile",
-      "residui": []
+      "residui": [],
+      "miglioramenti": []
     }
   }
 };

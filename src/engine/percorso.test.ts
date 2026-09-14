@@ -5,9 +5,9 @@ import { bando, certificazione, dichiarazione, esecutore, lotto, parametri, pres
 import { creaMemo, valutazione } from './valutazione';
 import { bando as bandoFixture, DATA_RIFERIMENTO, ORIZZONTE_SCADENZE_GIORNI, raggruppamento as raggruppamentoFixture, soggetti as soggettiFixture } from '../fixture';
 
-const ISO = { tipo: 'certificazione', norma: 'ISO 9001' } as const;
-const ISO_SCOPE = { tipo: 'certificazione', norma: 'ISO 9001', scope: 'giusto' } as const;
-const FATTURATO = { tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 1_000_000 } as const;
+const ISO = { tipo: 'certificazione', norme: ['ISO 9001'] } as const;
+const ISO_SCOPE = { tipo: 'certificazione', norme: ['ISO 9001'], scope: 'giusto' } as const;
+const FATTURATO = { tipo: 'fatturato', ambito: { tipo: 'globale' }, periodo: { tipo: 'a_ritroso', esercizi: 3, ancoraggio: 'riferimento' }, soglia: 1_000_000 } as const;
 const DICHIARAZIONE = { tipo: 'dichiarazione', oggetto: 'x' } as const;
 
 function cerca(requisiti: Requisito[], extra: Partial<ParametriValutazione>, lottoExtra: Partial<Lotto> = {}): PercorsoMinimo {
@@ -24,7 +24,7 @@ describe('percorsoMinimo', () => {
       soggetti: [soggetto('s-alfa'), soggetto('s-beta', [certificazione('ISO 9001', 'x')])],
       raggruppamento: alfaBeta,
     });
-    expect(esito).toEqual({ esito: 'gia_ammissibile', verdetto: 'ammissibile', residui: [] });
+    expect(esito).toEqual({ esito: 'gia_ammissibile', verdetto: 'ammissibile', residui: [], miglioramenti: [] });
   });
   it('è bloccato dalle anomalie bloccanti', () => {
     const esito = cerca([], { raggruppamento: raggruppamento([esecutore('s-a', 'mandante', { 'p-1': 1, 'p-2': 1 })]) });
@@ -115,7 +115,7 @@ describe('percorsoMinimo', () => {
     const esito = cerca(
       [
         requisito('r-scope', ISO_SCOPE, { tipo: 'esecutore_prestazione', prestazioneId: 'p-1' }),
-        requisito('r-iso', { tipo: 'certificazione', norma: 'ISO 13485' }, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' }),
+        requisito('r-iso', { tipo: 'certificazione', norme: ['ISO 13485'] }, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' }),
       ],
       {
         soggetti: [soggetto('s-alfa', [certificazione('ISO 9001', 'altro'), certificazione('ISO 13485', 'x')]), soggetto('s-beta'), soggetto('s-x')],
@@ -129,7 +129,7 @@ describe('percorsoMinimo', () => {
       soggetti: [soggetto('s-alfa', [certificazione('ISO 9001', 'altro')]), soggetto('s-beta'), soggetto('s-x')],
       raggruppamento: alfaBeta,
     });
-    expect(esito).toEqual({ esito: 'gia_ammissibile', verdetto: 'ammissibile_con_riserva', residui: ['r-scope'] });
+    expect(esito).toEqual({ esito: 'gia_ammissibile', verdetto: 'ammissibile_con_riserva', residui: ['r-scope'], miglioramenti: [] });
   });
   it('partendo da con riserva, se una mossa porta ad ammissibile la propone', () => {
     const esito = cerca([requisito('r-scope', ISO_SCOPE, { tipo: 'esecutore_prestazione', prestazioneId: 'p-1' })], {

@@ -1,6 +1,8 @@
 // Motivazioni in italiano. Il testo è il prodotto quanto il verdetto:
 // nomina tutti i membri sotto soglia, mostra i numeri da cui escono i
-// minimi, dichiara ciò che è un'assunzione del motore.
+// minimi, dichiara ciò che è un'assunzione del motore, e quando il
+// disciplinare non dice come si compone il requisito lo dice con quelle
+// parole, invece di fingere una regola.
 
 import { assertNever } from '../assertNever';
 import type { Assunzione, RegolaComposizione, RuoloEsecutore, SoggettoId, StatoRequisito, Unita, ValoreContributo } from '../domain';
@@ -28,11 +30,13 @@ export type DatiMotivazione = {
   unita: Unita | undefined;
   soglia: number;
   righe: RigaMotivazione[];
-  misurazione: MisurazioneGrezza;
+  /** Assente con la regola non dichiarata: niente si misura. */
+  misurazione?: MisurazioneGrezza;
   descrizionePrestazione?: string;
 };
 
 const GIUDIZIO = 'Il confronto che manca è un giudizio semantico: decide una persona, non il motore.';
+const NON_DICHIARATA = 'Il disciplinare non dice come il requisito si componga nel raggruppamento: nessuna regola è stata applicata.';
 
 // ─── Formattazione ───────────────────────────────────────────
 
@@ -111,6 +115,24 @@ function possessoAlmenoUno(righe: RigaMotivazione[]): string {
   return `nessun membro lo possiede (${elenco(righe.map((r) => conNote(nome(r), r.note)))})`;
 }
 
+/** Membro per membro, senza comporre: "Alfa lo possiede; Beta non lo possiede; Gamma lo possiede con riserva". */
+function possessoPerMembro(righe: RigaMotivazione[]): string {
+  if (righe.length === 0) return 'nessun membro';
+  return elenco(righe.map((r) => {
+    const esito = esitoPossesso(r.composto);
+    switch (esito) {
+      case 'posseduto':
+        return `${nome(r)} lo possiede`;
+      case 'da_verificare':
+        return conNote(`${nome(r)} lo possiede con riserva`, r.note);
+      case 'assente':
+        return conNote(`${nome(r)} non lo possiede`, r.note);
+      default:
+        return assertNever(esito);
+    }
+  }));
+}
+
 // ─── Misura ──────────────────────────────────────────────────
 
 function certoDi(valore: ValoreContributo): number {
@@ -182,8 +204,8 @@ function minimoDiRuolo(
   return `${intestazione}: ${calcolo}; ${elenco(raggiunti)}.`;
 }
 
-function somma(dati: DatiMotivazione): string {
-  const { misurazione, soglia, unita, righe, regola } = dati;
+function somma(dati: DatiMotivazione, misurazione: MisurazioneGrezza): string {
+  const { soglia, unita, righe, regola } = dati;
   const fmt = (v: number) => formattaValore(v, unita);
   const frasi: string[] = [];
 
@@ -250,20 +272,31 @@ function corpo(dati: DatiMotivazione): string {
       return frasi.join(' ');
     }
     case 'somma_membri':
-      return somma(dati);
+      return dati.misurazione ? somma(dati, dati.misurazione) : `Contributi: ${elenco(righe.map((r) => contributoDi(r, unita)))}.`;
     case 'almeno_un_membro': {
       const testo = misurato ? misuraAlmenoUno(righe, soglia, unita) : possessoAlmenoUno(righe);
       const intestazione = misurato ? `Basta un membro con almeno ${formattaValore(soglia, unita)}` : 'Basta un membro';
       return `${intestazione}: ${testo}.`;
+    }
+    case 'non_dichiarata': {
+      const perMembro = misurato
+        ? `Valori per membro, contro una soglia di ${formattaValore(soglia, unita)}: ${elenco(righe.map((r) => contributoDi(r, unita)))}.`
+        : `Per membro: ${possessoPerMembro(righe)}.`;
+      return `${NON_DICHIARATA} ${perMembro}`;
     }
     default:
       return assertNever(regola);
   }
 }
 
+/** Vero se lo stato dipende da un valore incerto di un membro conteggiato: serve un giudizio. */
+function serveGiudizio(dati: DatiMotivazione): boolean {
+  return dati.stato === 'da_verificare' && dati.righe.some((r) => r.conteggiato && incertoDi(r.composto) > 0);
+}
+
 export function componiMotivazione(dati: DatiMotivazione): string {
   const testo = corpo(dati);
-  return dati.stato === 'da_verificare' ? `${testo} ${GIUDIZIO}` : testo;
+  return serveGiudizio(dati) ? `${testo} ${GIUDIZIO}` : testo;
 }
 
 /** L'arrotondamento per eccesso dei minimi per ruolo è una regola del motore: va dichiarata. */

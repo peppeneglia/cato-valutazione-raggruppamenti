@@ -15,6 +15,7 @@ import { contributoDi } from './requisito';
 import { applicaMossa, mosseCandidate, type Mossa } from './rimedi';
 import { eBloccante } from './validazione';
 import { valutaBase, type EsitoBase, type Memo } from './valutazione';
+import { variantiDi } from './varianti';
 
 type Nodo = { raggruppamento: Raggruppamento; mosse: Mossa[]; esito: EsitoBase };
 
@@ -39,29 +40,41 @@ export function chiaveStato(raggruppamento: Raggruppamento): string {
  * Le mosse non inventano fatti: spostano soggetti e quote. Un requisito è
  * copribile solo se, tra TUTTI i soggetti disponibili, esiste chi lo
  * possiede con certezza (possesso) o la somma dei contributi certi
- * raggiunge la soglia (misura). Se un requisito non è copribile nemmeno
- * in teoria, `ammissibile` è irraggiungibile e la ricerca non deve
- * esplorare l'intero spazio per scoprirlo.
+ * raggiunge la soglia (misura), e questo sotto OGNI variante. Con la
+ * regola non dichiarata o il criterio non determinato nessuna mossa lo
+ * porta a coperto: è lo stesso ragionamento applicato ai casi nuovi.
+ * Se un requisito non è copribile nemmeno in teoria, `ammissibile` è
+ * irraggiungibile e la ricerca non deve esplorare tutto per scoprirlo.
  */
 function copribileInTeoria(requisito: Requisito, parametri: ParametriValutazione, memo: Memo | undefined): boolean {
-  const contesto = { criterio: { dataRiferimento: parametri.dataRiferimento, dataPubblicazione: parametri.bando.dataPubblicazione }, memo: memo?.criteri };
-  const soglia = sogliaInterna(requisito.criterio);
-  let somma = 0;
-  for (const soggetto of parametri.soggetti) {
-    const valore = contributoDi(requisito, soggetto, contesto).valore;
-    switch (valore.tipo) {
-      case 'possesso':
-        if (valore.esito === 'posseduto') return true;
-        break;
-      case 'misura':
-        somma += valore.certo;
-        if (somma >= soglia) return true;
-        break;
-      default:
-        assertNever(valore);
+  if (requisito.regola.tipo === 'non_dichiarata') return false;
+  const { varianti } = variantiDi(requisito, parametri.bando, memo?.varianti);
+  if (varianti.length === 0) return false;
+  const contesto = {
+    criterio: { dataRiferimento: parametri.dataRiferimento, dataPubblicazione: parametri.bando.dataPubblicazione, terminePresentazione: parametri.bando.terminePresentazione },
+    memo: memo?.criteri,
+  };
+  return varianti.every((variante) => {
+    if (variante.criterio.tipo === 'non_determinato') return false;
+    const soglia = sogliaInterna(variante.criterio);
+    let somma = 0;
+    for (const soggetto of parametri.soggetti) {
+      const valore = contributoDi(variante, soggetto, contesto)?.valore;
+      if (!valore) return false;
+      switch (valore.tipo) {
+        case 'possesso':
+          if (valore.esito === 'posseduto') return true;
+          break;
+        case 'misura':
+          somma += valore.certo;
+          if (somma >= soglia) return true;
+          break;
+        default:
+          assertNever(valore);
+      }
     }
-  }
-  return false;
+    return false;
+  });
 }
 
 function ammissibileRaggiungibile(parametri: ParametriValutazione, lotto: Lotto, memo: Memo | undefined): boolean {
@@ -98,6 +111,11 @@ function trovato(nodo: Nodo, verdettoRaggiunto: 'ammissibile' | 'ammissibile_con
   return { esito: 'trovato', mosse: nodo.mosse, verdettoRaggiunto, residui: residuiDi(nodo.esito), segnalazioni: nodo.esito.anomalie.length };
 }
 
+/** "Già raggiunto": i miglioramenti li aggiunge `valuta`, dai rimedi già verificati. */
+function giaRaggiunto(verdetto: 'ammissibile' | 'ammissibile_con_riserva', residui: RequisitoId[]): PercorsoMinimo {
+  return { esito: 'gia_ammissibile', verdetto, residui, miglioramenti: [] };
+}
+
 export type OpzioniRicerca = {
   /**
    * Se false, la ricerca ignora il limite teorico ed esplora tutto lo spazio.
@@ -116,12 +134,12 @@ export function percorsoMinimo(
   opzioni: OpzioniRicerca = OPZIONI_PREDEFINITE,
 ): PercorsoMinimo {
   if (iniziale.anomalie.some(eBloccante)) return { esito: 'bloccato_da_anomalie' };
-  if (iniziale.verdetto === 'ammissibile') return { esito: 'gia_ammissibile', verdetto: 'ammissibile', residui: [] };
+  if (iniziale.verdetto === 'ammissibile') return giaRaggiunto('ammissibile', []);
 
   const partenzaConRiserva = iniziale.verdetto === 'ammissibile_con_riserva';
   const cercaPieno = opzioni.limiteTeorico ? ammissibileRaggiungibile(parametri, lotto, memo) : true;
   if (partenzaConRiserva && !cercaPieno) {
-    return { esito: 'gia_ammissibile', verdetto: 'ammissibile_con_riserva', residui: residuiDi(iniziale) };
+    return giaRaggiunto('ammissibile_con_riserva', residuiDi(iniziale));
   }
 
   const visitati = new Set<string>([chiaveStato(parametri.raggruppamento)]);
@@ -136,7 +154,7 @@ export function percorsoMinimo(
 
     for (const nodo of livello) {
       const parametriNodo = { ...parametri, raggruppamento: nodo.raggruppamento };
-      for (const mossa of mosseCandidate(parametriNodo, lotto, nodo.esito)) {
+      for (const mossa of mosseCandidate(parametriNodo, lotto, nodo.esito, memo)) {
         const raggruppamento = applicaMossa(nodo.raggruppamento, mossa);
         const chiave = chiaveStato(raggruppamento);
         if (visitati.has(chiave)) continue;
@@ -166,6 +184,6 @@ export function percorsoMinimo(
   }
 
   if (migliorConRiserva) return trovato(migliorConRiserva, 'ammissibile_con_riserva');
-  if (partenzaConRiserva) return { esito: 'gia_ammissibile', verdetto: 'ammissibile_con_riserva', residui: residuiDi(iniziale) };
+  if (partenzaConRiserva) return giaRaggiunto('ammissibile_con_riserva', residuiDi(iniziale));
   return { esito: 'inesistente', restanoScoperti: [...restanoScoperti] };
 }

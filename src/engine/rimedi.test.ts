@@ -4,8 +4,8 @@ import { ausiliaria, bando, certificazione, esecutore, fatturato, lotto, paramet
 import { applicaMossa, mosseCandidate, peggiora, rimediPerRequisito, type Mossa } from './rimedi';
 import { valutazione } from './valutazione';
 
-const ISO = { tipo: 'certificazione', norma: 'ISO 9001' } as const;
-const FATTURATO = { tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 1_000_000 } as const;
+const ISO = { tipo: 'certificazione', norme: ['ISO 9001'] } as const;
+const FATTURATO = { tipo: 'fatturato', ambito: { tipo: 'globale' }, periodo: { tipo: 'a_ritroso', esercizi: 3, ancoraggio: 'riferimento' }, soglia: 1_000_000 } as const;
 
 /** Due prestazioni: Alfa esegue p-1, Beta p-2. ISO richiesta a chi esegue p-2. */
 function scenario(extra: Partial<ParametriValutazione> = {}, lottoExtra: Partial<Lotto> = {}): { p: ParametriValutazione; l: Lotto } {
@@ -138,7 +138,7 @@ describe('rimediPerRequisito', () => {
       { soggetti: [soggetto('s-alfa', [certificazione('ISO 9001', 'x')]), soggetto('s-beta', [certificazione('ISO 13485', 'x')]), soggetto('s-x', [certificazione('ISO 9001', 'x')])] },
       { requisiti: [
         requisito('r-iso', ISO, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' }),
-        requisito('r-13485', { tipo: 'certificazione', norma: 'ISO 13485' }, { tipo: 'almeno_un_membro' }),
+        requisito('r-13485', { tipo: 'certificazione', norme: ['ISO 13485'] }, { tipo: 'almeno_un_membro' }),
       ] },
     );
     const rimedi = rimediDi(p, l, 'r-iso');
@@ -156,7 +156,7 @@ describe('rimediPerRequisito', () => {
     expect(rimedi).toContainEqual({ tipo: 'rinnovo_documento', soggettoId: 's-beta', requisitoId: 'r-iso', fonte: expect.anything(), scadutoIl: '2026-04-30' });
   });
   it('non propone il rinnovo di un documento che, rinnovato, non coprirebbe', () => {
-    const scoped = { tipo: 'certificazione', norma: 'ISO 9001', scope: 'giusto' } as const;
+    const scoped = { tipo: 'certificazione', norme: ['ISO 9001'], scope: 'giusto' } as const;
     const { p, l } = scenario(
       { soggetti: [soggetto('s-alfa'), soggetto('s-beta', [certificazione('ISO 9001', 'sbagliato', '2026-04-30')]), soggetto('s-x')] },
       { requisiti: [requisito('r-iso', scoped, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' })] },
@@ -171,7 +171,7 @@ describe('rimediPerRequisito', () => {
     expect(rimediDi(p, l, 'r-fat')).toEqual([{ tipo: 'profilo_mancante', requisitoId: 'r-fat', criterio: FATTURATO, mancante: 1_000_000 }]);
   });
   it('calcola i rimedi anche per un requisito da verificare', () => {
-    const scoped = { tipo: 'certificazione', norma: 'ISO 9001', scope: 'giusto' } as const;
+    const scoped = { tipo: 'certificazione', norme: ['ISO 9001'], scope: 'giusto' } as const;
     const { p, l } = scenario(
       { soggetti: [soggetto('s-alfa', [certificazione('ISO 9001', 'giusto')]), soggetto('s-beta', [certificazione('ISO 9001', 'altro')]), soggetto('s-x')] },
       { requisiti: [requisito('r-iso', scoped, { tipo: 'esecutore_prestazione', prestazioneId: 'p-2' })] },

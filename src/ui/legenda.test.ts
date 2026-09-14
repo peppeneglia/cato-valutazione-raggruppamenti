@@ -3,7 +3,7 @@ import type { EsitoRequisito } from '../domain';
 import { legendaAssunzioni, siglaAssunzione } from './legenda';
 
 function requisito(id: string, assunzioni: EsitoRequisito['assunzioni']): EsitoRequisito {
-  return { requisitoId: id, stato: 'coperto', contributi: [], motivazione: '', assunzioni, rimedi: [] };
+  return { requisitoId: id, stato: 'coperto', contributi: [], motivazione: '', assunzioni, indeterminatezze: [], rimedi: [] };
 }
 
 describe('legendaAssunzioni', () => {

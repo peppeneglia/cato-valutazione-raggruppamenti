@@ -76,3 +76,12 @@ export type Periodo = { da: DataISO; a: DataISO };
 export function siSovrappongono(p: Periodo, q: Periodo): boolean {
   return p.da <= q.a && q.da <= p.a;
 }
+
+/** Giorni da `a` a `b`: positivi se `b` è successiva. Presuppone date valide. */
+export function giorniTra(a: DataISO, b: DataISO): number {
+  const ca = scomponi(a);
+  const cb = scomponi(b);
+  if (!ca || !cb) throw new Error(`Data malformata: ${!ca ? a : b}`);
+  const ms = Date.UTC(cb.anno, cb.mese - 1, cb.giorno) - Date.UTC(ca.anno, ca.mese - 1, ca.giorno);
+  return Math.round(ms / 86_400_000);
+}

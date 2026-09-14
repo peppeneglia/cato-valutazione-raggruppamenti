@@ -62,7 +62,7 @@ describe('fixture — fatti verificati a mano, indipendenti dall’esito generat
   });
   it('lotto 2: ammissibile, già senza mosse, con la ISO 9001 di Alfa in scadenza entro l’orizzonte', () => {
     expect(lotto2.verdetto).toBe('ammissibile');
-    expect(lotto2.percorsoMinimo).toEqual({ esito: 'gia_ammissibile', verdetto: 'ammissibile', residui: [] });
+    expect(lotto2.percorsoMinimo).toEqual({ esito: 'gia_ammissibile', verdetto: 'ammissibile', residui: [], miglioramenti: [] });
     expect(lotto2.avvisiScadenza).toEqual([expect.objectContaining({ soggettoId: 's-alfa', scadeIl: '2026-11-30', primaDelTermine: false, entroOrizzonte: true })]);
   });
   it('lotto 2: il servizio di punta scarta la formazione da 80.000 € e trova gli arredi da 450.000 €', () => {

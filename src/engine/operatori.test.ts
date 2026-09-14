@@ -67,8 +67,8 @@ describe('somma_membri', () => {
   it('è scoperto con il delta esatto quando nemmeno il massimo basta', () => {
     const e = componi({ tipo: 'somma_membri' }, [partecipante('a', 'mandataria', misura(200)), partecipante('b', 'mandante', misura(50, 10))], 300, PRESTAZIONI);
     expect(e.stato).toBe('scoperto');
-    expect(e.misurazione.delta).toBe(50);
-    expect(e.misurazione.massimo).toBe(260);
+    expect(e.misurazione?.delta).toBe(50);
+    expect(e.misurazione?.massimo).toBe(260);
   });
   it('è da verificare quando servono gli incerti per arrivare alla soglia', () => {
     const e = componi({ tipo: 'somma_membri' }, [partecipante('a', 'mandataria', misura(2)), partecipante('b', 'mandante', misura(0, 1))], 3, PRESTAZIONI);
@@ -78,18 +78,18 @@ describe('somma_membri', () => {
   it('minimo della mandataria sopra soglia: coperto, con il minimo registrato', () => {
     const e = componi({ tipo: 'somma_membri', minimoMandataria: 0.4 }, [partecipante('a', 'mandataria', misura(120)), partecipante('b', 'mandante', misura(180))], 300, PRESTAZIONI);
     expect(e.stato).toBe('coperto');
-    expect(e.misurazione.minimiRuolo).toEqual([{ soggettoId: 'a', ruolo: 'mandataria', richiesto: 120, raggiunto: 120, delta: 0 }]);
+    expect(e.misurazione?.minimiRuolo).toEqual([{ soggettoId: 'a', ruolo: 'mandataria', richiesto: 120, raggiunto: 120, delta: 0 }]);
   });
   it('minimo della mandataria sotto soglia: scoperto anche se il totale basta, con il delta del ruolo', () => {
     const e = componi({ tipo: 'somma_membri', minimoMandataria: 0.4 }, [partecipante('a', 'mandataria', misura(100)), partecipante('b', 'mandante', misura(300))], 300, PRESTAZIONI);
     expect(e.stato).toBe('scoperto');
-    expect(e.misurazione.delta).toBe(0);
-    expect(e.misurazione.minimiRuolo).toEqual([{ soggettoId: 'a', ruolo: 'mandataria', richiesto: 120, raggiunto: 100, delta: 20 }]);
+    expect(e.misurazione?.delta).toBe(0);
+    expect(e.misurazione?.minimiRuolo).toEqual([{ soggettoId: 'a', ruolo: 'mandataria', richiesto: 120, raggiunto: 100, delta: 20 }]);
   });
   it('minimo assente: nessun controllo sul ruolo', () => {
     const e = componi({ tipo: 'somma_membri' }, [partecipante('a', 'mandataria', misura(0)), partecipante('b', 'mandante', misura(300))], 300, PRESTAZIONI);
     expect(e.stato).toBe('coperto');
-    expect(e.misurazione.minimiRuolo).toEqual([]);
+    expect(e.misurazione?.minimiRuolo).toEqual([]);
   });
   it('il minimo della mandante si applica a ciascuna mandante, consorziate comprese', () => {
     const e = componi(
@@ -99,7 +99,7 @@ describe('somma_membri', () => {
       PRESTAZIONI,
     );
     expect(e.stato).toBe('scoperto');
-    expect(e.misurazione.minimiRuolo).toEqual([
+    expect(e.misurazione?.minimiRuolo).toEqual([
       { soggettoId: 'b', ruolo: 'mandante', richiesto: 30, raggiunto: 30, delta: 0 },
       { soggettoId: 'c', ruolo: 'consorziata_esecutrice', richiesto: 30, raggiunto: 10, delta: 20 },
     ]);
