@@ -7,16 +7,19 @@
 //
 // Cosa dimostra:
 // - Lotto 1 (dispositivi): NON ammissibile. ISO 9001 di Beta scaduta,
-//   fatturato sotto soglia di 100.000 €, referenze con CPV divergente
-//   (da verificare), scope di Gamma divergente (da verificare), vincolo di
-//   esecuzione della prestazione principale dichiarato e rispettato.
-//   Il percorso minimo richiede due mosse.
-// - Lotto 2 (arredi): ammissibile, con un avviso: la ISO 9001 di Alfa
+//   fatturato sotto soglia di 100.000 €, referenze scoperte perché gli
+//   arredi non sono della stessa classe CPV, scope di Gamma divergente
+//   (da verificare), vincolo di esecuzione della prestazione principale
+//   dichiarato e rispettato. Il percorso minimo è di due mosse e raggiunge
+//   "con riserva": lo scope di Gamma lo scioglie solo una persona.
+// - Lotto 2 (arredi): ammissibile, con CPV della stessa divisione da
+//   verificare sul servizio di punta e un avviso: la ISO 9001 di Alfa
 //   scade entro l'orizzonte. La ISO 13485 di Alfa (lotto 1) scade prima
 //   del termine di presentazione.
 // - Delta ed Epsilon non sono membri: sono i candidati reali della ricerca.
+//   Epsilon ha una referenza con CPV dichiarato equivalente: conta come certa.
 
-import type { Bando, Raggruppamento, Soggetto } from './domain';
+import type { Bando, Esito, LottoId, Raggruppamento, Soggetto } from './domain';
 
 const DISCIPLINARE = { documento: 'Disciplinare di gara', riferimento: '[art. da leggere]' };
 const CAPITOLATO = { documento: 'Capitolato tecnico', riferimento: '[art. da leggere]' };
@@ -313,3 +316,887 @@ export const raggruppamento: Raggruppamento = {
 
 export const DATA_RIFERIMENTO = '2026-09-14';
 export const ORIZZONTE_SCADENZE_GIORNI = 90;
+
+// ─── Esito atteso ────────────────────────────────────────────
+// GENERATO dal motore (`valuta`) su questa fixture, alla data di riferimento
+// e con l'orizzonte qui sopra, e letto riga per riga prima di essere fissato.
+// Non è scritto a mano: dove il motore cambia, questo cambia con lui e il
+// test di integrazione lo dice. Per rigenerarlo: `npm run fixture:esito`.
+
+export const esitoAtteso: Record<LottoId, Esito> = {
+  "lotto-1": {
+    "lottoId": "lotto-1",
+    "valutatoAl": "2026-09-14",
+    "verdetto": "non_ammissibile",
+    "requisiti": [
+      {
+        "requisitoId": "l1-generale",
+        "stato": "coperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "DGUE"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "DGUE"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "DGUE"
+              }
+            ]
+          }
+        ],
+        "motivazione": "Richiesto a ciascun membro: tutti e 3 i membri lo possiedono.",
+        "assunzioni": [],
+        "rimedi": []
+      },
+      {
+        "requisitoId": "l1-cciaa",
+        "stato": "coperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "visura camerale"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "visura camerale"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "visura camerale"
+              }
+            ]
+          }
+        ],
+        "motivazione": "Richiesto a ciascun membro: tutti e 3 i membri lo possiedono.",
+        "assunzioni": [],
+        "rimedi": []
+      },
+      {
+        "requisitoId": "l1-fatturato",
+        "stato": "scoperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "misura",
+              "certo": 2100000,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2023"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2024"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2025"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "misura",
+              "certo": 600000,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2023"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2024"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2025"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "misura",
+              "certo": 200000,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2023"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2024"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2025"
+              }
+            ]
+          }
+        ],
+        "motivazione": "Somma dei contributi certi: 2.900.000 € su una soglia di 3.000.000 €: mancano 100.000 €. Contributi: Alfa Medical S.p.A. 2.100.000 €; Beta Service S.r.l. 600.000 €; Gamma Formazione S.r.l. 200.000 €. Minimo della mandataria: 40 % di 3.000.000 € = 1.200.000 €; Alfa Medical S.p.A. raggiunge 2.100.000 €.",
+        "assunzioni": [],
+        "rimedi": [
+          {
+            "tipo": "ingresso_soggetto",
+            "soggettoId": "s-delta",
+            "ruolo": "mandante",
+            "quote": {}
+          },
+          {
+            "tipo": "ingresso_soggetto",
+            "soggettoId": "s-delta",
+            "ruolo": "mandante",
+            "quote": {
+              "l1-formazione": 1
+            },
+            "rilevateDa": "s-gamma"
+          },
+          {
+            "tipo": "ingresso_soggetto",
+            "soggettoId": "s-delta",
+            "ruolo": "mandante",
+            "quote": {
+              "l1-manutenzione": 1
+            },
+            "rilevateDa": "s-beta"
+          },
+          {
+            "tipo": "ingresso_soggetto",
+            "soggettoId": "s-epsilon",
+            "ruolo": "mandante",
+            "quote": {}
+          },
+          {
+            "tipo": "ingresso_soggetto",
+            "soggettoId": "s-epsilon",
+            "ruolo": "mandante",
+            "quote": {
+              "l1-manutenzione": 1
+            },
+            "rilevateDa": "s-beta"
+          },
+          {
+            "tipo": "avvalimento",
+            "requisitoId": "l1-fatturato",
+            "ausiliariaId": "s-delta",
+            "ausiliataId": "s-alfa"
+          },
+          {
+            "tipo": "avvalimento",
+            "requisitoId": "l1-fatturato",
+            "ausiliariaId": "s-epsilon",
+            "ausiliataId": "s-alfa"
+          }
+        ],
+        "misurazione": {
+          "unita": {
+            "tipo": "euro"
+          },
+          "soglia": 3000000,
+          "raggiunto": 2900000,
+          "massimo": 2900000,
+          "delta": 100000,
+          "minimiRuolo": [
+            {
+              "soggettoId": "s-alfa",
+              "ruolo": "mandataria",
+              "richiesto": 1200000,
+              "raggiunto": 2100000,
+              "delta": 0
+            }
+          ]
+        }
+      },
+      {
+        "requisitoId": "l1-iso-13485",
+        "stato": "coperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato ISO 13485"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "assente"
+            },
+            "conteggiato": false,
+            "fonti": [],
+            "nota": "non esegue la prestazione «Fornitura dispositivi elettromedicali»; nessuna certificazione ISO 13485 nel fascicolo"
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "assente"
+            },
+            "conteggiato": false,
+            "fonti": [],
+            "nota": "non esegue la prestazione «Fornitura dispositivi elettromedicali»; nessuna certificazione ISO 13485 nel fascicolo"
+          }
+        ],
+        "motivazione": "Richiesto a chi esegue «Fornitura dispositivi elettromedicali», cioè Alfa Medical S.p.A. (100 %): Alfa Medical S.p.A. lo possiede.",
+        "assunzioni": [],
+        "rimedi": []
+      },
+      {
+        "requisitoId": "l1-iso-9001-manutenzione",
+        "stato": "scoperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "da_verificare"
+            },
+            "conteggiato": false,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato ISO 9001"
+              }
+            ],
+            "nota": "non esegue la prestazione «Manutenzione e assistenza tecnica»; certificazione ISO 9001 con «produzione e commercializzazione di dispositivi medici» invece di «assistenza tecnica su apparecchiature elettromedicali»: equivalenza da valutare"
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "assente"
+            },
+            "conteggiato": true,
+            "fonti": [],
+            "nota": "certificazione ISO 9001 — assistenza tecnica su apparecchiature elettromedicali: scaduto il 30/04/2026"
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "da_verificare"
+            },
+            "conteggiato": false,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato ISO 9001"
+              }
+            ],
+            "nota": "non esegue la prestazione «Manutenzione e assistenza tecnica»; certificazione ISO 9001 con «progettazione ed erogazione di corsi di formazione professionale» invece di «assistenza tecnica su apparecchiature elettromedicali»: equivalenza da valutare"
+          }
+        ],
+        "motivazione": "Richiesto a chi esegue «Manutenzione e assistenza tecnica», cioè Beta Service S.r.l. (100 %): manca a Beta Service S.r.l. (certificazione ISO 9001 — assistenza tecnica su apparecchiature elettromedicali: scaduto il 30/04/2026).",
+        "assunzioni": [],
+        "rimedi": [
+          {
+            "tipo": "ingresso_soggetto",
+            "soggettoId": "s-delta",
+            "ruolo": "mandante",
+            "quote": {
+              "l1-manutenzione": 1
+            },
+            "rilevateDa": "s-beta"
+          },
+          {
+            "tipo": "rinnovo_documento",
+            "soggettoId": "s-beta",
+            "requisitoId": "l1-iso-9001-manutenzione",
+            "fonte": {
+              "documento": "Fascicolo aziendale",
+              "riferimento": "certificato ISO 9001"
+            },
+            "scadutoIl": "2026-04-30"
+          }
+        ]
+      },
+      {
+        "requisitoId": "l1-iso-9001-formazione",
+        "stato": "da_verificare",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "da_verificare"
+            },
+            "conteggiato": false,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato ISO 9001"
+              }
+            ],
+            "nota": "non esegue la prestazione «Formazione del personale sanitario»; certificazione ISO 9001 con «produzione e commercializzazione di dispositivi medici» invece di «progettazione ed erogazione di formazione in ambito sanitario»: equivalenza da valutare"
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "assente"
+            },
+            "conteggiato": false,
+            "fonti": [],
+            "nota": "non esegue la prestazione «Formazione del personale sanitario»; certificazione ISO 9001 — assistenza tecnica su apparecchiature elettromedicali: scaduto il 30/04/2026"
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "da_verificare"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato ISO 9001"
+              }
+            ],
+            "nota": "certificazione ISO 9001 con «progettazione ed erogazione di corsi di formazione professionale» invece di «progettazione ed erogazione di formazione in ambito sanitario»: equivalenza da valutare"
+          }
+        ],
+        "motivazione": "Richiesto a chi esegue «Formazione del personale sanitario», cioè Gamma Formazione S.r.l. (100 %): Gamma Formazione S.r.l. (certificazione ISO 9001 con «progettazione ed erogazione di corsi di formazione professionale» invece di «progettazione ed erogazione di formazione in ambito sanitario»: equivalenza da valutare) lo possiede con riserva. Il confronto che manca è un giudizio semantico: decide una persona, non il motore.",
+        "assunzioni": [],
+        "rimedi": [
+          {
+            "tipo": "profilo_mancante",
+            "requisitoId": "l1-iso-9001-formazione",
+            "criterio": {
+              "tipo": "certificazione",
+              "norma": "ISO 9001",
+              "scope": "progettazione ed erogazione di formazione in ambito sanitario"
+            }
+          }
+        ]
+      },
+      {
+        "requisitoId": "l1-referenze",
+        "stato": "scoperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "misura",
+              "certo": 2,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato di esecuzione ASL X"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato di esecuzione AO Y"
+              }
+            ],
+            "nota": "non analoghi per classe CPV, non contati: «Fornitura di arredi per reparto di degenza» (CPV 33192000)"
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "misura",
+              "certo": 0,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [],
+            "nota": "non analoghi per classe CPV, non contati: «Manutenzione di apparecchiature elettromedicali» (CPV 50421000)"
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "misura",
+              "certo": 0,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [],
+            "nota": "non analoghi per classe CPV, non contati: «Formazione del personale infermieristico» (CPV 80500000)"
+          }
+        ],
+        "motivazione": "Somma dei contributi certi: 2 forniture analoghe su una soglia di 3 forniture analoghe: mancano 1 fornitura analoga. Contributi: Alfa Medical S.p.A. 2 forniture analoghe (non analoghi per classe CPV, non contati: «Fornitura di arredi per reparto di degenza» (CPV 33192000)); Beta Service S.r.l. 0 forniture analoghe (non analoghi per classe CPV, non contati: «Manutenzione di apparecchiature elettromedicali» (CPV 50421000)); Gamma Formazione S.r.l. 0 forniture analoghe (non analoghi per classe CPV, non contati: «Formazione del personale infermieristico» (CPV 80500000)).",
+        "assunzioni": [
+          "I servizi il cui CPV non condivide le prime 4 cifre con 33100000 o 33110000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
+        ],
+        "rimedi": [
+          {
+            "tipo": "ingresso_soggetto",
+            "soggettoId": "s-epsilon",
+            "ruolo": "mandante",
+            "quote": {}
+          },
+          {
+            "tipo": "ingresso_soggetto",
+            "soggettoId": "s-epsilon",
+            "ruolo": "mandante",
+            "quote": {
+              "l1-manutenzione": 1
+            },
+            "rilevateDa": "s-beta"
+          },
+          {
+            "tipo": "avvalimento",
+            "requisitoId": "l1-referenze",
+            "ausiliariaId": "s-epsilon",
+            "ausiliataId": "s-alfa"
+          }
+        ],
+        "misurazione": {
+          "unita": {
+            "tipo": "conteggio",
+            "sostantivo": {
+              "singolare": "fornitura analoga",
+              "plurale": "forniture analoghe"
+            }
+          },
+          "soglia": 3,
+          "raggiunto": 2,
+          "massimo": 2,
+          "delta": 1,
+          "minimiRuolo": []
+        }
+      }
+    ],
+    "anomalie": [],
+    "avvisiScadenza": [
+      {
+        "soggettoId": "s-alfa",
+        "descrizioneVoce": "certificazione ISO 13485 — progettazione, produzione e commercializzazione di dispositivi medici",
+        "scadeIl": "2026-10-31",
+        "fonte": {
+          "documento": "Fascicolo aziendale",
+          "riferimento": "certificato ISO 13485"
+        },
+        "requisitiIds": [
+          "l1-iso-13485"
+        ],
+        "primaDelTermine": true,
+        "entroOrizzonte": true
+      }
+    ],
+    "percorsoMinimo": {
+      "esito": "trovato",
+      "mosse": [
+        {
+          "tipo": "ingresso_soggetto",
+          "soggettoId": "s-delta",
+          "ruolo": "mandante",
+          "quote": {
+            "l1-manutenzione": 1
+          },
+          "rilevateDa": "s-beta"
+        },
+        {
+          "tipo": "avvalimento",
+          "requisitoId": "l1-referenze",
+          "ausiliariaId": "s-epsilon",
+          "ausiliataId": "s-alfa"
+        }
+      ],
+      "verdettoRaggiunto": "ammissibile_con_riserva",
+      "residui": [
+        "l1-iso-9001-formazione"
+      ],
+      "segnalazioni": 1
+    }
+  },
+  "lotto-2": {
+    "lottoId": "lotto-2",
+    "valutatoAl": "2026-09-14",
+    "verdetto": "ammissibile",
+    "requisiti": [
+      {
+        "requisitoId": "l2-generale",
+        "stato": "coperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "DGUE"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "DGUE"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "DGUE"
+              }
+            ]
+          }
+        ],
+        "motivazione": "Richiesto a ciascun membro: tutti e 3 i membri lo possiedono.",
+        "assunzioni": [],
+        "rimedi": []
+      },
+      {
+        "requisitoId": "l2-cciaa",
+        "stato": "coperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "visura camerale"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "da_verificare"
+            },
+            "conteggiato": false,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "visura camerale"
+              }
+            ],
+            "nota": "non esegue la prestazione «Fornitura arredi sanitari»; iscrizione CCIAA con «manutenzione e riparazione di apparecchiature elettromedicali» invece di «commercio all'ingrosso di articoli medicali e ortopedici»: equivalenza da valutare"
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "da_verificare"
+            },
+            "conteggiato": false,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "visura camerale"
+              }
+            ],
+            "nota": "non esegue la prestazione «Fornitura arredi sanitari»; iscrizione CCIAA con «formazione professionale» invece di «commercio all'ingrosso di articoli medicali e ortopedici»: equivalenza da valutare"
+          }
+        ],
+        "motivazione": "Richiesto a chi esegue «Fornitura arredi sanitari», cioè Alfa Medical S.p.A. (100 %): Alfa Medical S.p.A. lo possiede.",
+        "assunzioni": [],
+        "rimedi": []
+      },
+      {
+        "requisitoId": "l2-fatturato-globale",
+        "stato": "coperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "misura",
+              "certo": 3000000,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2023"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2024"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "bilancio 2025"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "misura",
+              "certo": 0,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [],
+            "nota": "nessun fatturato nell'ambito globale per gli esercizi 2023–2025"
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "misura",
+              "certo": 0,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [],
+            "nota": "nessun fatturato nell'ambito globale per gli esercizi 2023–2025"
+          }
+        ],
+        "motivazione": "Somma dei contributi certi: 3.000.000 € su una soglia di 1.800.000 €: soglia raggiunta. Contributi: Alfa Medical S.p.A. 3.000.000 €; Beta Service S.r.l. 0 € (nessun fatturato nell'ambito globale per gli esercizi 2023–2025); Gamma Formazione S.r.l. 0 € (nessun fatturato nell'ambito globale per gli esercizi 2023–2025).",
+        "assunzioni": [],
+        "rimedi": [],
+        "misurazione": {
+          "unita": {
+            "tipo": "euro"
+          },
+          "soglia": 1800000,
+          "raggiunto": 3000000,
+          "massimo": 3000000,
+          "delta": 0,
+          "minimiRuolo": []
+        }
+      },
+      {
+        "requisitoId": "l2-iso-9001",
+        "stato": "coperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato ISO 9001"
+              }
+            ]
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "assente"
+            },
+            "conteggiato": false,
+            "fonti": [],
+            "nota": "non esegue la prestazione «Fornitura arredi sanitari»; certificazione ISO 9001 — assistenza tecnica su apparecchiature elettromedicali: scaduto il 30/04/2026"
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "possesso",
+              "esito": "posseduto"
+            },
+            "conteggiato": false,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato ISO 9001"
+              }
+            ],
+            "nota": "non esegue la prestazione «Fornitura arredi sanitari»"
+          }
+        ],
+        "motivazione": "Richiesto a chi esegue «Fornitura arredi sanitari», cioè Alfa Medical S.p.A. (100 %): Alfa Medical S.p.A. lo possiede. Gamma Formazione S.r.l. lo possiede ma non esegue la prestazione.",
+        "assunzioni": [],
+        "rimedi": []
+      },
+      {
+        "requisitoId": "l2-punta",
+        "stato": "coperto",
+        "contributi": [
+          {
+            "soggettoId": "s-alfa",
+            "valore": {
+              "tipo": "misura",
+              "certo": 1,
+              "incerto": 2
+            },
+            "conteggiato": true,
+            "fonti": [
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato di esecuzione ASL X"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato di esecuzione AO Y"
+              },
+              {
+                "documento": "Fascicolo aziendale",
+                "riferimento": "certificato di esecuzione AO Y — arredi"
+              }
+            ],
+            "nota": "servizio «Fornitura di apparecchiature elettromedicali» per ASL X: CPV 33100000 diverso da quello di gara 33192000, analogia da valutare; servizio «Fornitura di monitor multiparametrici» per AO Y: CPV 33100000 diverso da quello di gara 33192000, analogia da valutare"
+          },
+          {
+            "soggettoId": "s-beta",
+            "valore": {
+              "tipo": "misura",
+              "certo": 0,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [],
+            "nota": "non analoghi per classe CPV, non contati: «Manutenzione di apparecchiature elettromedicali» (CPV 50421000)"
+          },
+          {
+            "soggettoId": "s-gamma",
+            "valore": {
+              "tipo": "misura",
+              "certo": 0,
+              "incerto": 0
+            },
+            "conteggiato": true,
+            "fonti": [],
+            "nota": "servizio «Formazione del personale infermieristico» per ASL X: importo 80.000 € sotto il minimo unitario di 300.000 €"
+          }
+        ],
+        "motivazione": "Basta un membro con almeno 1 fornitura: il migliore è Alfa Medical S.p.A. con 1 fornitura.",
+        "assunzioni": [
+          "I servizi il cui CPV non condivide le prime 2 cifre con 33192000 sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare."
+        ],
+        "rimedi": [],
+        "misurazione": {
+          "unita": {
+            "tipo": "conteggio",
+            "sostantivo": {
+              "singolare": "fornitura",
+              "plurale": "forniture"
+            }
+          },
+          "soglia": 1,
+          "raggiunto": 1,
+          "massimo": 3,
+          "delta": 0,
+          "minimiRuolo": []
+        }
+      }
+    ],
+    "anomalie": [],
+    "avvisiScadenza": [
+      {
+        "soggettoId": "s-alfa",
+        "descrizioneVoce": "certificazione ISO 9001 — produzione e commercializzazione di dispositivi medici",
+        "scadeIl": "2026-11-30",
+        "fonte": {
+          "documento": "Fascicolo aziendale",
+          "riferimento": "certificato ISO 9001"
+        },
+        "requisitiIds": [
+          "l2-iso-9001"
+        ],
+        "primaDelTermine": false,
+        "entroOrizzonte": true
+      }
+    ],
+    "percorsoMinimo": {
+      "esito": "gia_ammissibile",
+      "verdetto": "ammissibile",
+      "residui": []
+    }
+  }
+};
