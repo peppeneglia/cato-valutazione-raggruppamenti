@@ -8,10 +8,12 @@ import type {
   Bando,
   CodiceAssunzione,
   CriterioRisolto,
+  Esito,
   FamigliaRequisito,
   GravitaAnomalia,
   Indeterminatezza,
   LottoId,
+  PercorsoMinimo,
   PrestazioneId,
   RequisitoId,
   Rimedio,
@@ -269,6 +271,185 @@ export function eApplicabile(rimedio: Rimedio): rimedio is RimedioApplicabile {
       return false;
     default:
       return assertNever(rimedio);
+  }
+}
+
+// ─── La frase del verdetto ───────────────────────────────────
+// Il verdetto è una conclusione, e le conclusioni si scrivono: una frase
+// che una persona leggerebbe ad alta voce a un collega. Tre forme di pari
+// rango: esiste una mossa; nessuna mossa e si chiedono chiarimenti entro
+// il termine; il termine è decorso e l'ambiguità resta a rischio.
+
+const IN_PAROLE = ['nessuno', 'uno', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto', 'nove', 'dieci'];
+
+/** "cinque", "una": i numeri piccoli si scrivono, nelle frasi. */
+export function inParole(n: number, femminile = false): string {
+  const parola = IN_PAROLE[n];
+  if (parola === undefined) return String(n);
+  return femminile && n === 1 ? 'una' : femminile && n === 0 ? 'nessuna' : parola;
+}
+
+function maiuscola(testo: string): string {
+  return testo.charAt(0).toUpperCase() + testo.slice(1);
+}
+
+/** Il nome senza la forma giuridica, solo dove si parla: "Grossfarma Centro-Sud". */
+export function nomeParlato(id: SoggettoId, contesto: ContestoDescrizioni): string {
+  return nomeSoggetto(id, contesto).replace(/\s+(S\.p\.A\.|S\.r\.l\.|S\.n\.c\.|S\.a\.s\.|S\.c\.a\.?\s?r\.l\.|S\.c\.r\.l\.|S\.r\.l\.s\.|SpA|Srl)\s*$/i, '');
+}
+
+function nomeBreveRequisito(id: RequisitoId, contesto: ContestoDescrizioni): string {
+  return contesto.bando.lotti.flatMap((l) => l.requisiti).find((r) => r.id === id)?.nomeBreve ?? id;
+}
+
+/** Vero se la prestazione è l'unica del suo lotto: nominarla non aggiunge niente. */
+function prestazioneUnica(id: PrestazioneId, contesto: ContestoDescrizioni): boolean {
+  const lotto = contesto.bando.lotti.find((l) => l.prestazioni.some((p) => p.id === id));
+  return lotto !== undefined && lotto.prestazioni.length === 1;
+}
+
+/** La mossa come la direbbe una persona: "far entrare Grossfarma al posto di Farmadistribuzione". */
+export function fraseMossa(mossa: RimedioApplicabile, contesto: ContestoDescrizioni): string {
+  switch (mossa.tipo) {
+    case 'riassegna_quota': {
+      const dove = prestazioneUnica(mossa.prestazioneId, contesto) ? '' : ` di «${nomePrestazione(mossa.prestazioneId, contesto)}»`;
+      return `spostare il ${formattaPercentuale(mossa.quota)}${dove} da ${nomeParlato(mossa.daSoggettoId, contesto)} a ${nomeParlato(mossa.aSoggettoId, contesto)}`;
+    }
+    case 'uscita_soggetto':
+      return `far uscire ${nomeParlato(mossa.soggettoId, contesto)}`;
+    case 'ingresso_soggetto': {
+      const quote = Object.entries(mossa.quote).filter(([, q]) => q > 0);
+      const chi = `far entrare ${nomeParlato(mossa.soggettoId, contesto)}`;
+      if (quote.length === 0) return `${chi} senza quote di esecuzione`;
+      const su = quote.every(([p]) => prestazioneUnica(p, contesto)) ? '' : ` su ${quote.map(([p]) => `«${nomePrestazione(p, contesto)}»`).join(' e ')}`;
+      const alPosto = mossa.rilevateDa === undefined ? '' : ` al posto di ${nomeParlato(mossa.rilevateDa, contesto)}`;
+      return `${chi}${su}${alPosto}`;
+    }
+    case 'avvalimento':
+      return `l'avvalimento di ${nomeParlato(mossa.ausiliariaId, contesto)} a favore di ${nomeParlato(mossa.ausiliataId, contesto)} su «${nomeBreveRequisito(mossa.requisitoId, contesto)}»`;
+    default:
+      return assertNever(mossa);
+  }
+}
+
+export type MossaProposta = { testo: string; mossa: RimedioApplicabile };
+
+export type FraseVerdetto = {
+  /** "Ammissibile con riserva." — la parola dello stato, e il lotto se ce n'è più d'uno. */
+  stato: string;
+  lotto?: string;
+  /** Quanti requisiti e perché: "Cinque requisiti su sei restano da verificare: su tre…". */
+  situazione?: string;
+  /** Il termine per i chiarimenti, quando è la cosa più urgente: aperto o decorso. */
+  scadenza?: { testo: string; decorsa: boolean };
+  /** La mossa (o le mosse) da provare, introdotte da una frase. */
+  azione?: string;
+  mosse: MossaProposta[];
+  residui?: string;
+  bloccanti: string[];
+  inCalcolo: boolean;
+};
+
+type Percorso = PercorsoMinimo | 'in_calcolo';
+
+function plurale(n: number, singolare: string, plurale: string): string {
+  return n === 1 ? singolare : plurale;
+}
+
+/** "Un requisito", "Cinque requisiti": l'apocope davanti al nome, la cifra in parole altrove. */
+function quanti(n: number, singolare: string, plurali: string): string {
+  return n === 1 ? `Un ${singolare}` : `${maiuscola(inParole(n))} ${plurali}`;
+}
+
+function situazioneDi(esito: Pick<Esito, 'requisiti'>, totale: number): string | undefined {
+  const scoperti = esito.requisiti.filter((r) => r.stato === 'scoperto');
+  const daVerificare = esito.requisiti.filter((r) => r.stato === 'da_verificare');
+  const frasi: string[] = [];
+  if (scoperti.length > 0) {
+    frasi.push(`${quanti(scoperti.length, 'requisito', 'requisiti')} su ${inParole(totale)} ${plurale(scoperti.length, 'è scoperto', 'sono scoperti')}.`);
+  }
+  if (daVerificare.length > 0) {
+    const regola = daVerificare.filter((r) => r.indeterminatezze.some((i) => i.tipo === 'regola_non_dichiarata')).length;
+    const documento = daVerificare.filter((r) => !r.indeterminatezze.some((i) => i.tipo === 'regola_non_dichiarata') && r.indeterminatezze.some((i) => i.tipo === 'criterio_non_determinato' || i.tipo === 'letture_discordanti' || i.tipo === 'valore_contraddittorio')).length;
+    const giudizio = daVerificare.length - regola - documento;
+    const perche: string[] = [];
+    if (regola > 0) perche.push(`su ${inParole(regola)} il disciplinare non dice chi debba ${plurale(regola, 'possederlo', 'possederli')} nel raggruppamento`);
+    if (documento > 0) perche.push(`su ${inParole(documento)} il documento ammette più letture`);
+    if (giudizio > 0) perche.push(`su ${inParole(giudizio)} serve un giudizio`);
+    const testa = `${quanti(daVerificare.length, 'requisito', 'requisiti')} su ${inParole(totale)} ${plurale(daVerificare.length, 'resta', 'restano')} da verificare`;
+    frasi.push(perche.length > 0 ? `${testa}: ${perche.join(', ')}.` : `${testa}.`);
+  }
+  if (frasi.length === 0 && totale > 0) frasi.push('Tutti i requisiti sono coperti.');
+  return frasi.length === 0 ? undefined : frasi.join(' ');
+}
+
+function scadenzaDi(esito: Pick<Esito, 'requisiti'>, bando: Bando, dataRiferimento: string, richiedeChiarimenti: (i: Indeterminatezza) => boolean): FraseVerdetto['scadenza'] {
+  const daChiedere = esito.requisiti.filter((r) => r.indeterminatezze.some(richiedeChiarimenti)).length;
+  if (daChiedere === 0) return undefined;
+  const su = `su ${inParole(daChiedere)} ${plurale(daChiedere, 'requisito', 'requisiti')}`;
+  const termine = bando.termineChiarimenti;
+  if (!termine) return { testo: `Il bando non fissa un termine per i chiarimenti: chiedili alla stazione appaltante ${su}.`, decorsa: false };
+  if (dataRiferimento > termine.data) {
+    return { testo: `Il termine per i chiarimenti è decorso il ${formattaData(termine.data)}: le ambiguità restano a rischio del concorrente.`, decorsa: true };
+  }
+  const fino = termine.ora === undefined ? `al ${formattaData(termine.data)}` : `alle ${termine.ora} del ${formattaData(termine.data)}`;
+  return { testo: `Hai tempo fino ${fino} per chiedere chiarimenti ${su}.`, decorsa: false };
+}
+
+function elencoBrevi(ids: RequisitoId[], contesto: ContestoDescrizioni): string {
+  return ids.map((id) => `«${nomeBreveRequisito(id, contesto)}»`).join(', ');
+}
+
+export function fraseVerdetto(p: {
+  bando: Bando;
+  lottoId: LottoId;
+  esito: Pick<Esito, 'verdetto' | 'requisiti' | 'anomalie'>;
+  percorso: Percorso;
+  dataRiferimento: string;
+  contesto: ContestoDescrizioni;
+  richiedeChiarimenti: (i: Indeterminatezza) => boolean;
+}): FraseVerdetto {
+  const { bando, lottoId, esito, percorso, dataRiferimento, contesto, richiedeChiarimenti } = p;
+  const lotto = bando.lotti.find((l) => l.id === lottoId);
+  const base: FraseVerdetto = {
+    stato: etichettaVerdetto(esito.verdetto),
+    lotto: bando.lotti.length > 1 ? `sul ${nomeLotto(bando, lottoId)}` : undefined,
+    mosse: [],
+    bloccanti: esito.anomalie.filter((a) => a.gravita === 'bloccante').map((a) => a.messaggio),
+    inCalcolo: false,
+  };
+  if (base.bloccanti.length > 0) {
+    const n = base.bloccanti.length;
+    return { ...base, situazione: `Prima sistema i dati: ${n} ${plurale(n, 'anomalia bloccante', 'anomalie bloccanti')}.` };
+  }
+  const totale = lotto?.requisiti.length ?? esito.requisiti.length;
+  const situazione = situazioneDi(esito, totale);
+  const scadenza = scadenzaDi(esito, bando, dataRiferimento, richiedeChiarimenti);
+
+  if (percorso === 'in_calcolo') return { ...base, situazione, scadenza, inCalcolo: true };
+
+  switch (percorso.esito) {
+    case 'bloccato_da_anomalie':
+      return { ...base, situazione };
+    case 'trovato': {
+      const n = percorso.mosse.length;
+      const dove = percorso.verdettoRaggiunto === 'ammissibile' ? 'dentro' : 'ad ammissibile con riserva';
+      const azione = n === 1 ? `Una mossa ti porta ${dove}:` : `${maiuscola(inParole(n))} mosse ti portano ${dove}:`;
+      const residui = percorso.residui.length === 0 ? undefined : `Resta da verificare a mano: ${elencoBrevi(percorso.residui, contesto)}.`;
+      return { ...base, situazione, scadenza, azione, mosse: percorso.mosse.map((mossa) => ({ testo: maiuscola(fraseMossa(mossa, contesto)), mossa })), residui };
+    }
+    case 'gia_ammissibile': {
+      const { miglioramenti } = percorso;
+      if (miglioramenti.length === 0) return { ...base, situazione, scadenza };
+      const risolti = [...new Set(miglioramenti.flatMap((m) => m.requisitiRisolti))];
+      const n = miglioramenti.length;
+      const azione = `${n === 1 ? 'Una mossa toglierebbe' : `${maiuscola(inParole(n))} mosse toglierebbero`} anche l'incertezza su ${elencoBrevi(risolti, contesto)}:`;
+      return { ...base, situazione, scadenza, azione, mosse: miglioramenti.map((m) => ({ testo: maiuscola(fraseMossa(m.mossa, contesto)), mossa: m.mossa })) };
+    }
+    case 'inesistente':
+      return { ...base, situazione, scadenza, azione: `Nessuna mossa con i soggetti disponibili ti porta dentro. Restano scoperti: ${elencoBrevi(percorso.restanoScoperti, contesto)}.` };
+    default:
+      return assertNever(percorso);
   }
 }
 

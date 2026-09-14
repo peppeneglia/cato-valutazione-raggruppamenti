@@ -73,12 +73,12 @@ describe('pagina — il documento che non decide', () => {
     expect(within(fatturato).getByText(/Il bando scrive «valore stimato dell'appalto» in più modi/)).toBeTruthy();
     expect(within(fatturato).getAllByText(/^valore stimato dell'appalto = /)).toHaveLength(3);
   });
-  it('il percorso nomina la mossa che toglie un’incertezza, e provarla copre il fatturato', async () => {
+  it('la mossa proposta nel blocco del verdetto si prova da lì, e copre il fatturato', async () => {
     const user = userEvent.setup();
     render(<App />);
-    const percorso = regione('Percorso minimo');
-    expect(await within(percorso).findByText(/mosse però tolgono un'incertezza su «Fatturato globale/, undefined, LENTO)).toBeTruthy();
-    const prove = within(percorso).getAllByRole('button', { name: 'Prova' });
+    const verdetto = regione('Verdetto');
+    expect(await within(verdetto).findByText(/toglierebbero anche l'incertezza su «Fatturato globale»/, undefined, LENTO)).toBeTruthy();
+    const prove = within(verdetto).getAllByRole('button', { name: 'Prova' });
     await user.click(prove[prove.length - 1] as HTMLElement);
     expect(within(riga('fatturato-globale')).getByText('Coperto')).toBeTruthy();
     expect(within(regione('Modifiche')).getByText(/^Prova: Avvalimento di Grossfarma/)).toBeTruthy();
@@ -93,8 +93,8 @@ describe('pagina — quote', () => {
     await user.clear(input);
     await user.type(input, '0');
     expect(within(regione('Anomalie nei dati')).getByText(/totalizzano 75\s% invece del 100/)).toBeTruthy();
-    expect(within(regione('Verdetto')).getByText(/1 anomalia bloccante/)).toBeTruthy();
-    expect(within(regione('Percorso minimo')).queryByText(/Calcolo del percorso/)).toBeTruthy();
+    expect(within(regione('Verdetto')).getByText(/Prima sistema i dati: 1 anomalia bloccante/)).toBeTruthy();
+    expect(within(regione('Verdetto')).getByText(/totalizzano 75\s% invece del 100/)).toBeTruthy();
   });
   it('la bozza locale: un testo non numerico è segnalato, non inviato, e al blur torna il valore reale', async () => {
     const user = userEvent.setup();
@@ -148,12 +148,25 @@ describe('pagina — prove e annullamento', () => {
     expect(await within(confronto).findByText('Composizione attuale', undefined, LENTO)).toBeTruthy();
     expect(within(confronto).getByText("Prima dell'ultima prova")).toBeTruthy();
   });
-  it('il percorso minimo dice che il massimo raggiungibile è già raggiunto e nomina i residui', async () => {
+  it('il blocco del verdetto dice la situazione in parole, la scadenza dei chiarimenti, e poi la mossa che toglie un’incertezza', async () => {
     render(<App />);
-    const percorso = regione('Percorso minimo');
-    expect(within(percorso).getByRole('status').textContent).toContain('Calcolo del percorso minimo in corso');
-    expect(await within(percorso).findByText(/Nessuna mossa necessaria/, undefined, LENTO)).toBeTruthy();
-    expect(within(percorso).getByText(/Restano da risolvere fuori dallo strumento/)).toBeTruthy();
+    const verdetto = regione('Verdetto');
+    expect(within(verdetto).getByText('Ammissibile con riserva')).toBeTruthy();
+    expect(within(verdetto).getByText('Cinque requisiti su sei restano da verificare: su tre il disciplinare non dice chi debba possederli nel raggruppamento, su uno il documento ammette più letture, su uno serve un giudizio.')).toBeTruthy();
+    expect(within(verdetto).getByText('Hai tempo fino alle 12:00 del 27/12/2023 per chiedere chiarimenti su cinque requisiti.')).toBeTruthy();
+    expect(within(verdetto).getByRole('status').textContent).toContain('Calcolo del percorso minimo in corso');
+    expect(await within(verdetto).findByText('Due mosse toglierebbero anche l\'incertezza su «Fatturato globale»:', undefined, LENTO)).toBeTruthy();
+    // Su una prestazione indivisibile ogni ripartizione lascia qualcuno a zero: la mossa è "far entrare", le quote le decide chi usa lo strumento.
+    expect(within(verdetto).getByText('Far entrare Grossfarma Centro-Sud senza quote di esecuzione')).toBeTruthy();
+    expect(within(verdetto).getByText('L\'avvalimento di Grossfarma Centro-Sud a favore di Farmadistribuzione Laziale su «Fatturato globale»')).toBeTruthy();
+  });
+  it('oltre il termine dei chiarimenti il blocco lo dice, in rosso e non come lapide', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const data = screen.getByLabelText('Data di riferimento');
+    await user.clear(data);
+    await user.type(data, '2024-01-08');
+    expect(within(regione('Verdetto')).getByText('Il termine per i chiarimenti è decorso il 27/12/2023: le ambiguità restano a rischio del concorrente.')).toBeTruthy();
   });
 });
 
@@ -209,6 +222,8 @@ describe('pagina — membri e ausiliarie', () => {
     if (!rigaMandataria) throw new Error('riga della mandataria non trovata');
     await user.click(within(rigaMandataria).getByRole('button', { name: 'Rimuovi' }));
     expect(within(regione('Anomalie nei dati')).getByText(/non ha una mandataria/)).toBeTruthy();
-    await waitFor(() => expect(within(regione('Percorso minimo')).getByText(/Il percorso non si calcola finché ci sono anomalie bloccanti/)).toBeTruthy(), LENTO);
+    expect(within(regione('Verdetto')).getByText('Non ammissibile')).toBeTruthy();
+    // Senza mandataria le quote non totalizzano più il 100 %: due anomalie bloccanti, non una.
+    await waitFor(() => expect(within(regione('Verdetto')).getByText(/Prima sistema i dati: 2 anomalie bloccanti/)).toBeTruthy(), LENTO);
   });
 });

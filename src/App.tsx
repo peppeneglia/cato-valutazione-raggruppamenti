@@ -15,20 +15,21 @@ import { valutaBase } from './engine';
 import { bando, DATA_RIFERIMENTO, DICHIARAZIONE_DATI, ORIZZONTE_SCADENZE_GIORNI, raggruppamento, soggetti } from './fixture';
 import { trovaLotto } from './engine/indici';
 import { formattaData } from './formato';
+import { fraseVerdetto } from './descrizioni';
+import { richiedeChiarimenti } from './engine/rimedi';
 import { Anomalie } from './ui/Anomalie';
 import { Assunzioni } from './ui/Assunzioni';
 import { Avvisi } from './ui/Avvisi';
 import { BarraLotti } from './ui/BarraLotti';
+import { BloccoVerdetto } from './ui/BloccoVerdetto';
 import { Composizione } from './ui/Composizione';
 import { ConfrontoLotti } from './ui/ConfrontoLotti';
 import { ConfrontoProva } from './ui/ConfrontoProva';
 import { IntestazioneBando } from './ui/IntestazioneBando';
 import { legendaAssunzioni } from './ui/legenda';
 import { NonValutato } from './ui/NonValutato';
-import { PercorsoMinimo } from './ui/PercorsoMinimo';
 import { Storia } from './ui/Storia';
 import { TabellaEsito } from './ui/TabellaEsito';
-import { Verdetto } from './ui/Verdetto';
 import { useValutazioneDifferita } from './ui/useValutazioneDifferita';
 import styles from './App.module.css';
 
@@ -73,6 +74,18 @@ export default function App() {
     () => (differita.stato === 'pronto' ? new Map(differita.esito.requisiti.map((r) => [r.requisitoId, r.rimedi])) : ('in_calcolo' as const)),
     [differita],
   );
+  const frase = useMemo(
+    () => fraseVerdetto({
+      bando,
+      lottoId: lavoro.lottoId,
+      esito,
+      percorso: differita.stato === 'pronto' ? differita.esito.percorsoMinimo : 'in_calcolo',
+      dataRiferimento: lavoro.dataRiferimento,
+      contesto: CONTESTO,
+      richiedeChiarimenti,
+    }),
+    [esito, differita, lavoro.lottoId, lavoro.dataRiferimento],
+  );
 
   return (
     <main className={styles.pagina}>
@@ -82,6 +95,10 @@ export default function App() {
           <span className={styles.oggetto}>{bando.oggetto}</span>
           <span className={styles.dato}>{bando.stazioneAppaltante}</span>
           <span className={styles.dato}>Offerte entro il {formattaData(bando.terminePresentazione)}</span>
+          <label className={styles.data}>
+            <span>Data di riferimento</span>
+            <input type="date" value={lavoro.dataRiferimento} onChange={(e) => dispatch({ tipo: 'imposta_data', valore: e.target.value })} className={styles.inputData} />
+          </label>
         </p>
         <p className={styles.dichiarazione}>{DICHIARAZIONE_DATI}</p>
       </header>
@@ -115,16 +132,7 @@ export default function App() {
         </section>
       ) : (
         <>
-          <Verdetto
-            verdetto={esito.verdetto}
-            dataRiferimento={lavoro.dataRiferimento}
-            onDataRiferimento={(valore) => dispatch({ tipo: 'imposta_data', valore })}
-            scoperti={esito.requisiti.filter((r) => r.stato === 'scoperto').length}
-            daVerificare={esito.requisiti.filter((r) => r.stato === 'da_verificare').length}
-            bloccanti={esito.anomalie.filter((a) => a.gravita === 'bloccante').length}
-          />
-
-          <PercorsoMinimo differita={differita} contesto={CONTESTO} dispatch={dispatch} />
+          <BloccoVerdetto verdetto={esito.verdetto} frase={frase} dispatch={dispatch} />
 
           <details className={styles.datiBando}>
             <summary>Dati del bando e del lotto</summary>

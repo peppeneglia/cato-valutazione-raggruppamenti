@@ -97,6 +97,7 @@ export const bando: Bando = {
         {
           id: 'requisiti-generali',
           famiglia: 'generale',
+          nomeBreve: 'Requisiti generali',
           descrizione: 'Requisiti di ordine generale: assenza delle cause di esclusione di cui agli articoli 94 e 95 del Codice',
           letture: [{ criterio: { tipo: 'dichiarazione', oggetto: 'Assenza delle cause di esclusione di cui agli articoli 94 e 95 del Codice' } }],
           // L'art. 5 (p. 12) dice come si possiedono nei CONSORZI; per i
@@ -111,6 +112,7 @@ export const bando: Bando = {
         {
           id: 'registro-imprese',
           famiglia: 'iscrizione',
+          nomeBreve: 'Registro delle imprese',
           descrizione: "Iscrizione nel registro delle imprese oppure nell'Albo delle Imprese Artigiane per attività pertinenti con quelle oggetto della procedura",
           // Il disciplinare non dice quali attività siano pertinenti: il
           // confronto è testuale, e ogni attività scritta diversamente è
@@ -129,6 +131,7 @@ export const bando: Bando = {
         {
           id: 'registri-di-settore',
           famiglia: 'iscrizione',
+          nomeBreve: 'Registri di settore',
           descrizione: "Iscrizione in registri o albi se prescritta dalla legislazione vigente per l'esercizio dell'attività oggetto di appalto",
           // Il documento non nomina né il registro né la legge: non c'è
           // niente contro cui confrontare un fascicolo.
@@ -147,6 +150,7 @@ export const bando: Bando = {
         {
           id: 'fatturato-globale',
           famiglia: 'economico',
+          nomeBreve: 'Fatturato globale',
           descrizione: "Fatturato globale almeno pari al valore stimato dell'appalto, maturato complessivamente nel triennio 2020/2021/2022",
           letture: [{
             criterio: {
@@ -170,6 +174,7 @@ export const bando: Bando = {
         {
           id: 'certificazione-qualita',
           famiglia: 'certificazione',
+          nomeBreve: 'Certificazione ISO',
           descrizione: "Certificazione del sistema di gestione della qualità UNI EN ISO 9001:2015 nel settore oggetto dell'appalto e/o ISO 13485",
           // "e/o": ne basta una. Lo scope richiesto è testo libero del
           // documento: coincide, o è un giudizio.
@@ -185,6 +190,7 @@ export const bando: Bando = {
         {
           id: 'forniture-analoghe',
           famiglia: 'referenza',
+          nomeBreve: 'Forniture analoghe',
           descrizione: "Forniture analoghe nel settore di attività oggetto dell'appalto, regolarmente eseguite nell'ultimo triennio, di importo non inferiore all'importo a base d'asta",
           // Il documento non dice se la soglia vada raggiunta da un solo
           // contratto o dalla somma: due letture, entrambe esprimibili.

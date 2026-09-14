@@ -1,0 +1,120 @@
+/* Fondo bianco, un filetto nel colore dello stato, la parola dello stato
+   nel colore dello stato e il resto in navy. Nessuna card. */
+.blocco {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4) 0 var(--sp-4) var(--sp-5);
+  border-left: var(--spessore-filetto-verdetto) solid var(--c-bordo-forte);
+  max-width: 62em;
+}
+
+.coperto { border-left-color: var(--c-coperto); }
+.scoperto { border-left-color: var(--c-scoperto); }
+.da_verificare { border-left-color: var(--c-da-verificare); }
+
+.nascosto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.verdetto {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 var(--sp-3);
+  font-size: var(--testo-verdetto);
+  font-weight: var(--peso-verdetto);
+  line-height: var(--interlinea-verdetto);
+  color: var(--c-navy);
+  letter-spacing: -0.01em;
+}
+
+.forma {
+  display: inline-flex;
+  align-self: center;
+  width: 0.8em;
+  height: 0.8em;
+}
+
+.forma svg {
+  width: 100%;
+  height: 100%;
+}
+
+.coperto .forma, .coperto .stato { color: var(--c-coperto); }
+.scoperto .forma, .scoperto .stato { color: var(--c-scoperto); }
+.da_verificare .forma, .da_verificare .stato { color: var(--c-da-verificare); }
+
+.lotto {
+  color: var(--c-navy);
+}
+
+.situazione,
+.azione,
+.scadenza,
+.decorsa {
+  font-size: var(--testo-mossa);
+  line-height: var(--interlinea-mossa);
+  color: var(--c-testo);
+}
+
+.scadenza {
+  font-weight: var(--peso-forte);
+  color: var(--c-navy);
+}
+
+.decorsa {
+  color: var(--c-scoperto);
+}
+
+.bloccanti {
+  margin: 0;
+  padding-left: var(--sp-4);
+  color: var(--c-scoperto);
+  font-size: var(--testo-base);
+}
+
+.attesa,
+.residui {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+.attesa {
+  font-style: italic;
+}
+
+.mosse {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.mossa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--testo-base);
+}
+
+.prova {
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--spessore-bordo) solid var(--c-accento);
+  border-radius: var(--raggio-piccolo);
+  background: var(--c-accento);
+  color: var(--c-accento-testo);
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-medio);
+}
+
+.prova:hover {
+  background: var(--c-sfondo);
+  color: var(--c-accento);
+}

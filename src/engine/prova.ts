@@ -40,7 +40,7 @@ export function requisito(
   regola: RegolaComposizione,
   extra: Partial<Requisito> = {},
 ): Requisito {
-  return { id, famiglia: 'generale', descrizione: `Requisito ${id}`, letture: [{ criterio }], regola, avvalibile: false, vincolante: true, fonte: FONTE, ...extra };
+  return { id, famiglia: 'generale', descrizione: `Requisito ${id}`, nomeBreve: `Requisito ${id}`, letture: [{ criterio }], regola, avvalibile: false, vincolante: true, fonte: FONTE, ...extra };
 }
 
 export function lettura(testo: string, criterio: Criterio): Lettura {

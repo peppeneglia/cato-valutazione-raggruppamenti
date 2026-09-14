@@ -305,7 +305,10 @@ export type RegolaComposizione =
 export type Requisito = {
   id: RequisitoId;
   famiglia: FamigliaRequisito;
+  /** Come lo chiama il documento, per esteso. Non si accorcia: sta nell'espansione. */
   descrizione: string;
+  /** La forma breve che sta in riga e nelle frasi: "Fatturato globale". È un dato, non un troncamento. */
+  nomeBreve: string;
   /** Sempre una lista, anche quando è una: il motore cicla sempre. Vuota = anomalia. */
   letture: Lettura[];
   regola: RegolaComposizione;
