@@ -10,8 +10,10 @@ import type { ParametriValutazione } from './domain';
 import { valutaBase } from './engine';
 import { bando, DATA_RIFERIMENTO, ORIZZONTE_SCADENZE_GIORNI, raggruppamento, soggetti } from './fixture';
 import { trovaLotto } from './engine/indici';
+import { Composizione } from './ui/Composizione';
 import { ConfrontoLotti } from './ui/ConfrontoLotti';
 import { IntestazioneBando } from './ui/IntestazioneBando';
+import { Storia } from './ui/Storia';
 import { Verdetto } from './ui/Verdetto';
 import { useValutazioneDifferita } from './ui/useValutazioneDifferita';
 import styles from './App.module.css';
@@ -67,6 +69,9 @@ export default function App() {
         daVerificare={esito.requisiti.filter((r) => r.stato === 'da_verificare').length}
         bloccanti={esito.anomalie.filter((a) => a.gravita === 'bloccante').length}
       />
+
+      <Composizione lotto={lotto} raggruppamento={lavoro.raggruppamento} soggetti={soggetti} contesto={CONTESTO} dispatch={dispatch} />
+      <Storia storia={lavoro.storia} onAnnulla={() => dispatch({ tipo: 'annulla' })} />
     </main>
   );
 }
