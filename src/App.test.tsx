@@ -124,7 +124,6 @@ describe('pagina — quote', () => {
     const input = quotaInput(OSPEDALIA, FORNITURA);
     await user.clear(input);
     await user.type(input, '0');
-    expect(within(regione('Anomalie nei dati')).getByText(/totalizzano 75\s% invece del 100/)).toBeTruthy();
     expect(within(regione('Verdetto')).getByText(/Prima sistema i dati: 1 anomalia bloccante/)).toBeTruthy();
     expect(within(regione('Verdetto')).getByText(/totalizzano 75\s% invece del 100/)).toBeTruthy();
   });
@@ -135,7 +134,7 @@ describe('pagina — quote', () => {
     await user.clear(input);
     await user.type(input, 'abc');
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(within(regione('Anomalie nei dati')).queryByText(/totalizzano/)).toBeNull();
+    expect(screen.queryByText(/totalizzano/)).toBeNull();
     await user.tab();
     expect(input.value).toBe('60');
     expect(input.getAttribute('aria-invalid')).toBeNull();
@@ -147,7 +146,7 @@ describe('pagina — quote', () => {
     await user.clear(input);
     await user.type(input, '60');
     expect(input.value).toBe('60');
-    expect(within(regione('Anomalie nei dati')).getByText(/totalizzano 135\s% invece del 100/)).toBeTruthy();
+    expect(within(regione('Verdetto')).getByText(/totalizzano 135\s% invece del 100/)).toBeTruthy();
   });
 });
 
@@ -238,7 +237,10 @@ describe('pagina — membri e ausiliarie', () => {
     await user.click(screen.getByText('Aggiungi un membro'));
     await user.click(screen.getByRole('button', { name: 'Aggiungi al raggruppamento' }));
     expect(within(regione('Composizione del raggruppamento')).getByRole('heading', { name: GROSSFARMA })).toBeTruthy();
-    expect(within(regione('Anomalie nei dati')).getByText(/s-grossfarma non esegue prestazioni nel lotto lotto-unico/)).toBeTruthy();
+    // Una segnalazione: sta nelle note del motore, con il nome e senza identificativi.
+    const segnalazioni = regione('Segnalazioni nei dati');
+    expect(within(segnalazioni).getByText('Grossfarma Centro-Sud S.p.A. non esegue niente nel lotto unico: tutte le sue quote sono a zero.')).toBeTruthy();
+    expect(screen.getByText(/^Note del motore — 1 segnalazione/)).toBeTruthy();
   });
   it('un’ausiliaria aggiunta a mano sul fatturato lo copre sotto ogni lettura; i non avvalibili sono disabilitati con la ragione', async () => {
     const user = userEvent.setup();
@@ -263,7 +265,7 @@ describe('pagina — membri e ausiliarie', () => {
     const rigaMandataria = document.getElementById('membro-s-farmalazio');
     if (!rigaMandataria) throw new Error('riga della mandataria non trovata');
     await user.click(within(rigaMandataria).getByRole('button', { name: 'Rimuovi' }));
-    expect(within(regione('Anomalie nei dati')).getByText(/non ha una mandataria/)).toBeTruthy();
+    expect(within(regione('Verdetto')).getByText('Il raggruppamento non ha una mandataria.')).toBeTruthy();
     expect(within(regione('Verdetto')).getByText('Non ammissibile')).toBeTruthy();
     // Senza mandataria le quote non totalizzano più il 100 %: due anomalie bloccanti, non una.
     await waitFor(() => expect(within(regione('Verdetto')).getByText(/Prima sistema i dati: 2 anomalie bloccanti/)).toBeTruthy(), LENTO);

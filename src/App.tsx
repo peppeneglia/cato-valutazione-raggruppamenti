@@ -17,9 +17,6 @@ import { trovaLotto } from './engine/indici';
 import { formattaData } from './formato';
 import { fraseVerdetto } from './descrizioni';
 import { richiedeChiarimenti } from './engine/rimedi';
-import { Anomalie } from './ui/Anomalie';
-import { Assunzioni } from './ui/Assunzioni';
-import { Avvisi } from './ui/Avvisi';
 import { BarraLotti } from './ui/BarraLotti';
 import { BloccoVerdetto } from './ui/BloccoVerdetto';
 import { Composizione } from './ui/Composizione';
@@ -27,7 +24,7 @@ import { ConfrontoLotti } from './ui/ConfrontoLotti';
 import { ConfrontoProva } from './ui/ConfrontoProva';
 import { IntestazioneBando } from './ui/IntestazioneBando';
 import { legendaAssunzioni } from './ui/legenda';
-import { NonValutato } from './ui/NonValutato';
+import { NoteMotore } from './ui/NoteMotore';
 import { Storia } from './ui/Storia';
 import { TabellaEsito } from './ui/TabellaEsito';
 import { useValutazioneDifferita } from './ui/useValutazioneDifferita';
@@ -160,12 +157,14 @@ export default function App() {
             </aside>
           </div>
 
-          <div className={styles.note}>
-            <Avvisi avvisi={esito.avvisiScadenza} terminePresentazione={bando.terminePresentazione} orizzonteGiorni={ORIZZONTE_SCADENZE_GIORNI} contesto={CONTESTO} />
-            <Anomalie anomalie={esito.anomalie} contesto={CONTESTO} />
-            <Assunzioni legenda={legenda} />
-            <NonValutato />
-          </div>
+          <NoteMotore
+            avvisi={esito.avvisiScadenza}
+            anomalie={esito.anomalie}
+            legenda={legenda}
+            terminePresentazione={bando.terminePresentazione}
+            orizzonteGiorni={ORIZZONTE_SCADENZE_GIORNI}
+            contesto={CONTESTO}
+          />
         </>
       )}
     </main>

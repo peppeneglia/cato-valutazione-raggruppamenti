@@ -418,7 +418,7 @@ export function fraseVerdetto(p: {
     stato: etichettaVerdetto(esito.verdetto),
     lotto: bando.lotti.length > 1 ? `sul ${nomeLotto(bando, lottoId)}` : undefined,
     mosse: [],
-    bloccanti: esito.anomalie.filter((a) => a.gravita === 'bloccante').map((a) => a.messaggio),
+    bloccanti: esito.anomalie.filter((a) => a.gravita === 'bloccante').map((a) => descriviAnomalia(a, contesto)),
     inCalcolo: false,
   };
   if (base.bloccanti.length > 0) {
@@ -545,7 +545,93 @@ export function ragioneBreve(esito: EsitoRequisito, requisito: Requisito, contes
   }
 }
 
+// ─── Le note del motore ──────────────────────────────────────
+
+/** "Note del motore — 1 scadenza in arrivo, 2 segnalazioni, 2 assunzioni": conta cosa c'è dentro. */
+export function titoloNote(p: { scadenze: number; segnalazioni: number; assunzioni: number }): string {
+  const parti: string[] = [];
+  if (p.scadenze > 0) parti.push(`${p.scadenze} ${plurale(p.scadenze, 'scadenza in arrivo', 'scadenze in arrivo')}`);
+  if (p.segnalazioni > 0) parti.push(`${p.segnalazioni} ${plurale(p.segnalazioni, 'segnalazione', 'segnalazioni')}`);
+  if (p.assunzioni > 0) parti.push(`${p.assunzioni} ${plurale(p.assunzioni, 'assunzione', 'assunzioni')}`);
+  parti.push('cosa non valuta');
+  return `Note del motore — ${parti.join(', ')}`;
+}
+
 // ─── Anomalie ────────────────────────────────────────────────
+
+/**
+ * Il messaggio dell'anomalia con i nomi al posto degli identificativi.
+ * Il motore produce dati e un messaggio tecnico; la presentazione è
+ * compito di chi mostra la pagina, ed è qui che deve stare.
+ */
+export function descriviAnomalia(a: Anomalia, contesto: ContestoDescrizioni): string {
+  const soggetto = (id: SoggettoId) => nomeSoggetto(id, contesto);
+  const prestazione = (id: PrestazioneId) => `«${nomePrestazione(id, contesto)}»`;
+  const requisito = (id: RequisitoId) => `«${nomeBreveRequisito(id, contesto)}»`;
+  const lotto = (id: LottoId) => (contesto.bando.lotti.some((l) => l.id === id) ? nomeLotto(contesto.bando, id).toLowerCase() : id);
+  switch (a.codice) {
+    case 'mandataria_assente':
+      return 'Il raggruppamento non ha una mandataria.';
+    case 'mandataria_multipla':
+      return `Il raggruppamento ha più di una mandataria: ${a.soggettiIds.map(soggetto).join(', ')}.`;
+    case 'membro_duplicato':
+      return `${soggetto(a.soggettoId)} compare più di una volta tra i membri.`;
+    case 'membro_senza_quote':
+      return `${soggetto(a.soggettoId)} non esegue niente nel ${lotto(a.lottoId)}: tutte le sue quote sono a zero.`;
+    case 'identificativo_duplicato':
+      return `Il bando usa lo stesso identificativo per più ${a.entita === 'prestazione' ? 'prestazioni' : 'requisiti'}: quote e riferimenti si mescolerebbero.`;
+    case 'quota_fuori_intervallo':
+      return `La quota di ${soggetto(a.soggettoId)} su ${prestazione(a.prestazioneId)} non è tra 0 e 100 %.`;
+    case 'quote_non_totali':
+      return `Le quote su ${prestazione(a.prestazioneId)} totalizzano ${formattaPercentuale(a.totale)} invece del 100 %.`;
+    case 'prestazione_senza_esecutore':
+      return `Nessun membro esegue ${prestazione(a.prestazioneId)}.`;
+    case 'riferimento_inesistente': {
+      const entita = a.entita;
+      switch (entita) {
+        case 'soggetto':
+        case 'ausiliata':
+          return `Un membro rinvia a un soggetto che non esiste nei fascicoli (${a.id}).`;
+        case 'lotto':
+          return `Il lotto selezionato non esiste nel bando (${a.id}).`;
+        case 'prestazione':
+          return `Una quota o una regola rinvia a una prestazione che il bando non ha (${a.id}).`;
+        case 'requisito':
+          return `Un'ausiliaria è indicata per un requisito che il lotto non ha (${a.id}).`;
+        default:
+          return assertNever(entita);
+      }
+    }
+    case 'regola_somma_su_criterio_di_possesso':
+      return `${requisito(a.requisitoId)} somma i membri, ma si possiede o no: non ha una soglia da sommare.`;
+    case 'parametro_requisito_non_valido':
+      return `${requisito(a.requisitoId)} ha un parametro non valido nei dati del bando (${a.parametro} = ${String(a.valore)}).`;
+    case 'avvalimento_su_requisito_non_avvalibile':
+      return `${soggetto(a.soggettoId)} è indicata come ausiliaria per ${requisito(a.requisitoId)}, che il disciplinare non dichiara avvalibile.`;
+    case 'data_malformata':
+      return a.origine === 'parametri' ? 'La data di riferimento non è una data valida.' : `Una data non è valida in ${a.dove}: «${a.valore}».`;
+    case 'periodo_invertito':
+      return `Nel fascicolo di ${soggetto(a.soggettoId)} un periodo finisce prima di iniziare.`;
+    case 'termine_presentazione_decorso':
+      return `Il termine di presentazione è decorso il ${formattaData(a.terminePresentazione)}.`;
+    case 'vincolo_senza_prestazione_principale':
+      return 'Il lotto vincola la prestazione principale ma non ne dichiara nessuna.';
+    case 'vincolo_prestazione_principale_violato':
+      return `${prestazione(a.prestazioneId)} va eseguita dalla ${etichettaRuolo(a.esecutore).toLowerCase()} per almeno il ${formattaPercentuale(a.quotaMinima)}; ora è al ${formattaPercentuale(a.quotaEffettiva)}.`;
+    case 'rinvio_a_valore_inesistente':
+      return `${requisito(a.requisitoId)} rinvia a «${a.nome}», che il bando non riporta.`;
+    case 'valore_bando_senza_candidati':
+      return `Il bando nomina «${a.nome}» senza dargli un valore.`;
+    case 'ancoraggio_a_pubblicazione_senza_data':
+      return `${requisito(a.requisitoId)} conta dalla pubblicazione del bando, che il documento non data.`;
+    case 'prestazione_indivisibile_non_unica':
+      return `${prestazione(a.prestazioneId)} è indivisibile ma il lotto ne dichiara altre.`;
+    case 'requisito_senza_letture':
+      return `${requisito(a.requisitoId)} non ha nessun criterio da valutare.`;
+    default:
+      return assertNever(a);
+  }
+}
 
 export type BersaglioAnomalia =
   | { tipo: 'membro'; id: SoggettoId }

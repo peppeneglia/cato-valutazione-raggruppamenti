@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bersaglioAnomalia, descriviCriterio, descriviIndeterminatezza, descriviMossa, descriviRimedio, eApplicabile, etichettaAssunzione, etichettaFamiglia, etichettaRuolo, etichettaStato, etichettaVerdetto, nomePrestazione, nomeRequisito, nomeSoggetto } from './descrizioni';
+import { bersaglioAnomalia, descriviAnomalia, descriviCriterio, descriviIndeterminatezza, descriviMossa, descriviRimedio, eApplicabile, etichettaAssunzione, etichettaFamiglia, etichettaRuolo, etichettaStato, etichettaVerdetto, nomePrestazione, nomeRequisito, nomeSoggetto, titoloNote } from './descrizioni';
 import { creaAnomalia } from './engine/validazione';
 import { bando, soggetti } from './fixture';
 
@@ -65,6 +65,19 @@ describe('descriviCriterio', () => {
       .toBe('servizi con CPV 33192000 negli ultimi 5 anni per almeno 800.000 € complessivi');
     expect(descriviCriterio({ tipo: 'iscrizione', registro: 'CCIAA', attivita: 'commercio' })).toBe('iscrizione CCIAA per «commercio»');
     expect(descriviCriterio({ tipo: 'dichiarazione', oggetto: 'x' })).toBe('dichiarazione «x»');
+  });
+});
+
+describe('descriviAnomalia e titoloNote', () => {
+  it('mette i nomi al posto degli identificativi', () => {
+    expect(descriviAnomalia(creaAnomalia({ codice: 'membro_senza_quote', soggettoId: 's-grossfarma', lottoId: 'lotto-unico' }), contesto)).toBe('Grossfarma Centro-Sud S.p.A. non esegue niente nel lotto unico: tutte le sue quote sono a zero.');
+    expect(descriviAnomalia(creaAnomalia({ codice: 'prestazione_senza_esecutore', prestazioneId: 'fornitura' }), contesto)).toBe('Nessun membro esegue «Fornitura di farmaci, parafarmaci, dispositivi medici e altro, da grossista con consegna veloce».');
+    expect(descriviAnomalia(creaAnomalia({ codice: 'avvalimento_su_requisito_non_avvalibile', soggettoId: 's-grossfarma', requisitoId: 'registro-imprese' }), contesto)).toBe('Grossfarma Centro-Sud S.p.A. è indicata come ausiliaria per «Registro delle imprese», che il disciplinare non dichiara avvalibile.');
+    expect(descriviAnomalia(creaAnomalia({ codice: 'mandataria_multipla', soggettiIds: ['s-farmalazio', 's-ospedalia'] }), contesto)).toBe('Il raggruppamento ha più di una mandataria: Farmadistribuzione Laziale S.p.A., Ospedalia Forniture S.r.l..');
+  });
+  it('il titolo delle note conta cosa c’è dentro e omette ciò che manca', () => {
+    expect(titoloNote({ scadenze: 2, segnalazioni: 1, assunzioni: 11 })).toBe('Note del motore — 2 scadenze in arrivo, 1 segnalazione, 11 assunzioni, cosa non valuta');
+    expect(titoloNote({ scadenze: 0, segnalazioni: 0, assunzioni: 0 })).toBe('Note del motore — cosa non valuta');
   });
 });
 
