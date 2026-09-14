@@ -26,11 +26,15 @@
   max-width: 100%;
 }
 
+.elenco > li {
+  min-width: 0;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  max-width: 34em;
+  max-width: min(34em, 100%);
   padding: var(--sp-1) var(--sp-3);
   border: var(--spessore-bordo) solid var(--c-bordo-forte);
   border-radius: var(--raggio);

@@ -1,36 +1,33 @@
 .sezione {
   display: grid;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
 }
 
-.scorrimento {
-  overflow-x: auto;
+.nascosto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.tabella {
+  table-layout: auto;
 }
 
 .tabella th,
 .tabella td {
-  padding: var(--sp-2);
+  padding: var(--sp-2) var(--sp-2);
   border-bottom: var(--spessore-bordo) solid var(--c-bordo);
   vertical-align: top;
+  font-size: var(--testo-sm);
 }
 
 .tabella thead th {
-  font-size: var(--testo-sm);
   color: var(--c-testo-tenue);
+  font-weight: var(--peso-normale);
   border-bottom: var(--spessore-bordo) solid var(--c-bordo-forte);
-}
-
-.didascalia {
-  font-size: var(--testo-sm);
-  color: var(--c-testo-tenue);
-  padding-bottom: var(--sp-2);
-}
-
-.famiglia th {
-  padding-top: var(--sp-3);
-  font-size: var(--testo-xs);
-  color: var(--c-testo-tenue);
-  background: var(--c-superficie);
 }
 
 /* Terzo segnale di stato: il bordo sinistro cambia stile, non solo colore. */
@@ -55,80 +52,114 @@
 
 .stato {
   white-space: nowrap;
+  width: 1%;
 }
 
 .requisito {
-  min-width: 20em;
-  max-width: 34em;
+  width: 100%;
+}
+
+.nome {
+  display: block;
+  font-size: var(--testo-base);
+  font-weight: var(--peso-medio);
+  color: var(--c-testo);
+}
+
+.ragione {
+  display: block;
+  color: var(--c-testo-tenue);
+  margin-top: 2px;
+}
+
+.chiarimenti,
+.daValutare {
+  font-weight: var(--peso-medio);
+}
+
+.chiarimenti {
+  color: var(--c-da-verificare);
+}
+
+.daValutare {
+  color: var(--c-testo);
+}
+
+.manca {
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-scoperto);
+  font-weight: var(--peso-medio);
+}
+
+.da_verificare .manca {
+  color: var(--c-da-verificare);
+}
+
+.azioni {
+  white-space: nowrap;
+  text-align: right;
+  width: 1%;
+}
+
+.dettagli,
+.apriGruppo {
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--spessore-bordo) solid var(--c-bordo-forte);
+  border-radius: var(--raggio-piccolo);
+  background: var(--c-sfondo);
+  font-size: var(--testo-sm);
+  color: var(--c-testo);
+}
+
+.dettagli:hover,
+.apriGruppo:hover {
+  background: var(--c-superficie);
+}
+
+.dettagli[aria-expanded='true'] {
+  background: var(--c-navy-tenue);
+  border-color: var(--c-navy);
+}
+
+.gruppo td {
+  padding: var(--sp-3) var(--sp-2);
+  border-bottom: none;
+}
+
+.apriGruppo {
+  color: var(--c-testo-tenue);
+}
+
+/* L'espansione: tutto ciò che documenta la riga. Stretto dentro, come una tabella. */
+.rigaEspansione > td {
+  padding: var(--sp-3) var(--sp-4) var(--sp-4) var(--sp-5);
+  background: var(--c-superficie);
+}
+
+.espansione {
+  display: grid;
+  gap: var(--sp-3);
+  max-width: 80em;
 }
 
 .descrizione {
-  font-weight: var(--peso-medio);
+  font-size: var(--testo-base);
 }
 
 .meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-2);
-  font-size: var(--testo-xs);
-  color: var(--c-testo-tenue);
-}
-
-.nonVincolante,
-.avvalibile {
-  padding: 0 var(--sp-1);
-  border: var(--spessore-bordo) solid var(--c-bordo);
-  border-radius: var(--raggio-piccolo);
-}
-
-.dettagli {
+  gap: var(--sp-3);
   margin-top: var(--sp-1);
-  font-size: var(--testo-sm);
-}
-
-.dettagli summary {
-  color: var(--c-accento);
-}
-
-.motivazione {
-  margin: var(--sp-1) 0 var(--sp-2);
-}
-
-.contributo {
-  min-width: 11em;
-}
-
-.intestazioneMembro {
-  display: table-cell;
-}
-
-.ruoloTenue {
-  display: block;
   font-size: var(--testo-xs);
-  font-weight: var(--peso-normale);
-}
-
-.cifra {
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.delta {
-  color: var(--c-scoperto);
-  font-weight: var(--peso-forte);
-  font-size: var(--testo-titolo);
-}
-
-.vuoto {
   color: var(--c-testo-tenue);
 }
 
-/* Perché il motore non decide: una riga per indeterminatezza, due famiglie. */
 .indeterminatezze {
-  margin: var(--sp-1) 0 0;
+  margin: 0;
   padding-left: var(--sp-4);
-  font-size: var(--testo-sm);
 }
 
 .documento {
@@ -139,12 +170,86 @@
   color: var(--c-testo);
 }
 
-.varianti {
-  margin: 0 0 var(--sp-2);
-  padding-left: var(--sp-4);
+.membri th,
+.membri td {
+  padding: var(--sp-1) var(--sp-2);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+  background: var(--c-sfondo);
+}
+
+.membri th {
+  text-align: left;
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+  width: 1%;
+}
+
+.didascalia {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+  padding-bottom: var(--sp-1);
+}
+
+.membro {
+  vertical-align: top;
+}
+
+.ruoloTenue {
+  display: block;
+  font-size: var(--testo-xs);
+  font-weight: var(--peso-normale);
+  color: var(--c-testo-tenue);
+}
+
+.misura,
+.motivazione,
+.varianti,
+.assunzioni {
   font-size: var(--testo-sm);
+}
+
+.cifra {
+  font-variant-numeric: tabular-nums;
+}
+
+.varianti {
+  margin: 0;
+  padding-left: var(--sp-4);
 }
 
 .etichettaVariante {
   font-weight: var(--peso-medio);
+}
+
+.vuoto {
+  color: var(--c-testo-tenue);
+}
+
+/* Stretto: la riga si impila. Stato e Dettagli sopra, requisito e quanto manca a tutta larghezza. */
+@media (max-width: 699px) {
+  .tabella thead {
+    display: none;
+  }
+
+  .riga {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+  }
+
+  .riga > td {
+    border-bottom: none;
+    width: auto;
+  }
+
+  .stato { grid-column: 1; grid-row: 1; }
+  .azioni { grid-column: 2; grid-row: 1; }
+  .requisito { grid-column: 1 / -1; padding-top: 0; }
+  .manca { grid-column: 1 / -1; text-align: left; padding-top: 0; }
+  .manca:empty { display: none; }
+
+  .rigaEspansione > td {
+    display: block;
+    padding-inline: var(--sp-3);
+  }
 }

@@ -9,12 +9,15 @@ import type {
   CodiceAssunzione,
   CriterioRisolto,
   Esito,
+  EsitoRequisito,
+  EsitoVariante,
   FamigliaRequisito,
   GravitaAnomalia,
   Indeterminatezza,
   LottoId,
   PercorsoMinimo,
   PrestazioneId,
+  Requisito,
   RequisitoId,
   Rimedio,
   RimedioApplicabile,
@@ -450,6 +453,95 @@ export function fraseVerdetto(p: {
       return { ...base, situazione, scadenza, azione: `Nessuna mossa con i soggetti disponibili ti porta dentro. Restano scoperti: ${elencoBrevi(percorso.restanoScoperti, contesto)}.` };
     default:
       return assertNever(percorso);
+  }
+}
+
+// ─── La riga del requisito ───────────────────────────────────
+// In riga restano quattro cose: stato, nome breve, quanto manca, e una
+// frase sola che dice perché — al massimo quindici parole, un verbo
+// attivo, nessun identificativo. Nasce dai dati dell'esito, non dal
+// taglio della motivazione lunga: un troncamento produce frasi mutilate.
+
+/** "chiarimenti" se la stazione appaltante può sciogliere il dubbio, "da valutare" se resta al concorrente. */
+export function azioneRichiesta(esito: EsitoRequisito, richiedeChiarimenti: (i: Indeterminatezza) => boolean): 'chiarimenti' | 'da valutare' | undefined {
+  if (esito.indeterminatezze.some(richiedeChiarimenti)) return 'chiarimenti';
+  if (esito.indeterminatezze.length > 0) return 'da valutare';
+  return undefined;
+}
+
+function conteggiati(esito: EsitoRequisito, filtro: (c: EsitoRequisito['contributi'][number]) => boolean): SoggettoId[] {
+  return esito.contributi.filter((c) => c.conteggiato && filtro(c)).map((c) => c.soggettoId);
+}
+
+/** Quanto manca, in tre parole: "mancano 100.000 €", "manca a Beta", "da verificare". */
+export function quantoManca(esito: EsitoRequisito, contesto: ContestoDescrizioni): string {
+  if (esito.stato === 'coperto') return '';
+  const m = esito.misurazione;
+  // Su un requisito da verificare il delta è della lettura peggiore: è un massimo, non un fatto.
+  const fino = esito.stato === 'da_verificare' ? 'fino a ' : '';
+  if (m && m.delta > 0) return `${m.unita.tipo === 'conteggio' && m.delta === 1 && fino === '' ? 'manca' : 'mancano'} ${fino}${formattaConUnita(m.delta, m.unita)}`;
+  if (esito.stato === 'scoperto') {
+    const assenti = conteggiati(esito, (c) => c.valore.tipo === 'possesso' && c.valore.esito === 'assente');
+    if (assenti.length > 0) return `manca a ${assenti.map((id) => nomeParlato(id, contesto)).join(', ')}`;
+    return 'scoperto';
+  }
+  // La colonna dice quanto manca, non lo stato: senza un numero resta vuota.
+  return '';
+}
+
+function statiIn(esiti: EsitoVariante[], femminile: boolean): string {
+  const conta = (stato: StatoRequisito) => esiti.filter((e) => e.stato === stato).length;
+  const parti: string[] = [];
+  for (const stato of ['coperto', 'da_verificare', 'scoperto'] as const) {
+    const n = conta(stato);
+    if (n > 0) parti.push(`${etichettaStato(stato).toLowerCase()} con ${inParole(n, femminile)}`);
+  }
+  return parti.join(', ');
+}
+
+/** Il giudizio in poche parole: cosa non coincide. */
+function cosaNonCoincide(oggetto: string): string {
+  if (oggetto.includes('(iscrizione')) return "l'attività iscritta non coincide con quella richiesta";
+  if (oggetto.includes('(certificazione')) return 'lo scope della certificazione non coincide con il settore richiesto';
+  if (oggetto.startsWith('analogia del CPV')) return 'il CPV della fornitura non coincide con quello di gara';
+  return oggetto;
+}
+
+/** La frase in riga: perché non è coperto. Undefined se è coperto. */
+export function ragioneBreve(esito: EsitoRequisito, requisito: Requisito, contesto: ContestoDescrizioni): string | undefined {
+  if (esito.stato === 'coperto') return undefined;
+  const per = (tipo: Indeterminatezza['tipo']) => esito.indeterminatezze.find((i) => i.tipo === tipo);
+  // Prima il più grave: se non si sa cosa soddisfi il requisito, chi debba possederlo viene dopo.
+  if (per('criterio_non_determinato')) return "Il disciplinare non nomina il registro, l'albo o il documento richiesto.";
+  if (per('regola_non_dichiarata')) return 'Il disciplinare non dice chi debba possederlo nel raggruppamento.';
+  const valore = per('valore_contraddittorio');
+  // Il nome del valore sta nell'espansione: in riga non ci sta, e il requisito lo dice già.
+  if (valore?.tipo === 'valore_contraddittorio') return `Il bando dà ${inParole(valore.esiti.length)} valori: ${statiIn(valore.esiti, false)}.`;
+  const letture = per('letture_discordanti');
+  if (letture?.tipo === 'letture_discordanti') return `Il documento ammette ${inParole(letture.esiti.length, true)} letture: ${statiIn(letture.esiti, true)}.`;
+  const giudizio = per('giudizio_richiesto');
+  if (giudizio?.tipo === 'giudizio_richiesto') return `Per ${nomeParlato(giudizio.soggettoId, contesto)} ${cosaNonCoincide(giudizio.oggetto)}.`;
+
+  const m = esito.misurazione;
+  switch (requisito.regola.tipo) {
+    case 'somma_membri':
+      return m && m.minimiRuolo.some((r) => r.delta > 0)
+        ? `${nomeParlato(m.minimiRuolo.find((r) => r.delta > 0)?.soggettoId ?? '', contesto)} resta sotto il minimo del suo ruolo.`
+        : 'La somma dei membri non raggiunge la soglia.';
+    case 'almeno_un_membro':
+      return m && m.raggiunto > 0 ? 'Nessun membro raggiunge la soglia da solo.' : 'Nessun membro lo possiede.';
+    case 'ciascun_membro':
+    case 'esecutore_prestazione': {
+      const assenti = conteggiati(esito, (c) => (c.valore.tipo === 'possesso' ? c.valore.esito === 'assente' : m !== undefined && c.valore.certo < m.soglia));
+      const scaduto = esito.contributi.find((c) => assenti.includes(c.soggettoId) && c.nota?.includes('scaduto il'))?.nota?.match(/scaduto il (\S+)/)?.[1];
+      const chi = assenti.map((id) => nomeParlato(id, contesto)).join(', ');
+      if (assenti.length === 0) return 'Nessun membro esegue la prestazione.';
+      return scaduto ? `Manca a ${chi}: il documento è scaduto il ${scaduto}.` : `Manca a ${chi}${requisito.regola.tipo === 'esecutore_prestazione' ? ', che esegue la prestazione' : ''}.`;
+    }
+    case 'non_dichiarata':
+      return 'Il disciplinare non dice chi debba possederlo nel raggruppamento.';
+    default:
+      return assertNever(requisito.regola);
   }
 }
 

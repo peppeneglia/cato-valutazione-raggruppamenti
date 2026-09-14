@@ -1,10 +1,22 @@
-// La tabella principale: una riga per requisito, una colonna per membro,
-// il numero che comanda a destra. Le righe sono raggruppate per famiglia,
-// che è descrittiva e serve solo a questo.
+// La tabella principale: una riga per requisito, quattro cose in riga —
+// stato, nome breve, quanto manca, una frase che dice perché — e tutto
+// il resto nell'espansione: descrizione integrale con la fonte, contributi
+// per membro, motivazione, letture, assunzioni, rimedi. I requisiti
+// coperti stanno raccolti e chiusi: chi guarda cerca i problemi.
 
-import { descriviIndeterminatezza, etichettaFamiglia, etichettaStato, nomeSoggetto, type ContestoDescrizioni } from '../descrizioni';
+import { useState } from 'react';
+import {
+  azioneRichiesta,
+  descriviIndeterminatezza,
+  etichettaFamiglia,
+  etichettaStato,
+  nomeSoggetto,
+  quantoManca,
+  ragioneBreve,
+  type ContestoDescrizioni,
+} from '../descrizioni';
 import { richiedeChiarimenti } from '../engine/rimedi';
-import type { EsitoRequisito, FamigliaRequisito, Lotto, Membro, Requisito, Rimedio } from '../domain';
+import type { EsitoRequisito, Lotto, Membro, Requisito, Rimedio } from '../domain';
 import { formattaConUnita } from '../formato';
 import type { Azione } from '../lavoro';
 import { RiferimentiAssunzioni } from './Assunzioni';
@@ -26,20 +38,9 @@ type Props = {
   dispatch: (azione: Azione) => void;
 };
 
-function perFamiglia(requisiti: Requisito[]): { famiglia: FamigliaRequisito; requisiti: Requisito[] }[] {
-  const gruppi: { famiglia: FamigliaRequisito; requisiti: Requisito[] }[] = [];
-  for (const r of requisiti) {
-    let gruppo = gruppi.find((g) => g.famiglia === r.famiglia);
-    if (!gruppo) {
-      gruppo = { famiglia: r.famiglia, requisiti: [] };
-      gruppi.push(gruppo);
-    }
-    gruppo.requisiti.push(r);
-  }
-  return gruppi;
-}
+const COLONNE = 4;
 
-function RigaRequisito({ requisito, esito, rimedi, membri, legenda, contesto, dispatch }: {
+type RigaProps = {
   requisito: Requisito;
   esito: EsitoRequisito | undefined;
   rimedi: Rimedio[] | 'in_calcolo';
@@ -47,65 +48,130 @@ function RigaRequisito({ requisito, esito, rimedi, membri, legenda, contesto, di
   legenda: Legenda;
   contesto: ContestoDescrizioni;
   dispatch: Props['dispatch'];
-}) {
-  if (!esito) {
-    return (
-      <tr id={`requisito-${requisito.id}`} className={styles.riga}>
-        <td colSpan={5 + membri.length}>{requisito.descrizione}: non valutato (vedi anomalie).</td>
-      </tr>
-    );
-  }
+  aperta: boolean;
+  onApri: () => void;
+};
+
+function Espansione({ requisito, esito, rimedi, membri, legenda, contesto, dispatch }: Omit<RigaProps, 'aperta' | 'onApri'> & { esito: EsitoRequisito }) {
   const unita = esito.misurazione?.unita;
   const contributi = new Map(esito.contributi.map((c) => [c.soggettoId, c]));
   const m = esito.misurazione;
   return (
-    <tr id={`requisito-${requisito.id}`} className={`${styles.riga} ${styles[esito.stato]}`}>
-      <td className={styles.stato}><StatoRequisito stato={esito.stato} /></td>
-      <td className={styles.requisito}>
-        <div className={styles.descrizione}>{requisito.descrizione}</div>
-        <div className={styles.meta}>
+    <div className={styles.espansione}>
+      <p className={styles.descrizione}>
+        {requisito.descrizione}
+        <span className={styles.meta}>
           <Fonte fonte={requisito.fonte} />
-          {requisito.vincolante ? null : <span className={styles.nonVincolante}>non vincolante</span>}
-          {requisito.avvalibile ? <span className={styles.avvalibile}>avvalibile</span> : null}
-        </div>
-        {esito.indeterminatezze.length > 0 ? (
-          <ul className={styles.indeterminatezze}>
-            {esito.indeterminatezze.map((i, k) => (
-              <li key={k} className={richiedeChiarimenti(i) ? styles.documento : styles.giudizio}>{descriviIndeterminatezza(i, contesto)}</li>
+          <span>{etichettaFamiglia(requisito.famiglia).toLowerCase()}</span>
+          {requisito.vincolante ? null : <span>non vincolante</span>}
+          {requisito.avvalibile ? <span>avvalibile</span> : null}
+        </span>
+      </p>
+
+      {esito.indeterminatezze.length > 0 ? (
+        <ul className={styles.indeterminatezze}>
+          {esito.indeterminatezze.map((i, k) => (
+            <li key={k} className={richiedeChiarimenti(i) ? styles.documento : styles.giudizio}>{descriviIndeterminatezza(i, contesto)}</li>
+          ))}
+        </ul>
+      ) : null}
+
+      {esito.contributi.length > 0 ? (
+        <table className={styles.membri}>
+          <caption className={styles.didascalia}>Il valore reale del fascicolo di ogni membro; «non conta qui» dice che la regola non lo considera.</caption>
+          <tbody>
+            {membri.map((membro) => (
+              <tr key={membro.soggettoId}>
+                <th scope="row" className={styles.membro}>
+                  {nomeSoggetto(membro.soggettoId, contesto)}
+                  {membro.ruolo === 'ausiliaria' ? <span className={styles.ruoloTenue}>ausiliaria</span> : null}
+                </th>
+                <td><CellaContributo contributo={contributi.get(membro.soggettoId)} unita={unita} /></td>
+              </tr>
             ))}
-          </ul>
-        ) : null}
-        <details className={styles.dettagli}>
-          <summary>Motivazione e rimedi</summary>
-          <p className={styles.motivazione}>{esito.motivazione}</p>
-          {esito.varianti ? (
-            <ul className={styles.varianti}>
-              {esito.varianti.map((v) => (
-                <li key={v.etichetta}>
-                  <span className={styles.etichettaVariante}>{v.etichetta || 'lettura unica'}</span>: {etichettaStato(v.stato).toLowerCase()}
-                  {v.misurazione && v.misurazione.delta > 0 ? ` (mancano ${formattaConUnita(v.misurazione.delta, v.misurazione.unita)})` : ''}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          <Rimedi rimedi={rimedi} contesto={contesto} dispatch={dispatch} />
-        </details>
-      </td>
-      {membri.map((membro) => (
-        <td key={membro.soggettoId} className={styles.contributo}>
-          <CellaContributo contributo={contributi.get(membro.soggettoId)} unita={unita} />
-        </td>
-      ))}
-      <td className={styles.cifra}>{m && unita ? formattaConUnita(m.raggiunto, unita) : '—'}</td>
-      <td className={styles.cifra}>{m && unita ? formattaConUnita(m.soglia, unita) : '—'}</td>
-      <td className={`${styles.cifra} ${m && m.delta > 0 ? styles.delta : ''}`}>{m && unita ? (m.delta > 0 ? `−${formattaConUnita(m.delta, unita)}` : '0') : '—'}</td>
-      <td><RiferimentiAssunzioni codici={esito.assunzioni.map((a) => a.codice)} legenda={legenda} /></td>
-    </tr>
+          </tbody>
+        </table>
+      ) : null}
+
+      {m && unita ? (
+        <p className={styles.misura}>
+          Raggiunto <span className={styles.cifra}>{formattaConUnita(m.raggiunto, unita)}</span> su una soglia di <span className={styles.cifra}>{formattaConUnita(m.soglia, unita)}</span>
+          {m.massimo > m.raggiunto ? <>, fino a <span className={styles.cifra}>{formattaConUnita(m.massimo, unita)}</span> contando i fatti da verificare</> : null}.
+        </p>
+      ) : null}
+
+      <p className={styles.motivazione}>{esito.motivazione}</p>
+
+      {esito.varianti ? (
+        <ul className={styles.varianti}>
+          {esito.varianti.map((v) => (
+            <li key={v.etichetta}>
+              <span className={styles.etichettaVariante}>{v.etichetta || 'lettura unica'}</span>: {etichettaStato(v.stato).toLowerCase()}
+              {v.misurazione && v.misurazione.delta > 0 ? ` (mancano ${formattaConUnita(v.misurazione.delta, v.misurazione.unita)})` : ''}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {esito.assunzioni.length > 0 ? (
+        <p className={styles.assunzioni}>Assunzioni del motore: <RiferimentiAssunzioni codici={esito.assunzioni.map((a) => a.codice)} legenda={legenda} /></p>
+      ) : null}
+
+      <Rimedi rimedi={rimedi} contesto={contesto} dispatch={dispatch} />
+    </div>
   );
 }
 
+function RigaRequisito(props: RigaProps) {
+  const { requisito, esito, contesto, aperta, onApri } = props;
+  if (!esito) {
+    return (
+      <tr id={`requisito-${requisito.id}`} className={styles.riga}>
+        <td colSpan={COLONNE}>{requisito.nomeBreve}: non valutato (vedi anomalie).</td>
+      </tr>
+    );
+  }
+  const ragione = ragioneBreve(esito, requisito, contesto);
+  const azione = azioneRichiesta(esito, richiedeChiarimenti);
+  const idDettagli = `dettagli-${requisito.id}`;
+  return (
+    <>
+      <tr id={`requisito-${requisito.id}`} className={`${styles.riga} ${styles[esito.stato]}`}>
+        <td className={styles.stato}><StatoRequisito stato={esito.stato} /></td>
+        <td className={styles.requisito}>
+          <span className={styles.nome}>{requisito.nomeBreve}</span>
+          {ragione ? (
+            <span className={styles.ragione}>
+              {ragione}
+              {azione ? <span className={azione === 'chiarimenti' ? styles.chiarimenti : styles.daValutare}> {azione}</span> : null}
+            </span>
+          ) : null}
+        </td>
+        <td className={styles.manca}>{quantoManca(esito, contesto)}</td>
+        <td className={styles.azioni}>
+          <button type="button" className={styles.dettagli} aria-expanded={aperta} aria-controls={idDettagli} onClick={onApri}>
+            {aperta ? 'Chiudi' : 'Dettagli'}
+          </button>
+        </td>
+      </tr>
+      {aperta ? (
+        <tr id={idDettagli} className={styles.rigaEspansione}>
+          <td colSpan={COLONNE}>
+            <Espansione {...props} esito={esito} />
+          </td>
+        </tr>
+      ) : null}
+    </>
+  );
+}
+
+const ORDINE = { scoperto: 0, da_verificare: 1, coperto: 2 } as const;
+
 export function TabellaEsito({ lotto, requisiti, rimediPerRequisito, membri, legenda, contesto, dispatch }: Props) {
+  const [aperte, setAperte] = useState<ReadonlySet<string>>(new Set());
+  const [copertiAperti, setCopertiAperti] = useState(false);
   const esiti = new Map(requisiti.map((r) => [r.requisitoId, r]));
+
   if (lotto.requisiti.length === 0) {
     return (
       <section aria-labelledby="titolo-esito">
@@ -114,51 +180,67 @@ export function TabellaEsito({ lotto, requisiti, rimediPerRequisito, membri, leg
       </section>
     );
   }
+
+  const apri = (id: string) => setAperte((prima) => {
+    const dopo = new Set(prima);
+    if (dopo.has(id)) dopo.delete(id);
+    else dopo.add(id);
+    return dopo;
+  });
+
+  // Prima i problemi, nell'ordine del documento; i coperti in fondo, raccolti.
+  const ordinati = [...lotto.requisiti].sort((a, b) => ORDINE[esiti.get(a.id)?.stato ?? 'scoperto'] - ORDINE[esiti.get(b.id)?.stato ?? 'scoperto']);
+  const problemi = ordinati.filter((r) => esiti.get(r.id)?.stato !== 'coperto');
+  const coperti = ordinati.filter((r) => esiti.get(r.id)?.stato === 'coperto');
+
+  const riga = (requisito: Requisito) => (
+    <RigaRequisito
+      key={requisito.id}
+      requisito={requisito}
+      esito={esiti.get(requisito.id)}
+      rimedi={rimediPerRequisito === 'in_calcolo' ? 'in_calcolo' : (rimediPerRequisito.get(requisito.id) ?? [])}
+      membri={membri}
+      legenda={legenda}
+      contesto={contesto}
+      dispatch={dispatch}
+      aperta={aperte.has(requisito.id)}
+      onApri={() => apri(requisito.id)}
+    />
+  );
+
   return (
     <section aria-labelledby="titolo-esito" className={styles.sezione}>
       <h2 id="titolo-esito">Esito per requisito</h2>
-      <div className={styles.scorrimento}>
-        <table className={styles.tabella}>
-          <caption className={styles.didascalia}>
-            Una riga per requisito, una colonna per membro. Il valore in cella è quello reale del fascicolo; «non conta qui» dice che la regola non lo considera.
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Stato</th>
-              <th scope="col">Requisito</th>
-              {membri.map((m) => (
-                <th scope="col" key={m.soggettoId} className={styles.intestazioneMembro}>
-                  {nomeSoggetto(m.soggettoId, contesto)}
-                  {m.ruolo === 'ausiliaria' ? <span className={styles.ruoloTenue}>ausiliaria</span> : null}
-                </th>
-              ))}
-              <th scope="col" className={styles.cifra}>Raggiunto</th>
-              <th scope="col" className={styles.cifra}>Soglia</th>
-              <th scope="col" className={styles.cifra}>Delta</th>
-              <th scope="col">Assunz.</th>
+      <table className={styles.tabella}>
+        <thead>
+          <tr>
+            <th scope="col">Stato</th>
+            <th scope="col">Requisito</th>
+            <th scope="col">Quanto manca</th>
+            <th scope="col"><span className={styles.nascosto}>Dettagli</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {problemi.map(riga)}
+          {problemi.length === 0 ? (
+            <tr className={styles.riga}>
+              <td colSpan={COLONNE} className={styles.vuoto}>Tutti i requisiti sono coperti.</td>
             </tr>
-          </thead>
-          {perFamiglia(lotto.requisiti).map((gruppo) => (
-            <tbody key={gruppo.famiglia}>
-              <tr className={styles.famiglia}>
-                <th scope="rowgroup" colSpan={6 + membri.length}>{etichettaFamiglia(gruppo.famiglia)}</th>
-              </tr>
-              {gruppo.requisiti.map((requisito) => (
-                <RigaRequisito
-                  key={requisito.id}
-                  requisito={requisito}
-                  esito={esiti.get(requisito.id)}
-                  rimedi={rimediPerRequisito === 'in_calcolo' ? 'in_calcolo' : (rimediPerRequisito.get(requisito.id) ?? [])}
-                  membri={membri}
-                  legenda={legenda}
-                  contesto={contesto}
-                  dispatch={dispatch}
-                />
-              ))}
-            </tbody>
-          ))}
-        </table>
-      </div>
+          ) : null}
+        </tbody>
+        {coperti.length > 0 ? (
+          <tbody>
+            <tr className={styles.gruppo}>
+              <td colSpan={COLONNE}>
+                <button type="button" className={styles.apriGruppo} aria-expanded={copertiAperti} onClick={() => setCopertiAperti((v) => !v)}>
+                  {coperti.length === 1 ? '1 requisito coperto' : `${coperti.length} requisiti coperti`}
+                </button>
+              </td>
+            </tr>
+            {copertiAperti ? coperti.map(riga) : null}
+          </tbody>
+        ) : null}
+      </table>
     </section>
   );
 }

@@ -31,6 +31,19 @@ function quotaInput(soggetto: string, prestazione: string): HTMLInputElement {
   return screen.getByLabelText(`Quota di ${soggetto} su ${prestazione}`);
 }
 
+/** Tutto ciò che documenta una riga sta nell'espansione: si apre con Dettagli. */
+async function apri(user: ReturnType<typeof userEvent.setup>, requisitoId: string): Promise<HTMLElement> {
+  await user.click(within(riga(requisitoId)).getByRole('button', { name: 'Dettagli' }));
+  const dettagli = document.getElementById(`dettagli-${requisitoId}`);
+  if (!dettagli) throw new Error(`Espansione ${requisitoId} non trovata`);
+  return dettagli;
+}
+
+/** I requisiti coperti stanno raccolti e chiusi: chi guarda cerca i problemi. */
+async function apriCoperti(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(screen.getByRole('button', { name: /^\d+ requisit[oi] copert[oi]$/ }));
+}
+
 describe('pagina — avvio', () => {
   it('mostra il verdetto del lotto unico e la data di riferimento della fixture', () => {
     render(<App />);
@@ -45,12 +58,24 @@ describe('pagina — avvio', () => {
     expect(await within(lotti).findByText('Ammissibile con riserva', undefined, LENTO)).toBeTruthy();
     expect(within(lotti).queryByText('Calcolo in corso…')).toBeNull();
   });
-  it('quattro requisiti su sei sono da verificare, le forniture analoghe coperte', () => {
+  it('cinque requisiti su sei sono da verificare e stanno in riga; l’unico coperto sta raccolto e chiuso', async () => {
+    const user = userEvent.setup();
     render(<App />);
     for (const id of ['requisiti-generali', 'registro-imprese', 'registri-di-settore', 'fatturato-globale', 'certificazione-qualita']) {
       expect(within(riga(id)).getByText('Da verificare')).toBeTruthy();
     }
+    expect(document.getElementById('requisito-forniture-analoghe')).toBeNull();
+    await apriCoperti(user);
     expect(within(riga('forniture-analoghe')).getByText('Coperto')).toBeTruthy();
+  });
+  it('in riga stanno il nome breve, quanto manca e una frase sola con l’azione', () => {
+    render(<App />);
+    const fatturato = riga('fatturato-globale');
+    expect(within(fatturato).getByText('Fatturato globale')).toBeTruthy();
+    expect(within(fatturato).getByText(/^Il bando dà tre valori: coperto con due, scoperto con uno./)).toBeTruthy();
+    expect(within(fatturato).getByText('chiarimenti')).toBeTruthy();
+    expect(within(fatturato).getByText(/^mancano fino a 35\.000.€$/)).toBeTruthy();
+    expect(within(fatturato).queryByText(/maturato complessivamente nel triennio/)).toBeNull();
   });
 });
 
@@ -61,17 +86,23 @@ describe('pagina — il documento che non decide', () => {
     expect(within(regione(/Fornitura di farmaci di fascia A e C/)).getByText(/il documento lo scrive in 3 modi/)).toBeTruthy();
     expect(screen.getByText(/Termine per i chiarimenti/)).toBeTruthy();
   });
-  it('sulla riga della ISO convivono le due famiglie: il documento non dice, e per un membro serve un giudizio', () => {
+  it('sulla riga della ISO convivono le due famiglie: in riga la ragione e la parola, nell’espansione tutto', async () => {
+    const user = userEvent.setup();
     render(<App />);
     const iso = riga('certificazione-qualita');
-    expect(within(iso).getByText('Il disciplinare non dice chi debba possederlo nel raggruppamento.')).toBeTruthy();
-    expect(within(iso).getByText(/^Per Ospedalia Forniture S\.r\.l\. si chiede alla stazione appaltante/)).toBeTruthy();
+    expect(within(iso).getByText(/^Il disciplinare non dice chi debba possederlo nel raggruppamento\./)).toBeTruthy();
+    expect(within(iso).getByText('chiarimenti')).toBeTruthy();
+    const dettagli = await apri(user, 'certificazione-qualita');
+    expect(within(dettagli).getByText(/^Per Ospedalia Forniture S\.r\.l\. si chiede alla stazione appaltante/)).toBeTruthy();
+    expect(within(dettagli).getByText(/Certificazione del sistema di gestione della qualità UNI EN ISO 9001:2015/)).toBeTruthy();
+    expect(within(dettagli).getByRole('rowheader', { name: OSPEDALIA })).toBeTruthy();
   });
-  it('il fatturato mostra le tre letture con il loro esito', () => {
+  it('l’espansione del fatturato mostra le tre letture con il loro esito', async () => {
+    const user = userEvent.setup();
     render(<App />);
-    const fatturato = riga('fatturato-globale');
-    expect(within(fatturato).getByText(/Il bando scrive «valore stimato dell'appalto» in più modi/)).toBeTruthy();
-    expect(within(fatturato).getAllByText(/^valore stimato dell'appalto = /)).toHaveLength(3);
+    const dettagli = await apri(user, 'fatturato-globale');
+    expect(within(dettagli).getByText(/Il bando scrive «valore stimato dell'appalto» in più modi/)).toBeTruthy();
+    expect(within(dettagli).getAllByText(/^valore stimato dell'appalto = /)).toHaveLength(3);
   });
   it('la mossa proposta nel blocco del verdetto si prova da lì, e copre il fatturato', async () => {
     const user = userEvent.setup();
@@ -80,6 +111,7 @@ describe('pagina — il documento che non decide', () => {
     expect(await within(verdetto).findByText(/toglierebbero anche l'incertezza su «Fatturato globale»/, undefined, LENTO)).toBeTruthy();
     const prove = within(verdetto).getAllByRole('button', { name: 'Prova' });
     await user.click(prove[prove.length - 1] as HTMLElement);
+    await apriCoperti(user);
     expect(within(riga('fatturato-globale')).getByText('Coperto')).toBeTruthy();
     expect(within(regione('Modifiche')).getByText(/^Prova: Avvalimento di Grossfarma/)).toBeTruthy();
   });
@@ -120,17 +152,20 @@ describe('pagina — quote', () => {
 });
 
 describe('pagina — prove e annullamento', () => {
-  it('provare un rimedio della riga del fatturato lo applica come modifica annullabile', async () => {
+  it('provare un rimedio dall’espansione del fatturato lo applica come modifica annullabile', async () => {
     const user = userEvent.setup();
     render(<App />);
-    const fatturato = riga('fatturato-globale');
-    const prove = await within(fatturato).findAllByRole('button', { name: 'Prova' }, LENTO);
+    const dettagli = await apri(user, 'fatturato-globale');
+    const prove = await within(dettagli).findAllByRole('button', { name: 'Prova' }, LENTO);
     // L'ultima mossa applicabile è l'avvalimento di Grossfarma a favore della mandataria.
     await user.click(prove[prove.length - 1] as HTMLElement);
 
     const composizione = regione('Composizione del raggruppamento');
     expect(within(composizione).getByRole('rowheader', { name: GROSSFARMA })).toBeTruthy();
     expect(within(regione('Modifiche')).getByText(/^Prova: Avvalimento di Grossfarma/)).toBeTruthy();
+    // Coperto, la riga passa nel gruppo chiuso dei coperti.
+    expect(document.getElementById('requisito-fatturato-globale')).toBeNull();
+    await apriCoperti(user);
     expect(within(riga('fatturato-globale')).getByText('Coperto')).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Annulla ultima modifica' }));
@@ -142,7 +177,8 @@ describe('pagina — prove e annullamento', () => {
     const user = userEvent.setup();
     render(<App />);
     expect(screen.queryByRole('region', { name: /Conviene di più/ })).toBeNull();
-    const prove = await within(riga('fatturato-globale')).findAllByRole('button', { name: 'Prova' }, LENTO);
+    const dettagli = await apri(user, 'fatturato-globale');
+    const prove = await within(dettagli).findAllByRole('button', { name: 'Prova' }, LENTO);
     await user.click(prove[prove.length - 1] as HTMLElement);
     const confronto = await screen.findByRole('region', { name: /Conviene di più/ });
     expect(await within(confronto).findByText('Composizione attuale', undefined, LENTO)).toBeTruthy();
@@ -174,12 +210,14 @@ describe('pagina — data di riferimento', () => {
   it('alla data iniziale i chiarimenti si possono chiedere entro il 27/12/2023; spostando la data oltre, il termine è decorso', async () => {
     const user = userEvent.setup();
     render(<App />);
+    const dettagli = await apri(user, 'certificazione-qualita');
     // I rimedi arrivano dal canale differito: si aspettano.
-    expect(await within(riga('certificazione-qualita')).findByText(/Chiedi chiarimenti alla stazione appaltante entro le 12:00 del 27\/12\/2023/, undefined, LENTO)).toBeTruthy();
+    expect(await within(dettagli).findByText(/Chiedi chiarimenti alla stazione appaltante entro le 12:00 del 27\/12\/2023/, undefined, LENTO)).toBeTruthy();
     const data = screen.getByLabelText('Data di riferimento');
     await user.clear(data);
     await user.type(data, '2024-01-08');
-    expect(await within(riga('certificazione-qualita')).findByText(/Il termine per i chiarimenti .* è decorso/, undefined, LENTO)).toBeTruthy();
+    // Mentre si digita la data passa per valori malformati e le righe si rimontano: l'espansione si ritrova per id.
+    await waitFor(() => expect(within(document.getElementById('dettagli-certificazione-qualita') as HTMLElement).getByText(/Il termine per i chiarimenti .* è decorso/)).toBeTruthy(), LENTO);
   });
   it('la ISO 9001 di Farmadistribuzione diventa un avviso di scadenza quando entra nell’orizzonte', async () => {
     const user = userEvent.setup();
@@ -212,6 +250,7 @@ describe('pagina — membri e ausiliarie', () => {
     expect(within(modulo).getAllByText(/non avvalibile: il disciplinare non lo ammette/).length).toBeGreaterThan(0);
     await user.click(within(modulo).getByLabelText(/Fatturato globale/));
     await user.click(within(modulo).getByRole('button', { name: 'Aggiungi ausiliaria' }));
+    await apriCoperti(user);
     expect(within(riga('fatturato-globale')).getByText('Coperto')).toBeTruthy();
     expect(within(regione('Composizione del raggruppamento')).getByText(/A favore di Farmadistribuzione Laziale S.p.A. per: Fatturato globale/)).toBeTruthy();
   });
