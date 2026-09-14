@@ -1,0 +1,10 @@
+.fonte {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+}
+
+.elenco {
+  margin: 0;
+  padding-left: var(--sp-4);
+  font-size: var(--testo-xs);
+}

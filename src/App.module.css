@@ -1,0 +1,16 @@
+.pagina {
+  max-width: var(--larghezza-max);
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-5) var(--sp-6);
+  display: grid;
+  gap: var(--sp-5);
+}
+
+.testata {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+  color: var(--c-navy);
+}

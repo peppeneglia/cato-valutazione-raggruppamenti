@@ -1,0 +1,23 @@
+.stato {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+}
+
+.forma {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+
+.coperto { color: var(--c-coperto); }
+.scoperto { color: var(--c-scoperto); }
+.da_verificare { color: var(--c-da-verificare); }
+
+.verdetto {
+  font-size: var(--testo-xl);
+  font-weight: var(--peso-forte);
+  gap: var(--sp-2);
+}
