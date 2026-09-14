@@ -1,0 +1,19 @@
+{
+  "formato": {
+    "nome": "indice-documenti",
+    "versione": 1,
+    "descrizione": "I documenti che l'applicazione carica all'avvio. Per aggiungere un bando o una raccolta di fascicoli basta il file e una voce qui: il codice non cambia."
+  },
+  "bandi": [
+    {
+      "file": "bandi/asl-roma-6-9445747.json",
+      "dataRiferimentoProposta": "2023-12-20",
+      "note": {
+        "dataRiferimentoProposta": "Una scelta nostra, non un dato della gara: prima del termine per i chiarimenti (27/12/2023), così i quesiti sono ancora azionabili. Spostandola oltre si vede il termine decorso."
+      }
+    }
+  ],
+  "fascicoli": [
+    { "file": "fascicoli/grossisti-farmaceutici-esempio.json" }
+  ]
+}

@@ -7,6 +7,7 @@
 import { assertNever } from './assertNever';
 import { descriviMossa, nomePrestazione, nomeSoggetto, type ContestoDescrizioni } from './descrizioni';
 import type {
+  Bando,
   LottoId,
   Membro,
   PrestazioneId,
@@ -56,6 +57,30 @@ export function interpretaQuotaPercento(testo: string): number | undefined {
   if (normalizzato === '' || !/^\d+(\.\d+)?$/.test(normalizzato)) return undefined;
   const quota = Number(normalizzato) / 100;
   return quotaValida(quota) ? quota : undefined;
+}
+
+/**
+ * La composizione di partenza quando l'utente sceglie le imprese: la mandataria
+ * per prima, e su ogni prestazione del bando quote in parti uguali in punti
+ * percentuali interi, con l'arrotondamento alla mandataria (34/33/33). È la
+ * scelta neutra: nessuna ripartizione pensata per produrre un esito.
+ */
+export function raggruppamentoInPartiUguali(bando: Bando, soggettiIds: SoggettoId[], mandatariaId: SoggettoId): Raggruppamento {
+  const ordinati = [mandatariaId, ...soggettiIds.filter((id) => id !== mandatariaId)];
+  const parte = Math.floor(100 / ordinati.length);
+  const resto = 100 - parte * ordinati.length;
+  const prestazioni = bando.lotti.flatMap((l) => l.prestazioni.map((p) => p.id));
+  return {
+    tipo: 'orizzontale',
+    membri: ordinati.map((soggettoId, i) => {
+      const percento = i === 0 ? parte + resto : parte;
+      return {
+        ruolo: i === 0 ? 'mandataria' : 'mandante',
+        soggettoId,
+        quote: Object.fromEntries(prestazioni.map((p) => [p, percento / 100])),
+      };
+    }),
+  };
 }
 
 function conPasso(lavoro: Lavoro, etichetta: string, genere: Passo['genere'], raggruppamento: Raggruppamento): Lavoro {

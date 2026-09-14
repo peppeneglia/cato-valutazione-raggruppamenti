@@ -1,0 +1,95 @@
+{
+  "formato": {
+    "nome": "fascicoli-imprese",
+    "versione": 1,
+    "descrizione": "Fascicoli delle imprese in ingresso al motore di valutazione dei raggruppamenti: per ogni impresa, i fatti tipizzati con la loro fonte."
+  },
+  "provenienza": {
+    "natura": "esempio",
+    "documento": "Fascicoli aziendali di esempio"
+  },
+  "note": {
+    "provenienza": "Grossisti farmaceutici inventati, con fascicoli inventati: fascicoli reali non ne abbiamo. Ogni fonte dice \"di esempio\" perché nessuno la scambi per un documento vero.",
+    "soggetti": "Gli importi sono al netto di IVA: il disciplinare ASL Roma 6 non lo precisa, ed è una convenzione di questi fascicoli, non del motore."
+  },
+  "soggetti": [
+    {
+      "id": "s-farmalazio",
+      "denominazione": "Farmadistribuzione Laziale S.p.A.",
+      "fascicolo": [
+        { "tipo": "dichiarazione", "oggetto": "Assenza delle cause di esclusione di cui agli articoli 94 e 95 del Codice", "resa": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "DGUE" } } },
+        { "tipo": "iscrizione", "registro": "Registro delle imprese", "attivita": "attività pertinenti con quelle oggetto della presente procedura di gara", "possesso": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "visura camerale" } } },
+        { "tipo": "fatturato", "esercizio": 2020, "ambito": { "tipo": "globale" }, "importo": { "valore": 220000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2020" } } },
+        { "tipo": "fatturato", "esercizio": 2021, "ambito": { "tipo": "globale" }, "importo": { "valore": 230000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2021" } } },
+        { "tipo": "fatturato", "esercizio": 2022, "ambito": { "tipo": "globale" }, "importo": { "valore": 250000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2022" } } },
+        {
+          "tipo": "certificazione", "norma": "UNI EN ISO 9001:2015", "scope": "settore oggetto dell'appalto",
+          "possesso": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "certificato ISO 9001:2015" }, "validoA": "2024-03-31" },
+          "note": { "scope": "Scritto con le parole del disciplinare: coincide, quindi è posseduta con certezza." }
+        },
+        {
+          "tipo": "servizio", "oggetto": "Fornitura di farmaci e dispositivi medici con consegna in urgenza", "cpv": "33190000-8", "committente": "Azienda sanitaria di esempio A", "importo": 800000,
+          "periodo": { "valore": { "da": "2022-02-01", "a": "2023-12-31" }, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "certificato di esecuzione — Azienda sanitaria di esempio A" } },
+          "note": { "importo": "Un contratto singolo sopra la base d'asta: le due letture delle forniture analoghe concordano." }
+        },
+        {
+          "tipo": "servizio", "oggetto": "Fornitura di farmaci di fascia A", "cpv": "33600000-6", "committente": "Azienda sanitaria di esempio B", "importo": 150000,
+          "periodo": { "valore": { "da": "2023-01-01", "a": "2023-10-31" }, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "certificato di esecuzione — Azienda sanitaria di esempio B" } },
+          "note": { "cpv": "CPV dei farmaci: stesse prime due cifre di quello di gara, analogia da valutare." }
+        },
+        {
+          "tipo": "servizio", "oggetto": "Fornitura di dispositivi medici monouso", "cpv": "33190000-8", "committente": "Azienda sanitaria di esempio C", "importo": 200000,
+          "periodo": { "valore": { "da": "2019-06-01", "a": "2020-12-20" }, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "certificato di esecuzione — Azienda sanitaria di esempio C" } },
+          "note": { "periodo": "Finita prima della finestra ancorata al termine di presentazione: la nota del motore dice di quanto dovrebbe arretrare l'ancoraggio." }
+        }
+      ]
+    },
+    {
+      "id": "s-ospedalia",
+      "denominazione": "Ospedalia Forniture S.r.l.",
+      "fascicolo": [
+        { "tipo": "dichiarazione", "oggetto": "Assenza delle cause di esclusione di cui agli articoli 94 e 95 del Codice", "resa": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "DGUE" } } },
+        {
+          "tipo": "iscrizione", "registro": "Registro delle imprese", "attivita": "commercio all'ingrosso di articoli medicali e ortopedici",
+          "possesso": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "visura camerale" } },
+          "note": { "attivita": "Scritta diversamente da quella richiesta: se sia pertinente lo decide una persona." }
+        },
+        { "tipo": "fatturato", "esercizio": 2020, "ambito": { "tipo": "globale" }, "importo": { "valore": 60000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2020" } } },
+        { "tipo": "fatturato", "esercizio": 2021, "ambito": { "tipo": "globale" }, "importo": { "valore": 65000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2021" } } },
+        { "tipo": "fatturato", "esercizio": 2022, "ambito": { "tipo": "globale" }, "importo": { "valore": 65000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2022" } } },
+        {
+          "tipo": "certificazione", "norma": "UNI EN ISO 9001:2015", "scope": "commercializzazione di arredi e attrezzature per strutture sanitarie",
+          "possesso": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "certificato ISO 9001:2015" }, "validoA": "2025-09-30" },
+          "note": { "scope": "Certificazione valida con uno scope diverso: sulla stessa riga convivono il documento che non dice chi deve possederla e il giudizio sullo scope." }
+        },
+        { "tipo": "servizio", "oggetto": "Fornitura di dispositivi medici per reparti di degenza", "cpv": "33190000-8", "committente": "Azienda sanitaria di esempio D", "importo": 120000, "periodo": { "valore": { "da": "2022-09-01", "a": "2023-08-31" }, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "certificato di esecuzione — Azienda sanitaria di esempio D" } } }
+      ]
+    },
+    {
+      "id": "s-medifarm",
+      "denominazione": "Medifarm Logistica S.r.l.",
+      "note": { "fascicolo": "Nessuna certificazione di qualità." },
+      "fascicolo": [
+        { "tipo": "dichiarazione", "oggetto": "Assenza delle cause di esclusione di cui agli articoli 94 e 95 del Codice", "resa": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "DGUE" } } },
+        { "tipo": "iscrizione", "registro": "Registro delle imprese", "attivita": "attività pertinenti con quelle oggetto della presente procedura di gara", "possesso": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "visura camerale" } } },
+        { "tipo": "fatturato", "esercizio": 2020, "ambito": { "tipo": "globale" }, "importo": { "valore": 30000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2020" } } },
+        { "tipo": "fatturato", "esercizio": 2021, "ambito": { "tipo": "globale" }, "importo": { "valore": 35000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2021" } } },
+        { "tipo": "fatturato", "esercizio": 2022, "ambito": { "tipo": "globale" }, "importo": { "valore": 35000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2022" } } },
+        { "tipo": "servizio", "oggetto": "Consegna urgente di farmaci e dispositivi a strutture territoriali", "cpv": "33190000-8", "committente": "Azienda sanitaria di esempio E", "importo": 60000, "periodo": { "valore": { "da": "2023-03-01", "a": "2023-12-31" }, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "certificato di esecuzione — Azienda sanitaria di esempio E" } } }
+      ]
+    },
+    {
+      "id": "s-grossfarma",
+      "denominazione": "Grossfarma Centro-Sud S.p.A.",
+      "fascicolo": [
+        { "tipo": "dichiarazione", "oggetto": "Assenza delle cause di esclusione di cui agli articoli 94 e 95 del Codice", "resa": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "DGUE" } } },
+        { "tipo": "iscrizione", "registro": "Registro delle imprese", "attivita": "attività pertinenti con quelle oggetto della presente procedura di gara", "possesso": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "visura camerale" } } },
+        { "tipo": "fatturato", "esercizio": 2020, "ambito": { "tipo": "globale" }, "importo": { "valore": 130000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2020" } } },
+        { "tipo": "fatturato", "esercizio": 2021, "ambito": { "tipo": "globale" }, "importo": { "valore": 135000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2021" } } },
+        { "tipo": "fatturato", "esercizio": 2022, "ambito": { "tipo": "globale" }, "importo": { "valore": 135000, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "bilancio 2022" } } },
+        { "tipo": "certificazione", "norma": "ISO 13485", "scope": "settore oggetto dell'appalto", "possesso": { "valore": true, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "certificato ISO 13485" }, "validoA": "2026-06-30" } },
+        { "tipo": "servizio", "oggetto": "Fornitura di farmaci e parafarmaci con consegna in giornata", "cpv": "33190000-8", "committente": "Azienda sanitaria di esempio F", "importo": 500000, "periodo": { "valore": { "da": "2021-06-01", "a": "2023-05-31" }, "fonte": { "documento": "Fascicolo aziendale (di esempio)", "riferimento": "certificato di esecuzione — Azienda sanitaria di esempio F" } } }
+      ]
+    }
+  ]
+}

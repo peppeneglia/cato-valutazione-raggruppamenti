@@ -1,0 +1,76 @@
+.sezione {
+  display: grid;
+  gap: var(--sp-4);
+  max-width: 62em;
+}
+
+.spiegazione {
+  color: var(--c-testo-tenue);
+}
+
+.documento {
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.intestazione {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+  align-items: baseline;
+}
+
+/* Il nome del file va a capo dove serve: un percorso lungo non allarga la pagina. */
+.file {
+  font-weight: var(--peso-forte);
+  color: var(--c-navy);
+  overflow-wrap: anywhere;
+}
+
+.conteggio {
+  color: var(--c-scoperto);
+}
+
+.elenco {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.errore {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-3);
+  border-left: var(--spessore-bordo-forte) double var(--c-scoperto);
+  font-size: var(--testo-sm);
+  min-width: 0;
+}
+
+.dove {
+  font-weight: var(--peso-forte);
+  overflow-wrap: anywhere;
+}
+
+.coppie {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.coppia {
+  display: grid;
+  grid-template-columns: 5.5em minmax(0, 1fr);
+  gap: var(--sp-2);
+}
+
+.coppia dt {
+  color: var(--c-testo-tenue);
+}
+
+.coppia dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,582 @@
+{
+  "lottoId": "lotto-unico",
+  "valutatoAl": "2023-12-20",
+  "verdetto": "ammissibile_con_riserva",
+  "requisiti": [
+    {
+      "requisitoId": "requisiti-generali",
+      "stato": "da_verificare",
+      "contributi": [
+        {
+          "soggettoId": "s-farmalazio",
+          "valore": {
+            "tipo": "possesso",
+            "esito": "posseduto"
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "DGUE"
+            }
+          ]
+        },
+        {
+          "soggettoId": "s-ospedalia",
+          "valore": {
+            "tipo": "possesso",
+            "esito": "posseduto"
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "DGUE"
+            }
+          ]
+        },
+        {
+          "soggettoId": "s-medifarm",
+          "valore": {
+            "tipo": "possesso",
+            "esito": "posseduto"
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "DGUE"
+            }
+          ]
+        }
+      ],
+      "motivazione": "Il disciplinare non dice come il requisito si componga nel raggruppamento: nessuna regola è stata applicata. Per membro: Farmadistribuzione Laziale S.p.A. lo possiede; Ospedalia Forniture S.r.l. lo possiede; Medifarm Logistica S.r.l. lo possiede.",
+      "assunzioni": [],
+      "indeterminatezze": [
+        {
+          "tipo": "regola_non_dichiarata"
+        }
+      ],
+      "rimedi": [
+        {
+          "tipo": "richiesta_chiarimenti",
+          "requisitoId": "requisiti-generali",
+          "quesiti": [
+            "In caso di raggruppamento temporaneo, da chi deve essere posseduto il requisito «Requisiti di ordine generale: assenza delle cause di esclusione di cui agli articoli 94 e 95 del Codice»: da ciascun componente, dalla sola mandataria o dal raggruppamento nel complesso?"
+          ],
+          "termine": {
+            "data": "2023-12-27",
+            "ora": "12:00"
+          },
+          "decorso": false
+        }
+      ]
+    },
+    {
+      "requisitoId": "registro-imprese",
+      "stato": "da_verificare",
+      "contributi": [
+        {
+          "soggettoId": "s-farmalazio",
+          "valore": {
+            "tipo": "possesso",
+            "esito": "posseduto"
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "visura camerale"
+            }
+          ]
+        },
+        {
+          "soggettoId": "s-ospedalia",
+          "valore": {
+            "tipo": "possesso",
+            "esito": "da_verificare"
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "visura camerale"
+            }
+          ],
+          "nota": "iscrizione Registro delle imprese con «commercio all'ingrosso di articoli medicali e ortopedici» invece di «attività pertinenti con quelle oggetto della presente procedura di gara»: equivalenza da valutare"
+        },
+        {
+          "soggettoId": "s-medifarm",
+          "valore": {
+            "tipo": "possesso",
+            "esito": "posseduto"
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "visura camerale"
+            }
+          ]
+        }
+      ],
+      "motivazione": "Richiesto a ciascun membro: Ospedalia Forniture S.r.l. (iscrizione Registro delle imprese con «commercio all'ingrosso di articoli medicali e ortopedici» invece di «attività pertinenti con quelle oggetto della presente procedura di gara»: equivalenza da valutare) lo possiede con riserva. Il confronto che manca è un giudizio semantico: decide una persona, non il motore.",
+      "assunzioni": [],
+      "indeterminatezze": [
+        {
+          "tipo": "giudizio_richiesto",
+          "soggettoId": "s-ospedalia",
+          "oggetto": "equivalenza tra «commercio all'ingrosso di articoli medicali e ortopedici» e «attività pertinenti con quelle oggetto della presente procedura di gara» (iscrizione Registro delle imprese)",
+          "interpella": "stazione_appaltante",
+          "quesito": "L'attività «commercio all'ingrosso di articoli medicali e ortopedici» dell'iscrizione Registro delle imprese è pertinente rispetto a «attività pertinenti con quelle oggetto della presente procedura di gara»"
+        }
+      ],
+      "rimedi": [
+        {
+          "tipo": "richiesta_chiarimenti",
+          "requisitoId": "registro-imprese",
+          "quesiti": [
+            "L'attività «commercio all'ingrosso di articoli medicali e ortopedici» dell'iscrizione Registro delle imprese è pertinente rispetto a «attività pertinenti con quelle oggetto della presente procedura di gara» ai fini del requisito «Iscrizione nel registro delle imprese oppure nell'Albo delle Imprese Artigiane per attività pertinenti con quelle oggetto della procedura» (§6.1 lett. a) — Requisiti di idoneità professionale)?"
+          ],
+          "termine": {
+            "data": "2023-12-27",
+            "ora": "12:00"
+          },
+          "decorso": false
+        }
+      ]
+    },
+    {
+      "requisitoId": "registri-di-settore",
+      "stato": "da_verificare",
+      "contributi": [],
+      "motivazione": "Il disciplinare non dice cosa soddisfi il requisito: lo formula come «Iscrizione in registri o albi se prescritta dalla legislazione vigente per l'esercizio, da parte del concorrente, dell'attività oggetto di appalto» senza nominare un registro, una norma o un documento. Nessun fascicolo si può confrontare.",
+      "assunzioni": [],
+      "indeterminatezze": [
+        {
+          "tipo": "criterio_non_determinato",
+          "testo": "Iscrizione in registri o albi se prescritta dalla legislazione vigente per l'esercizio, da parte del concorrente, dell'attività oggetto di appalto"
+        },
+        {
+          "tipo": "regola_non_dichiarata"
+        }
+      ],
+      "rimedi": [
+        {
+          "tipo": "richiesta_chiarimenti",
+          "requisitoId": "registri-di-settore",
+          "quesiti": [
+            "Quale registro, albo o documento soddisfa il requisito «Iscrizione in registri o albi se prescritta dalla legislazione vigente per l'esercizio dell'attività oggetto di appalto»? Il disciplinare non lo nomina.",
+            "In caso di raggruppamento temporaneo, da chi deve essere posseduto il requisito «Iscrizione in registri o albi se prescritta dalla legislazione vigente per l'esercizio dell'attività oggetto di appalto»: da ciascun componente, dalla sola mandataria o dal raggruppamento nel complesso?"
+          ],
+          "termine": {
+            "data": "2023-12-27",
+            "ora": "12:00"
+          },
+          "decorso": false
+        }
+      ]
+    },
+    {
+      "requisitoId": "fatturato-globale",
+      "stato": "da_verificare",
+      "contributi": [
+        {
+          "soggettoId": "s-farmalazio",
+          "valore": {
+            "tipo": "misura",
+            "certo": 700000,
+            "incerto": 0
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "bilancio 2020"
+            },
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "bilancio 2021"
+            },
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "bilancio 2022"
+            }
+          ]
+        },
+        {
+          "soggettoId": "s-ospedalia",
+          "valore": {
+            "tipo": "misura",
+            "certo": 190000,
+            "incerto": 0
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "bilancio 2020"
+            },
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "bilancio 2021"
+            },
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "bilancio 2022"
+            }
+          ]
+        },
+        {
+          "soggettoId": "s-medifarm",
+          "valore": {
+            "tipo": "misura",
+            "certo": 100000,
+            "incerto": 0
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "bilancio 2020"
+            },
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "bilancio 2021"
+            },
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "bilancio 2022"
+            }
+          ]
+        }
+      ],
+      "motivazione": "Il documento ammette 3 letture con esiti diversi: sotto «valore stimato dell'appalto = 750.000 € (art. 3, importo a base di gara, p. 9)» coperto; sotto «valore stimato dell'appalto = 966.144,50 € (art. 3.2, testo, p. 10)» coperto; sotto «valore stimato dell'appalto = 1.025.000 € (art. 3.2, tabella, p. 10)» scoperto (mancano 35.000 €). Fino a un chiarimento non si può decidere; i numeri mostrati sono della lettura peggiore.",
+      "assunzioni": [],
+      "indeterminatezze": [
+        {
+          "tipo": "valore_contraddittorio",
+          "nome": "valore stimato dell'appalto",
+          "esiti": [
+            {
+              "etichetta": "750.000 € (art. 3, importo a base di gara, p. 9)",
+              "stato": "coperto"
+            },
+            {
+              "etichetta": "966.144,50 € (art. 3.2, testo, p. 10)",
+              "stato": "coperto"
+            },
+            {
+              "etichetta": "1.025.000 € (art. 3.2, tabella, p. 10)",
+              "stato": "scoperto"
+            }
+          ]
+        }
+      ],
+      "rimedi": [
+        {
+          "tipo": "ingresso_soggetto",
+          "soggettoId": "s-grossfarma",
+          "ruolo": "mandante",
+          "quote": {}
+        },
+        {
+          "tipo": "avvalimento",
+          "requisitoId": "fatturato-globale",
+          "ausiliariaId": "s-grossfarma",
+          "ausiliataId": "s-farmalazio"
+        },
+        {
+          "tipo": "richiesta_chiarimenti",
+          "requisitoId": "fatturato-globale",
+          "quesiti": [
+            "Quale valore di «valore stimato dell'appalto» vale per il requisito «Fatturato globale almeno pari al valore stimato dell'appalto, maturato complessivamente nel triennio 2020/2021/2022»: 750.000 € (art. 3, importo a base di gara, p. 9) oppure 966.144,50 € (art. 3.2, testo, p. 10) oppure 1.025.000 € (art. 3.2, tabella, p. 10)?"
+          ],
+          "termine": {
+            "data": "2023-12-27",
+            "ora": "12:00"
+          },
+          "decorso": false
+        }
+      ],
+      "misurazione": {
+        "unita": {
+          "tipo": "euro"
+        },
+        "soglia": 1025000,
+        "raggiunto": 990000,
+        "massimo": 990000,
+        "delta": 35000,
+        "minimiRuolo": []
+      },
+      "varianti": [
+        {
+          "etichetta": "valore stimato dell'appalto = 750.000 € (art. 3, importo a base di gara, p. 9)",
+          "stato": "coperto",
+          "misurazione": {
+            "unita": {
+              "tipo": "euro"
+            },
+            "soglia": 750000,
+            "raggiunto": 990000,
+            "massimo": 990000,
+            "delta": 0,
+            "minimiRuolo": []
+          },
+          "motivazione": "Somma dei contributi certi: 990.000 € su una soglia di 750.000 €: soglia raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 700.000 €; Ospedalia Forniture S.r.l. 190.000 €; Medifarm Logistica S.r.l. 100.000 €."
+        },
+        {
+          "etichetta": "valore stimato dell'appalto = 966.144,50 € (art. 3.2, testo, p. 10)",
+          "stato": "coperto",
+          "misurazione": {
+            "unita": {
+              "tipo": "euro"
+            },
+            "soglia": 966144.5,
+            "raggiunto": 990000,
+            "massimo": 990000,
+            "delta": 0,
+            "minimiRuolo": []
+          },
+          "motivazione": "Somma dei contributi certi: 990.000 € su una soglia di 966.144,50 €: soglia raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 700.000 €; Ospedalia Forniture S.r.l. 190.000 €; Medifarm Logistica S.r.l. 100.000 €."
+        },
+        {
+          "etichetta": "valore stimato dell'appalto = 1.025.000 € (art. 3.2, tabella, p. 10)",
+          "stato": "scoperto",
+          "misurazione": {
+            "unita": {
+              "tipo": "euro"
+            },
+            "soglia": 1025000,
+            "raggiunto": 990000,
+            "massimo": 990000,
+            "delta": 35000,
+            "minimiRuolo": []
+          },
+          "motivazione": "Somma dei contributi certi: 990.000 € su una soglia di 1.025.000 €: mancano 35.000 €. Contributi: Farmadistribuzione Laziale S.p.A. 700.000 €; Ospedalia Forniture S.r.l. 190.000 €; Medifarm Logistica S.r.l. 100.000 €."
+        }
+      ]
+    },
+    {
+      "requisitoId": "certificazione-qualita",
+      "stato": "da_verificare",
+      "contributi": [
+        {
+          "soggettoId": "s-farmalazio",
+          "valore": {
+            "tipo": "possesso",
+            "esito": "posseduto"
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "certificato ISO 9001:2015"
+            }
+          ]
+        },
+        {
+          "soggettoId": "s-ospedalia",
+          "valore": {
+            "tipo": "possesso",
+            "esito": "da_verificare"
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "certificato ISO 9001:2015"
+            }
+          ],
+          "nota": "certificazione UNI EN ISO 9001:2015 o ISO 13485 con «commercializzazione di arredi e attrezzature per strutture sanitarie» invece di «settore oggetto dell'appalto»: equivalenza da valutare"
+        },
+        {
+          "soggettoId": "s-medifarm",
+          "valore": {
+            "tipo": "possesso",
+            "esito": "assente"
+          },
+          "conteggiato": true,
+          "fonti": [],
+          "nota": "nessuna certificazione UNI EN ISO 9001:2015 o ISO 13485 nel fascicolo"
+        }
+      ],
+      "motivazione": "Il disciplinare non dice come il requisito si componga nel raggruppamento: nessuna regola è stata applicata. Per membro: Farmadistribuzione Laziale S.p.A. lo possiede; Ospedalia Forniture S.r.l. lo possiede con riserva (certificazione UNI EN ISO 9001:2015 o ISO 13485 con «commercializzazione di arredi e attrezzature per strutture sanitarie» invece di «settore oggetto dell'appalto»: equivalenza da valutare); Medifarm Logistica S.r.l. non lo possiede (nessuna certificazione UNI EN ISO 9001:2015 o ISO 13485 nel fascicolo). Il confronto che manca è un giudizio semantico: decide una persona, non il motore.",
+      "assunzioni": [],
+      "indeterminatezze": [
+        {
+          "tipo": "regola_non_dichiarata"
+        },
+        {
+          "tipo": "giudizio_richiesto",
+          "soggettoId": "s-ospedalia",
+          "oggetto": "equivalenza tra «commercializzazione di arredi e attrezzature per strutture sanitarie» e «settore oggetto dell'appalto» (certificazione UNI EN ISO 9001:2015 o ISO 13485)",
+          "interpella": "stazione_appaltante",
+          "quesito": "Una certificazione UNI EN ISO 9001:2015 o ISO 13485 con scope «commercializzazione di arredi e attrezzature per strutture sanitarie» rientra in «settore oggetto dell'appalto»"
+        }
+      ],
+      "rimedi": [
+        {
+          "tipo": "richiesta_chiarimenti",
+          "requisitoId": "certificazione-qualita",
+          "quesiti": [
+            "In caso di raggruppamento temporaneo, da chi deve essere posseduto il requisito «Certificazione del sistema di gestione della qualità UNI EN ISO 9001:2015 nel settore oggetto dell'appalto e/o ISO 13485»: da ciascun componente, dalla sola mandataria o dal raggruppamento nel complesso?",
+            "Una certificazione UNI EN ISO 9001:2015 o ISO 13485 con scope «commercializzazione di arredi e attrezzature per strutture sanitarie» rientra in «settore oggetto dell'appalto» ai fini del requisito «Certificazione del sistema di gestione della qualità UNI EN ISO 9001:2015 nel settore oggetto dell'appalto e/o ISO 13485» (§6.3 lett. a) — Requisiti di capacità tecnica e professionale)?"
+          ],
+          "termine": {
+            "data": "2023-12-27",
+            "ora": "12:00"
+          },
+          "decorso": false
+        }
+      ]
+    },
+    {
+      "requisitoId": "forniture-analoghe",
+      "stato": "coperto",
+      "contributi": [
+        {
+          "soggettoId": "s-farmalazio",
+          "valore": {
+            "tipo": "misura",
+            "certo": 1,
+            "incerto": 0
+          },
+          "conteggiato": true,
+          "fonti": [
+            {
+              "documento": "Fascicolo aziendale (di esempio)",
+              "riferimento": "certificato di esecuzione — Azienda sanitaria di esempio A"
+            }
+          ],
+          "nota": "servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: importo 150.000 € sotto il minimo unitario di 750.000 €; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); con un ancoraggio anteriore di 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»",
+          "dettagli": [
+            "le forniture contate restano nella finestra fino a un arretramento dell'ancoraggio di 713 giorni; la più esposta è «Fornitura di farmaci e dispositivi medici con consegna in urgenza»"
+          ]
+        },
+        {
+          "soggettoId": "s-ospedalia",
+          "valore": {
+            "tipo": "misura",
+            "certo": 0,
+            "incerto": 0
+          },
+          "conteggiato": true,
+          "fonti": [],
+          "nota": "servizio «Fornitura di dispositivi medici per reparti di degenza» per Azienda sanitaria di esempio D: importo 120.000 € sotto il minimo unitario di 750.000 €"
+        },
+        {
+          "soggettoId": "s-medifarm",
+          "valore": {
+            "tipo": "misura",
+            "certo": 0,
+            "incerto": 0
+          },
+          "conteggiato": true,
+          "fonti": [],
+          "nota": "servizio «Consegna urgente di farmaci e dispositivi a strutture territoriali» per Azienda sanitaria di esempio E: importo 60.000 € sotto il minimo unitario di 750.000 €"
+        }
+      ],
+      "motivazione": "Somma dei contributi certi: 1 fornitura analoga su una soglia di 1 fornitura analoga: soglia raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 1 fornitura analoga (servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: importo 150.000 € sotto il minimo unitario di 750.000 €; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); con un ancoraggio anteriore di 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»); Ospedalia Forniture S.r.l. 0 forniture analoghe (servizio «Fornitura di dispositivi medici per reparti di degenza» per Azienda sanitaria di esempio D: importo 120.000 € sotto il minimo unitario di 750.000 €); Medifarm Logistica S.r.l. 0 forniture analoghe (servizio «Consegna urgente di farmaci e dispositivi a strutture territoriali» per Azienda sanitaria di esempio E: importo 60.000 € sotto il minimo unitario di 750.000 €). Le letture misurano cose diverse (forniture analoghe, euro) e l'esito coincide sotto tutte.",
+      "assunzioni": [
+        {
+          "codice": "ancoraggio_termine_presentazione",
+          "testo": "La finestra «ultimi 3 anni» non ha un ancoraggio dichiarato nel disciplinare: è stata ancorata al termine di presentazione (15/01/2024), l'unica data certa del bando. È un'assunzione del motore, non del disciplinare."
+        },
+        {
+          "codice": "esito_concordante",
+          "testo": "Il documento ammette più letture del requisito (un solo contratto di importo non inferiore all'importo a base d'asta; la somma delle forniture non inferiore all'importo a base d'asta). L'esito è lo stesso sotto ciascuna, e vale anche se il documento è ambiguo. È un'assunzione del motore, non del disciplinare."
+        }
+      ],
+      "indeterminatezze": [],
+      "rimedi": [],
+      "misurazione": {
+        "unita": {
+          "tipo": "conteggio",
+          "sostantivo": {
+            "singolare": "fornitura analoga",
+            "plurale": "forniture analoghe"
+          }
+        },
+        "soglia": 1,
+        "raggiunto": 1,
+        "massimo": 1,
+        "delta": 0,
+        "minimiRuolo": []
+      },
+      "varianti": [
+        {
+          "etichetta": "un solo contratto di importo non inferiore all'importo a base d'asta",
+          "stato": "coperto",
+          "misurazione": {
+            "unita": {
+              "tipo": "conteggio",
+              "sostantivo": {
+                "singolare": "fornitura analoga",
+                "plurale": "forniture analoghe"
+              }
+            },
+            "soglia": 1,
+            "raggiunto": 1,
+            "massimo": 1,
+            "delta": 0,
+            "minimiRuolo": []
+          },
+          "motivazione": "Somma dei contributi certi: 1 fornitura analoga su una soglia di 1 fornitura analoga: soglia raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 1 fornitura analoga (servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: importo 150.000 € sotto il minimo unitario di 750.000 €; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); con un ancoraggio anteriore di 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»); Ospedalia Forniture S.r.l. 0 forniture analoghe (servizio «Fornitura di dispositivi medici per reparti di degenza» per Azienda sanitaria di esempio D: importo 120.000 € sotto il minimo unitario di 750.000 €); Medifarm Logistica S.r.l. 0 forniture analoghe (servizio «Consegna urgente di farmaci e dispositivi a strutture territoriali» per Azienda sanitaria di esempio E: importo 60.000 € sotto il minimo unitario di 750.000 €)."
+        },
+        {
+          "etichetta": "la somma delle forniture non inferiore all'importo a base d'asta",
+          "stato": "coperto",
+          "misurazione": {
+            "unita": {
+              "tipo": "euro"
+            },
+            "soglia": 750000,
+            "raggiunto": 980000,
+            "massimo": 1130000,
+            "delta": 0,
+            "minimiRuolo": []
+          },
+          "motivazione": "Somma dei contributi certi: 980.000 € su una soglia di 750.000 €: soglia raggiunta. Altri 150.000 € dipendono da fatti da verificare: se reggono, la soglia è raggiunta. Contributi: Farmadistribuzione Laziale S.p.A. 800.000 € più 150.000 € da verificare (servizio «Fornitura di farmaci di fascia A» per Azienda sanitaria di esempio B: CPV 33600000-6 diverso da quello di gara 33190000-8, analogia da valutare; fuori dalla finestra 15/01/2021 – 15/01/2024: «Fornitura di dispositivi medici monouso» (01/06/2019 – 20/12/2020); con un ancoraggio anteriore di 26 giorni conterebbe anche «Fornitura di dispositivi medici monouso»); Ospedalia Forniture S.r.l. 120.000 €; Medifarm Logistica S.r.l. 60.000 €."
+        }
+      ]
+    }
+  ],
+  "anomalie": [],
+  "avvisiScadenza": [],
+  "percorsoMinimo": {
+    "esito": "gia_ammissibile",
+    "verdetto": "ammissibile_con_riserva",
+    "residui": [
+      "requisiti-generali",
+      "registro-imprese",
+      "registri-di-settore",
+      "fatturato-globale",
+      "certificazione-qualita"
+    ],
+    "miglioramenti": [
+      {
+        "mossa": {
+          "tipo": "ingresso_soggetto",
+          "soggettoId": "s-grossfarma",
+          "ruolo": "mandante",
+          "quote": {}
+        },
+        "requisitiRisolti": [
+          "fatturato-globale"
+        ]
+      },
+      {
+        "mossa": {
+          "tipo": "avvalimento",
+          "requisitoId": "fatturato-globale",
+          "ausiliariaId": "s-grossfarma",
+          "ausiliataId": "s-farmalazio"
+        },
+        "requisitiRisolti": [
+          "fatturato-globale"
+        ]
+      }
+    ]
+  }
+}

@@ -10,11 +10,31 @@ Progetto personale a scopo dimostrativo, non affiliato ad alcuna azienda.
 
 ## Il caso reale
 
-La fixture è la gara **ASL Roma 6, n. 9445747** — fornitura di farmaci e
-dispositivi da parte di grossista con consegna veloce — letta dal
-disciplinare di gara pubblico, con articolo e pagina per ogni valore
-(`Documenti/estrazione-disciplinare.md`). Le imprese e i loro fascicoli sono
-inventati, e la pagina lo dichiara.
+Il bando disponibile è la gara **ASL Roma 6, n. 9445747** — fornitura di
+farmaci e dispositivi da parte di grossista con consegna veloce — letta dal
+disciplinare di gara pubblico, con articolo e pagina per ogni valore. Le
+imprese e i loro fascicoli sono inventati, e la pagina lo dichiara.
+
+## I documenti
+
+Bandi e fascicoli non sono nel codice: sono file JSON in `public/documenti/`,
+che l'applicazione carica all'avvio. `indice.json` elenca quelli disponibili;
+per aggiungere un bando basta il suo file e una voce nell'indice.
+
+Il formato è il nostro formato di ingresso al motore: **requisiti
+strutturati**, prodotti a valle dell'estrazione dal documento di gara.
+L'estrazione questo progetto non la fa, per scelta. Ogni documento dichiara
+in testa cosa è (`formato`) e da dove viene (`provenienza`, reale o di
+esempio): la dichiarazione sulla pagina nasce da lì. Il campo `note`, su
+qualunque oggetto, porta le ragioni di chi ha strutturato il documento — un
+testo per campo, e ogni chiave deve essere un campo di quell'oggetto. Il
+motore non lo legge.
+
+Un documento che non ha la forma giusta non rompe la pagina: resta
+nell'elenco con i suoi errori, ciascuno con il percorso del campo, cosa ci
+voleva e cosa c'è. La coerenza — quote che non tornano, rinvii a valori che
+il bando non nomina — non è un errore di forma: la dice il motore, come
+anomalia.
 
 Il disciplinare rompe un modello ingenuo in sette punti, e non con requisiti
 esotici: con l'**indeterminatezza**. Tre requisiti su sei non dicono come si
@@ -34,11 +54,12 @@ npm run dev        # sviluppo
 npm run build      # produzione, in dist/
 npm run test       # motore + interfaccia (Vitest, 360+ test)
 npm run lint
-npm run fixture:esito   # rigenera l'esito atteso della fixture dal motore
+npm run esito:atteso    # rigenera l'esito atteso della gara reale dal motore
 ```
 
-Nessun backend, nessuna chiamata di rete, nessuna persistenza: tutto gira nel
-browser e nulla ne esce.
+Nessun backend e nessuna persistenza. Nessun servizio esterno, nessun dato che
+lascia il browser: i documenti sono caricati dallo stesso server che serve la
+pagina, e la valutazione gira tutta nel browser.
 
 ## La tesi
 
@@ -122,7 +143,11 @@ src/domain.ts          il contratto: tipi del dominio, unioni discriminate;
 src/engine/            motore puro: varianti (letture × candidati), criteri,
                        operatori, validazione, verdetto, scadenze, rimedi,
                        percorso, confronto
-src/fixture.ts         la gara ASL Roma 6 + esito atteso GENERATO dal motore
+public/documenti/      bandi e fascicoli in JSON, con l'indice
+src/documenti/         caricamento e controllo di struttura dei documenti,
+                       tipizzato contro il modello
+src/engine/esito-atteso-asl-roma-6.json
+                       l'esito della gara reale, GENERATO dal motore
 src/lavoro.ts          il foglio di lavoro: reducer puro con storia annullabile
 src/descrizioni.ts     testo dagli identificativi
 src/formato.ts         euro, date, percentuali in formato italiano

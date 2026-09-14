@@ -1,28 +1,33 @@
-// Test di integrazione sulla fixture completa: la gara reale ASL Roma 6.
+// Test di integrazione sui documenti veri: la gara reale ASL Roma 6.
 // L'esito atteso è generato dal motore e fissato dopo lettura riga per
 // riga: se il motore diverge, qui si scopre, e chi ha ragione va capito
-// prima di riallineare (`npm run fixture:esito`). I fatti sotto sono
+// prima di riallineare (`npm run esito:atteso`). I fatti sotto sono
 // verificati a mano sul disciplinare, indipendenti dall'esito generato.
 
 import { describe, expect, it } from 'vitest';
 import type { ParametriValutazione } from '../domain';
-import { bando, DATA_RIFERIMENTO, esitoAtteso, ORIZZONTE_SCADENZE_GIORNI, raggruppamento, soggetti } from '../fixture';
+import type { Esito } from '../domain';
+import { bando, DATA_RIFERIMENTO, raggruppamento, soggetti } from '../documenti/documentiDiProva';
+import { ORIZZONTE_SCADENZE_GIORNI } from '../parametri';
+import testoEsitoAtteso from './esito-atteso-asl-roma-6.json?raw';
 import { valuta } from './index';
+
+const esitoAtteso = JSON.parse(testoEsitoAtteso) as Esito;
 
 function parametri(extra: Partial<ParametriValutazione> = {}): ParametriValutazione {
   return { bando, lottoId: 'lotto-unico', soggetti, raggruppamento, dataRiferimento: DATA_RIFERIMENTO, orizzonteScadenzeGiorni: ORIZZONTE_SCADENZE_GIORNI, ...extra };
 }
 
-describe('fixture — esito completo', () => {
+describe('gara reale — esito completo', () => {
   it('il motore produce esattamente l’esito atteso sul lotto unico', () => {
-    expect(valuta(parametri())).toEqual(esitoAtteso['lotto-unico']);
+    expect(valuta(parametri())).toEqual(esitoAtteso);
   });
   it('la gara è monolotto', () => {
     expect(bando.lotti.map((l) => l.id)).toEqual(['lotto-unico']);
   });
 });
 
-describe('fixture — fatti verificati a mano sul disciplinare', () => {
+describe('gara reale — fatti verificati a mano sul disciplinare', () => {
   const esito = valuta(parametri());
   const requisito = (id: string) => {
     const r = esito.requisiti.find((x) => x.requisitoId === id);

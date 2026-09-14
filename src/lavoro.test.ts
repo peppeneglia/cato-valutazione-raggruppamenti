@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bando, DATA_RIFERIMENTO, raggruppamento, soggetti } from './fixture';
+import { bando, DATA_RIFERIMENTO, raggruppamento, soggetti } from './documenti/documentiDiProva';
 import { formattaPercentuale } from './formato';
 import { composizionePrimaDellUltimaProva, interpretaQuotaPercento, quotaValida, riduci, type Lavoro } from './lavoro';
 
@@ -36,7 +36,7 @@ describe('riduci — quote', () => {
     const dopo = riduci(iniziale(), { tipo: 'imposta_quota', soggettoId: 's-ospedalia', prestazioneId: 'fornitura', quota: 0.4 }, contesto);
     expect(dopo.raggruppamento.membri[1]).toMatchObject({ soggettoId: 's-ospedalia', quote: expect.objectContaining({ fornitura: 0.4 }) });
     expect(dopo.storia).toHaveLength(1);
-    expect(dopo.storia[0]).toMatchObject({ genere: 'modifica', etichetta: `Quota di Ospedalia Forniture S.r.l. su «${FORNITURA}»: ${formattaPercentuale(0.25)} → ${formattaPercentuale(0.4)}` });
+    expect(dopo.storia[0]).toMatchObject({ genere: 'modifica', etichetta: `Quota di Ospedalia Forniture S.r.l. su «${FORNITURA}»: ${formattaPercentuale(0.33)} → ${formattaPercentuale(0.4)}` });
     expect(dopo.storia[0]?.raggruppamento).toBe(raggruppamento);
   });
   it('non muta il raggruppamento di partenza', () => {
@@ -48,7 +48,7 @@ describe('riduci — quote', () => {
     const l = iniziale();
     expect(riduci(l, { tipo: 'imposta_quota', soggettoId: 's-ospedalia', prestazioneId: 'fornitura', quota: 1.5 }, contesto)).toBe(l);
     expect(riduci(l, { tipo: 'imposta_quota', soggettoId: 's-ignoto', prestazioneId: 'fornitura', quota: 0.5 }, contesto)).toBe(l);
-    expect(riduci(l, { tipo: 'imposta_quota', soggettoId: 's-ospedalia', prestazioneId: 'fornitura', quota: 0.25 }, contesto)).toBe(l);
+    expect(riduci(l, { tipo: 'imposta_quota', soggettoId: 's-ospedalia', prestazioneId: 'fornitura', quota: 0.33 }, contesto)).toBe(l);
   });
 });
 
@@ -78,13 +78,13 @@ describe('riduci — membri', () => {
 });
 
 describe('riduci — prove e annullamento', () => {
-  const mossa = { tipo: 'ingresso_soggetto', soggettoId: 's-grossfarma', ruolo: 'mandante', quote: { fornitura: 0.25 }, rilevateDa: 's-ospedalia' } as const;
+  const mossa = { tipo: 'ingresso_soggetto', soggettoId: 's-grossfarma', ruolo: 'mandante', quote: { fornitura: 0.33 }, rilevateDa: 's-ospedalia' } as const;
 
   it('una prova applica la mossa del motore e registra un passo di genere prova con l’etichetta onesta', () => {
     const dopo = riduci(iniziale(), { tipo: 'prova_rimedio', mossa }, contesto);
     expect(dopo.raggruppamento.membri.map((m) => m.soggettoId)).toEqual(['s-farmalazio', 's-ospedalia', 's-medifarm', 's-grossfarma']);
     expect(dopo.raggruppamento.membri[1]).toMatchObject({ quote: expect.objectContaining({ fornitura: 0 }) });
-    expect(dopo.storia[0]).toMatchObject({ genere: 'prova', etichetta: `Prova: Ingresso di Grossfarma Centro-Sud S.p.A. come mandante, rilevando ${formattaPercentuale(0.25)} di «${FORNITURA}» da Ospedalia Forniture S.r.l.` });
+    expect(dopo.storia[0]).toMatchObject({ genere: 'prova', etichetta: `Prova: Ingresso di Grossfarma Centro-Sud S.p.A. come mandante, rilevando ${formattaPercentuale(0.33)} di «${FORNITURA}» da Ospedalia Forniture S.r.l.` });
   });
   it('annulla ripristina lo stato precedente nell’ordine vero, prove e modifiche insieme', () => {
     const l0 = iniziale();

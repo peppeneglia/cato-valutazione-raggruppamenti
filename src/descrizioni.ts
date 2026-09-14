@@ -27,6 +27,7 @@ import type {
   StatoRequisito,
   Verdetto,
 } from './domain';
+import type { Provenienza } from './documenti/formato';
 import { formattaConUnita, formattaData, formattaEuro, formattaPercentuale } from './formato';
 
 export type ContestoDescrizioni = { bando: Bando; soggetti: Soggetto[] };
@@ -674,4 +675,22 @@ export function bersaglioAnomalia(anomalia: Anomalia): BersaglioAnomalia | undef
     default:
       return assertNever(anomalia);
   }
+}
+
+// ─── Perimetro dei dati ──────────────────────────────────────
+
+/**
+ * Cosa sono i dati sulla pagina, detto dai documenti stessi: la natura la
+ * dichiara l'intestazione di ciascuno, qui non si scrive a mano.
+ */
+export function dichiarazioneDati(bando: Provenienza, fascicoli: Provenienza[]): string {
+  const frase = bando.natura === 'reale' ? `Bando reale: ${bando.documento}.` : `Bando di esempio, inventato: ${bando.documento}.`;
+  const tutteEsempio = fascicoli.length > 0 && fascicoli.every((f) => f.natura === 'esempio');
+  const tutteReali = fascicoli.length > 0 && fascicoli.every((f) => f.natura === 'reale');
+  const imprese = tutteEsempio
+    ? 'Le imprese e i loro fascicoli sono di esempio, inventati.'
+    : tutteReali
+      ? 'Le imprese e i loro fascicoli sono reali.'
+      : 'Tra le imprese alcune sono reali e altre di esempio: lo dice la fonte di ogni fascicolo.';
+  return `${frase} ${imprese}`;
 }

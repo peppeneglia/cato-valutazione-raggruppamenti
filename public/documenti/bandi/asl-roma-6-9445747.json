@@ -1,0 +1,228 @@
+{
+  "formato": {
+    "nome": "requisiti-strutturati",
+    "versione": 1,
+    "descrizione": "Requisiti strutturati in ingresso al motore di valutazione dei raggruppamenti. Il documento è prodotto a valle dell'estrazione dal documento di gara: l'estrazione non la fa questo progetto, per scelta."
+  },
+  "provenienza": {
+    "natura": "reale",
+    "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747"
+  },
+  "note": {
+    "provenienza": "Ogni valore porta articolo e pagina del disciplinare di gara pubblico."
+  },
+  "bando": {
+    "id": "asl-roma-6-9445747",
+    "oggetto": "Fornitura di farmaci di fascia A e C, parafarmaci, integratori, alimenti e dietetici, diagnostici, galenici e materie prime, dispositivi medici, da parte di grossista con consegna veloce",
+    "stazioneAppaltante": "ASL Roma 6",
+    "terminePresentazione": "2024-01-15",
+    "termineChiarimenti": {
+      "data": "2023-12-27",
+      "ora": "12:00",
+      "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "art. 2.2 — chiarimenti \"entro le ore 12:00 del giorno 27/12/2023\"", "pagina": 7 },
+      "risposteEntro": {
+        "valore": "2024-01-04",
+        "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "art. 2.2 — risposte pubblicate entro il 04/01/2024", "pagina": 7 }
+      }
+    },
+    "baseAsta": 750000,
+    "valori": [
+      {
+        "nome": "importo a base d'asta",
+        "candidati": [
+          { "valore": 750000, "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "art. 3 — importo a base di gara, triennale, IVA esclusa", "pagina": 9 } }
+        ]
+      },
+      {
+        "nome": "valore stimato dell'appalto",
+        "candidati": [
+          { "valore": 750000, "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "art. 3, importo a base di gara", "pagina": 9 } },
+          { "valore": 966144.5, "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "art. 3.2, testo", "pagina": 10 } },
+          { "valore": 1025000, "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "art. 3.2, tabella", "pagina": 10 } }
+        ],
+        "note": {
+          "candidati": "Lo stesso valore è scritto in due modi nella stessa pagina (art. 3.2, p. 10: € 966.144,50 nel testo, € 1.025.000,00 nella tabella), e l'importo a base di gara (art. 3, p. 9) è il terzo candidato plausibile. Non si sceglie: il motore valuta sotto ciascuno."
+        }
+      }
+    ],
+    "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "frontespizio e art. 1", "pagina": 1 },
+    "note": {
+      "dataPubblicazione": "Assente perché il documento non la scrive: l'art. 1 (p. 4) dice che il bando è stato \"inviato per la pubblicazione\", senza data.",
+      "terminePresentazione": "\"ore 12.00 del giorno 15 Gennaio 2024\", termine perentorio (art. 13, p. 18)."
+    },
+    "lotti": [
+      {
+        "id": "lotto-unico",
+        "oggetto": "Fornitura di farmaci di fascia A e C, parafarmaci, integratori, alimenti e dietetici, diagnostici, galenici e materie prime, dispositivi medici, da parte di grossista con consegna veloce",
+        "importo": 750000,
+        "cig": "A030255389",
+        "note": {
+          "id": "Il documento non numera il lotto: \"La presente procedura prevede un lotto unico\" (art. 3, p. 9).",
+          "cig": "Il documento lo chiama \"Codice identificativo gara\" (art. 1, p. 4)."
+        },
+        "prestazioni": [
+          {
+            "id": "fornitura",
+            "descrizione": "Fornitura di farmaci, parafarmaci, dispositivi medici e altro, da grossista con consegna veloce",
+            "importo": 750000,
+            "natura": "indivisibile",
+            "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "art. 3 (oggetto) e §15.4 (forniture indivisibili)", "pagina": 9 },
+            "note": {
+              "natura": "Il disciplinare non scompone l'appalto in prestazioni: la dichiarazione dei raggruppamenti indica \"la percentuale in caso di servizio/forniture indivisibili\" (§15.4, pp. 24–25). La prestazione è una, per l'intero importo."
+            }
+          }
+        ],
+        "requisiti": [
+          {
+            "id": "requisiti-generali",
+            "famiglia": "generale",
+            "nomeBreve": "Requisiti generali",
+            "descrizione": "Requisiti di ordine generale: assenza delle cause di esclusione di cui agli articoli 94 e 95 del Codice",
+            "letture": [
+              { "criterio": { "tipo": "dichiarazione", "oggetto": "Assenza delle cause di esclusione di cui agli articoli 94 e 95 del Codice" } }
+            ],
+            "regola": { "tipo": "non_dichiarata" },
+            "avvalibile": false,
+            "vincolante": true,
+            "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "art. 5 — Requisiti generali", "pagina": 12 },
+            "note": {
+              "regola": "L'art. 5 (p. 12) dice come si possiedono nei consorzi; per i raggruppamenti temporanei non lo dice, e il §6.4 tratta solo i requisiti di ordine speciale.",
+              "avvalibile": "\"Non è consentito l'avvalimento per soddisfare i requisiti di ordine generale\" (art. 7, p. 15)."
+            }
+          },
+          {
+            "id": "registro-imprese",
+            "famiglia": "iscrizione",
+            "nomeBreve": "Registro delle imprese",
+            "descrizione": "Iscrizione nel registro delle imprese oppure nell'Albo delle Imprese Artigiane per attività pertinenti con quelle oggetto della procedura",
+            "letture": [
+              { "criterio": { "tipo": "iscrizione", "registro": "Registro delle imprese", "attivita": "attività pertinenti con quelle oggetto della presente procedura di gara" } }
+            ],
+            "regola": { "tipo": "ciascun_membro" },
+            "avvalibile": false,
+            "vincolante": true,
+            "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "§6.1 lett. a) — Requisiti di idoneità professionale", "pagina": 13 },
+            "note": {
+              "letture": "Il disciplinare non dice quali attività siano pertinenti: il confronto è testuale, e ogni attività scritta diversamente è un giudizio da verificare.",
+              "regola": "\"da ciascun componente del raggruppamento\" (§6.4, p. 14).",
+              "avvalibile": "L'art. 7 (p. 15) esclude l'avvalimento per \"l'iscrizione alla Camera di commercio\"; il §6.1 a) parla di \"registro delle imprese oppure Albo delle Imprese Artigiane\". Le due espressioni non coincidono testualmente; si legge come lo stesso requisito."
+            }
+          },
+          {
+            "id": "registri-di-settore",
+            "famiglia": "iscrizione",
+            "nomeBreve": "Registri di settore",
+            "descrizione": "Iscrizione in registri o albi se prescritta dalla legislazione vigente per l'esercizio dell'attività oggetto di appalto",
+            "letture": [
+              { "criterio": { "tipo": "non_determinato", "testo": "Iscrizione in registri o albi se prescritta dalla legislazione vigente per l'esercizio, da parte del concorrente, dell'attività oggetto di appalto" } }
+            ],
+            "regola": { "tipo": "non_dichiarata" },
+            "avvalibile": true,
+            "vincolante": true,
+            "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "§6.1 lett. b) — Requisiti di idoneità professionale", "pagina": 13 },
+            "note": {
+              "letture": "Il documento non nomina né il registro né la legge: non c'è niente contro cui confrontare un fascicolo.",
+              "regola": "Il §6.4 (p. 14) non lo menziona.",
+              "avvalibile": "Deriva dalla clausola generale dell'art. 7 (p. 15) sui requisiti \"di ordine speciale di cui al punto 6\", non da un silenzio interpretato: questo requisito è nel punto 6 e non è tra le due esclusioni espresse. Il criterio è comunque non determinato e nessun avvalimento si calcola."
+            }
+          },
+          {
+            "id": "fatturato-globale",
+            "famiglia": "economico",
+            "nomeBreve": "Fatturato globale",
+            "descrizione": "Fatturato globale almeno pari al valore stimato dell'appalto, maturato complessivamente nel triennio 2020/2021/2022",
+            "letture": [
+              {
+                "criterio": {
+                  "tipo": "fatturato",
+                  "ambito": { "tipo": "globale" },
+                  "periodo": { "tipo": "esercizi", "anni": [2020, 2021, 2022] },
+                  "soglia": { "rinvio": "valore stimato dell'appalto" },
+                  "note": {
+                    "periodo": "Anni di calendario fissati dal documento, non a ritroso.",
+                    "soglia": "\"almeno pari al valore stimato dell'appalto in oggetto\": un rinvio, non una cifra."
+                  }
+                }
+              }
+            ],
+            "regola": { "tipo": "somma_membri" },
+            "avvalibile": true,
+            "vincolante": true,
+            "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "§6.2 lett. a) — Requisiti di capacità economica e finanziaria", "pagina": 13 },
+            "note": {
+              "regola": "\"deve essere soddisfatto dal raggruppamento temporaneo nel complesso\" (§6.4, p. 14). Nessuna percentuale minima per la mandataria o le mandanti: il documento non ne prevede.",
+              "avvalibile": "Requisito di ordine speciale del punto 6, non escluso (art. 7, p. 15)."
+            }
+          },
+          {
+            "id": "certificazione-qualita",
+            "famiglia": "certificazione",
+            "nomeBreve": "Certificazione ISO",
+            "descrizione": "Certificazione del sistema di gestione della qualità UNI EN ISO 9001:2015 nel settore oggetto dell'appalto e/o ISO 13485",
+            "letture": [
+              {
+                "criterio": {
+                  "tipo": "certificazione",
+                  "norme": ["UNI EN ISO 9001:2015", "ISO 13485"],
+                  "scope": "settore oggetto dell'appalto",
+                  "note": {
+                    "norme": "\"e/o\": ne basta una.",
+                    "scope": "Testo libero del documento: coincide, o è un giudizio."
+                  }
+                }
+              }
+            ],
+            "regola": { "tipo": "non_dichiarata" },
+            "avvalibile": true,
+            "vincolante": true,
+            "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "§6.3 lett. a) — Requisiti di capacità tecnica e professionale", "pagina": 13 },
+            "note": {
+              "regola": "Il §6.4 (p. 14) non la menziona: a pena di esclusione, senza dire chi debba possederla nel raggruppamento.",
+              "avvalibile": "Clausola generale dell'art. 7 (p. 15) sui requisiti del punto 6."
+            }
+          },
+          {
+            "id": "forniture-analoghe",
+            "famiglia": "referenza",
+            "nomeBreve": "Forniture analoghe",
+            "descrizione": "Forniture analoghe nel settore di attività oggetto dell'appalto, regolarmente eseguite nell'ultimo triennio, di importo non inferiore all'importo a base d'asta",
+            "letture": [
+              {
+                "testo": "un solo contratto di importo non inferiore all'importo a base d'asta",
+                "criterio": {
+                  "tipo": "servizi",
+                  "cpv": "33190000-8",
+                  "cifreCpvComuni": 2,
+                  "anni": 3,
+                  "ancoraggio": "non_dichiarato",
+                  "importoMinimoUnitario": { "rinvio": "importo a base d'asta" },
+                  "numeroMinimo": 1,
+                  "sostantivo": { "singolare": "fornitura analoga", "plurale": "forniture analoghe" }
+                }
+              },
+              {
+                "testo": "la somma delle forniture non inferiore all'importo a base d'asta",
+                "criterio": {
+                  "tipo": "servizi_importo",
+                  "cpv": "33190000-8",
+                  "cifreCpvComuni": 2,
+                  "anni": 3,
+                  "ancoraggio": "non_dichiarato",
+                  "soglia": { "rinvio": "importo a base d'asta" }
+                }
+              }
+            ],
+            "regola": { "tipo": "somma_membri" },
+            "avvalibile": true,
+            "vincolante": true,
+            "fonte": { "documento": "Disciplinare di gara ASL Roma 6, gara n. 9445747", "riferimento": "§6.3 lett. b) — Requisiti di capacità tecnica e professionale", "pagina": 14 },
+            "note": {
+              "letture": "Il documento non dice se la soglia vada raggiunta da un solo contratto o dalla somma: due letture, entrambe esprimibili. \"Ultimo triennio\" senza dies a quo: ancoraggio non dichiarato. Il CPV di gara (art. 1, p. 4) è 33190000-8, \"Dispositivi e prodotti medici vari\"; un CPV con le stesse prime due cifre è analogo da verificare, uno diverso non conta.",
+              "regola": "\"deve essere posseduto dal raggruppamento nel complesso\" (§6.4, p. 14)."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

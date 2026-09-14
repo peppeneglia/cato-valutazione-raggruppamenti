@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bersaglioAnomalia, descriviAnomalia, descriviCriterio, descriviIndeterminatezza, descriviMossa, descriviRimedio, eApplicabile, etichettaAssunzione, etichettaFamiglia, etichettaRuolo, etichettaStato, etichettaVerdetto, nomePrestazione, nomeRequisito, nomeSoggetto, titoloNote } from './descrizioni';
 import { creaAnomalia } from './engine/validazione';
-import { bando, soggetti } from './fixture';
+import { bando, soggetti } from './documenti/documentiDiProva';
 
 const contesto = { bando, soggetti };
 

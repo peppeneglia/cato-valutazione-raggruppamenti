@@ -3,7 +3,8 @@ import type { Lotto, ParametriValutazione, PercorsoMinimo, Requisito } from '../
 import { chiaveStato, percorsoMinimo } from './percorso';
 import { bando, certificazione, dichiarazione, esecutore, lotto, parametri, prestazione, raggruppamento, requisito, soggetto } from './prova';
 import { creaMemo, valutazione } from './valutazione';
-import { bando as bandoFixture, DATA_RIFERIMENTO, ORIZZONTE_SCADENZE_GIORNI, raggruppamento as raggruppamentoFixture, soggetti as soggettiFixture } from '../fixture';
+import { bando as bandoFixture, DATA_RIFERIMENTO, raggruppamento as raggruppamentoFixture, soggetti as soggettiFixture } from '../documenti/documentiDiProva';
+import { ORIZZONTE_SCADENZE_GIORNI } from '../parametri';
 
 const ISO = { tipo: 'certificazione', norme: ['ISO 9001'] } as const;
 const ISO_SCOPE = { tipo: 'certificazione', norme: ['ISO 9001'], scope: 'giusto' } as const;
@@ -159,7 +160,7 @@ describe('percorsoMinimo', () => {
 describe('percorsoMinimo — limite teorico di copribilità', () => {
   // Senza limite la ricerca esplora l'intero spazio degli stati: è una prova
   // di equivalenza, non di velocità, e ha il suo timeout.
-  it('con e senza limite l’esito è identico su ogni lotto della fixture', { timeout: 120_000 }, () => {
+  it('con e senza limite l’esito è identico su ogni lotto della gara reale', { timeout: 120_000 }, () => {
     for (const l of bandoFixture.lotti) {
       const p: ParametriValutazione = {
         bando: bandoFixture, lottoId: l.id, soggetti: soggettiFixture, raggruppamento: raggruppamentoFixture,
