@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bersaglioAnomalia, descriviCriterio, descriviMossa, descriviRimedio, eApplicabile, etichettaRuolo, etichettaStato, etichettaVerdetto, nomePrestazione, nomeRequisito, nomeSoggetto } from './descrizioni';
+import { bersaglioAnomalia, descriviCriterio, descriviMossa, descriviRimedio, eApplicabile, etichettaAssunzione, etichettaFamiglia, etichettaRuolo, etichettaStato, etichettaVerdetto, nomePrestazione, nomeRequisito, nomeSoggetto } from './descrizioni';
 import { creaAnomalia } from './engine/validazione';
 import { bando, soggetti } from './fixture';
 
@@ -19,6 +19,8 @@ describe('etichette', () => {
     expect(etichettaStato('da_verificare')).toBe('Da verificare');
     expect(etichettaVerdetto('ammissibile_con_riserva')).toBe('Ammissibile con riserva');
     expect(etichettaRuolo('consorziata_esecutrice')).toBe('Consorziata esecutrice');
+    expect(etichettaFamiglia('economico')).toBe('Capacità economico-finanziaria');
+    expect(etichettaAssunzione('classe_cpv')).toBe('Esclusione dei servizi per classe CPV');
   });
 });
 
