@@ -13,10 +13,16 @@ import type {
   RegolaComposizione,
   Requisito,
   Soggetto,
+  Sostantivo,
+  Unita,
   VoceFascicolo,
 } from '../domain';
 
 export const FONTE: Fonte = { documento: 'Documento di prova', riferimento: 'rif.' };
+
+export const REFERENZE: Sostantivo = { singolare: 'referenza', plurale: 'referenze' };
+export const EURO: Unita = { tipo: 'euro' };
+export const CONTEGGIO_REFERENZE: Unita = { tipo: 'conteggio', sostantivo: REFERENZE };
 
 export const DATA_RIFERIMENTO = '2026-09-14';
 export const DATA_PUBBLICAZIONE = '2026-09-01';

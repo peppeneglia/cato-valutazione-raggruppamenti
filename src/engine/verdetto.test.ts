@@ -22,7 +22,7 @@ describe('calcolaVerdetto', () => {
     expect(calcolaVerdetto([{ stato: 'coperto', vincolante: true }], [creaAnomalia({ codice: 'mandataria_assente' })])).toBe('non_ammissibile');
   });
   it('una segnalazione non cambia il verdetto', () => {
-    expect(calcolaVerdetto([{ stato: 'coperto', vincolante: true }], [creaAnomalia({ codice: 'membro_senza_quote', soggettoId: 's' })])).toBe('ammissibile');
+    expect(calcolaVerdetto([{ stato: 'coperto', vincolante: true }], [creaAnomalia({ codice: 'membro_senza_quote', soggettoId: 's', lottoId: 'l' })])).toBe('ammissibile');
   });
   it('senza requisiti è ammissibile', () => {
     expect(calcolaVerdetto([], [])).toBe('ammissibile');

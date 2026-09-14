@@ -50,8 +50,11 @@ describe('formattaData', () => {
 });
 
 describe('formattaConUnita', () => {
-  it('formatta euro e conteggi', () => {
-    expect(formattaConUnita(3_000_000, 'euro')).toBe('3.000.000 €');
-    expect(formattaConUnita(3, 'conteggio')).toBe('3');
+  it('formatta euro e conteggi con il sostantivo del disciplinare', () => {
+    const referenze = { tipo: 'conteggio', sostantivo: { singolare: 'referenza', plurale: 'referenze' } } as const;
+    expect(formattaConUnita(3_000_000, { tipo: 'euro' })).toBe('3.000.000 €');
+    expect(formattaConUnita(3, referenze)).toBe('3 referenze');
+    expect(formattaConUnita(1, referenze)).toBe('1 referenza');
+    expect(formattaConUnita(0, referenze)).toBe('0 referenze');
   });
 });

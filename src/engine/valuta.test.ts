@@ -40,8 +40,12 @@ describe('valutaBase', () => {
   });
   it('lo stesso raggruppamento può essere ammissibile su un lotto e non su un altro', () => {
     const l1 = lotto({ id: 'l-1', prestazioni: [prestazione('p-1')], requisiti: [requisito('r-1', DICHIARAZIONE, { tipo: 'ciascun_membro' })] });
-    const l2 = lotto({ id: 'l-2', prestazioni: [prestazione('p-1')], requisiti: [requisito('r-2', ISO, { tipo: 'ciascun_membro' })] });
-    const p = parametri({ bando: bando([l1, l2]), soggetti: [soggetto('s-a', [dichiarazione('Assenza cause di esclusione')])] });
+    const l2 = lotto({ id: 'l-2', prestazioni: [prestazione('p-2')], requisiti: [requisito('r-2', ISO, { tipo: 'ciascun_membro' })] });
+    const p = parametri({
+      bando: bando([l1, l2]),
+      soggetti: [soggetto('s-a', [dichiarazione('Assenza cause di esclusione')])],
+      raggruppamento: raggruppamento([esecutore('s-a', 'mandataria', { 'p-1': 1, 'p-2': 1 })]),
+    });
     expect(valutaBase({ ...p, lottoId: 'l-1' }).verdetto).toBe('ammissibile');
     expect(valutaBase({ ...p, lottoId: 'l-2' }).verdetto).toBe('non_ammissibile');
   });

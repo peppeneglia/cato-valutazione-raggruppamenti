@@ -77,11 +77,11 @@ function fondi(base: ValoreContributo, integrazioni: ValoreContributo[]): Valore
 // ─── Unità di uscita ─────────────────────────────────────────
 
 function inUscita(valore: number, unita: Unita | undefined): number {
-  switch (unita) {
+  if (unita === undefined) return valore;
+  switch (unita.tipo) {
     case 'euro':
       return inEuro(valore);
     case 'conteggio':
-    case undefined:
       return valore;
     default:
       return assertNever(unita);
@@ -179,7 +179,8 @@ export function valutaRequisito(requisito: Requisito, contesto: ContestoValutazi
         note: esecutore.grezzo.note,
         ausiliarie: integrazioni.map((a) => a.soggetto.denominazione),
       });
-      usati.push(...esecutore.grezzo.usati.map((fatto) => ({ soggettoId: membro.soggettoId, requisitoId: requisito.id, fatto })));
+      // Solo i fatti di chi concorre al requisito: un avviso su un fatto che non conta è rumore.
+      if (conteggiato) usati.push(...esecutore.grezzo.usati.map((fatto) => ({ soggettoId: membro.soggettoId, requisitoId: requisito.id, fatto })));
       continue;
     }
     const ausiliaria = ausiliarie.find((a) => a.membro === membro);
@@ -193,7 +194,7 @@ export function valutaRequisito(requisito: Requisito, contesto: ContestoValutazi
         fonti: ausiliaria.grezzo.usati.map((u) => u.fonte),
         nota: unisciNote([`in avvalimento a favore di ${ausiliata?.denominazione ?? ausiliaria.membro.ausiliataId}`, ...ausiliaria.grezzo.note]),
       });
-      usati.push(...ausiliaria.grezzo.usati.map((fatto) => ({ soggettoId: membro.soggettoId, requisitoId: requisito.id, fatto })));
+      if (conteggiato) usati.push(...ausiliaria.grezzo.usati.map((fatto) => ({ soggettoId: membro.soggettoId, requisitoId: requisito.id, fatto })));
     }
   }
 

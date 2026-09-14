@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Requisito, Soggetto } from '../domain';
 import { indicizza } from './indici';
-import { ausiliaria, certificazione, esecutore, fatturato, prestazione, raggruppamento, requisito, servizio, soggetto } from './prova';
+import { ausiliaria, certificazione, esecutore, fatturato, prestazione, raggruppamento, REFERENZE, requisito, servizio, soggetto } from './prova';
 import { valutaRequisito, type ContestoValutazione } from './requisito';
 
 const CRITERIO_ISO = { tipo: 'certificazione', norma: 'ISO 9001' } as const;
 const CRITERIO_FATTURATO = { tipo: 'fatturato', ambito: { tipo: 'specifico', settore: 'dispositivi' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 1_000_000 } as const;
-const CRITERIO_SERVIZI = { tipo: 'servizi', cpv: '33100000', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 2 } as const;
+const CRITERIO_SERVIZI = { tipo: 'servizi', cpv: '33100000', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 2, sostantivo: REFERENZE } as const;
 
 function contesto(soggetti: Soggetto[], membri: ReturnType<typeof esecutore>[]): ContestoValutazione {
   return {
@@ -40,7 +40,7 @@ describe('valutaRequisito — contributi', () => {
     const { esito } = valutaRequisito(r, c);
     expect(esito.contributi[0]?.valore).toEqual({ tipo: 'misura', certo: 400_000.5, incerto: 0 });
     expect(esito.misurazione).toEqual({
-      unita: 'euro', soglia: 1_000_000, raggiunto: 700_000.5, massimo: 700_000.5, delta: 299_999.5,
+      unita: { tipo: 'euro' }, soglia: 1_000_000, raggiunto: 700_000.5, massimo: 700_000.5, delta: 299_999.5,
       minimiRuolo: [{ soggettoId: 's-a', ruolo: 'mandataria', richiesto: 500_000, raggiunto: 400_000.5, delta: 99_999.5 }],
     });
   });
@@ -54,6 +54,15 @@ describe('valutaRequisito — contributi', () => {
     const r = requisito('r', CRITERIO_ISO, { tipo: 'ciascun_membro' });
     const { usati } = valutaRequisito(r, contesto([soggetto('s-a', [certificazione('ISO 9001', 'x', '2027-01-01')])], [esecutore('s-a', 'mandataria', { 'p-1': 1 })]));
     expect(usati).toEqual([{ soggettoId: 's-a', requisitoId: 'r', fatto: { descrizione: 'certificazione ISO 9001 — x', fonte: expect.anything(), scadeIl: '2027-01-01' } }]);
+  });
+  it('raccoglie i fatti usati solo dei membri conteggiati', () => {
+    const r = requisito('r', CRITERIO_ISO, { tipo: 'esecutore_prestazione', prestazioneId: 'p-1' });
+    const c = contesto(
+      [soggetto('s-a', [certificazione('ISO 9001', 'x', '2026-10-01')]), soggetto('s-b', [certificazione('ISO 9001', 'x', '2026-10-02')])],
+      [esecutore('s-a', 'mandataria', { 'p-2': 1 }), esecutore('s-b', 'mandante', { 'p-1': 1 })],
+    );
+    const { usati } = valutaRequisito(r, c);
+    expect(usati.map((u) => u.soggettoId)).toEqual(['s-b']);
   });
   it('salta un membro il cui soggetto non esiste', () => {
     const r = requisito('r', CRITERIO_ISO, { tipo: 'ciascun_membro' });
@@ -129,6 +138,6 @@ describe('valutaRequisito — ausiliarie', () => {
     const { esito } = valutaRequisito(r, c);
     expect(esito.stato).toBe('da_verificare');
     expect(esito.contributi[0]?.valore).toEqual({ tipo: 'misura', certo: 1, incerto: 1 });
-    expect(esito.misurazione).toMatchObject({ unita: 'conteggio', raggiunto: 1, massimo: 2, delta: 1 });
+    expect(esito.misurazione).toMatchObject({ unita: { tipo: 'conteggio', sostantivo: REFERENZE }, raggiunto: 1, massimo: 2, delta: 1 });
   });
 });

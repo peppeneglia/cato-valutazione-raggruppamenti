@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RuoloEsecutore, ValoreContributo } from '../domain';
 import { componiMotivazione, type DatiMotivazione, type RigaMotivazione } from './motivazione';
+import { CONTEGGIO_REFERENZE, EURO } from './prova';
 
 const POSSEDUTO: ValoreContributo = { tipo: 'possesso', esito: 'posseduto' };
 const DA_VERIFICARE: ValoreContributo = { tipo: 'possesso', esito: 'da_verificare' };
@@ -32,7 +33,7 @@ describe('componiMotivazione — ciascun membro', () => {
   });
   it('con misura nomina ogni membro sotto soglia con il suo delta', () => {
     const testo = componiMotivazione(dati({
-      stato: 'scoperto', unita: 'euro', soglia: 30_000_000,
+      stato: 'scoperto', unita: EURO, soglia: 30_000_000,
       righe: [riga('Alfa', 'mandataria', misura(50_000_000)), riga('Beta', 'mandante', misura(20_000_000)), riga('Gamma', 'mandante', misura(10_000_000))],
     }));
     expect(testo).toBe('Richiesto a ciascun membro, con soglia 300.000 € per ciascuno: Alfa raggiunge 500.000 €; Beta 200.000 €, mancano 100.000 €; Gamma 100.000 €, mancano 200.000 €.');
@@ -72,7 +73,7 @@ describe('componiMotivazione — esecutore della prestazione', () => {
 describe('componiMotivazione — somma dei membri', () => {
   it('mostra somma, soglia, delta e i contributi di ciascuno', () => {
     const testo = componiMotivazione(dati({
-      regola: { tipo: 'somma_membri' }, stato: 'scoperto', unita: 'euro', soglia: 300_000_000,
+      regola: { tipo: 'somma_membri' }, stato: 'scoperto', unita: EURO, soglia: 300_000_000,
       righe: [riga('Alfa', 'mandataria', misura(210_000_000)), riga('Beta', 'mandante', misura(60_000_000)), riga('Gamma', 'mandante', misura(20_000_000))],
       misurazione: { soglia: 300_000_000, raggiunto: 290_000_000, massimo: 290_000_000, delta: 10_000_000, minimiRuolo: [] },
     }));
@@ -80,15 +81,15 @@ describe('componiMotivazione — somma dei membri', () => {
   });
   it('spiega la parte da verificare e cosa succede se regge', () => {
     const testo = componiMotivazione(dati({
-      regola: { tipo: 'somma_membri' }, stato: 'da_verificare', unita: 'conteggio', soglia: 3,
+      regola: { tipo: 'somma_membri' }, stato: 'da_verificare', unita: CONTEGGIO_REFERENZE, soglia: 3,
       righe: [riga('Alfa', 'mandataria', misura(2)), riga('Beta', 'mandante', misura(0, 1, ), { note: ['CPV 50421000 diverso da quello di gara 33100000'] })],
       misurazione: { soglia: 3, raggiunto: 2, massimo: 3, delta: 1, minimiRuolo: [] },
     }));
-    expect(testo).toBe('Somma dei contributi certi: 2 su una soglia di 3: mancano 1. Altri 1 dipendono da fatti da verificare: se reggono, la soglia è raggiunta. Contributi: Alfa 2; Beta 0 più 1 da verificare (CPV 50421000 diverso da quello di gara 33100000). Il confronto che manca è un giudizio semantico: decide una persona, non il motore.');
+    expect(testo).toBe('Somma dei contributi certi: 2 referenze su una soglia di 3 referenze: mancano 1 referenza. Altri 1 referenza dipendono da fatti da verificare: se reggono, la soglia è raggiunta. Contributi: Alfa 2 referenze; Beta 0 referenze più 1 referenza da verificare (CPV 50421000 diverso da quello di gara 33100000). Il confronto che manca è un giudizio semantico: decide una persona, non il motore.');
   });
   it('mostra il minimo della mandataria con il calcolo, senza arrotondamento quando è esatto', () => {
     const testo = componiMotivazione(dati({
-      regola: { tipo: 'somma_membri', minimoMandataria: 0.4 }, stato: 'scoperto', unita: 'euro', soglia: 300_000_000,
+      regola: { tipo: 'somma_membri', minimoMandataria: 0.4 }, stato: 'scoperto', unita: EURO, soglia: 300_000_000,
       righe: [riga('Alfa', 'mandataria', misura(100_000_000)), riga('Beta', 'mandante', misura(250_000_000))],
       misurazione: { soglia: 300_000_000, raggiunto: 350_000_000, massimo: 350_000_000, delta: 0, minimiRuolo: [{ soggettoId: 'alfa', ruolo: 'mandataria', richiesto: 120_000_000, raggiunto: 100_000_000, delta: 20_000_000 }] },
     }));
@@ -96,15 +97,15 @@ describe('componiMotivazione — somma dei membri', () => {
   });
   it('mostra frazione grezza, minimo arrotondato e l’assunzione dichiarata', () => {
     const testo = componiMotivazione(dati({
-      regola: { tipo: 'somma_membri', minimoMandataria: 0.4, minimoMandante: 0.1 }, stato: 'scoperto', unita: 'conteggio', soglia: 3,
+      regola: { tipo: 'somma_membri', minimoMandataria: 0.4, minimoMandante: 0.1 }, stato: 'scoperto', unita: CONTEGGIO_REFERENZE, soglia: 3,
       righe: [riga('Alfa', 'mandataria', misura(1)), riga('Beta', 'mandante', misura(2))],
       misurazione: { soglia: 3, raggiunto: 3, massimo: 3, delta: 0, minimiRuolo: [
         { soggettoId: 'alfa', ruolo: 'mandataria', richiesto: 2, raggiunto: 1, delta: 1 },
         { soggettoId: 'beta', ruolo: 'mandante', richiesto: 1, raggiunto: 2, delta: 0 },
       ] },
     }));
-    expect(testo).toContain('Minimo della mandataria: 40 % di 3 = 1,2, quindi almeno 2 (arrotondato per eccesso: assunzione del motore, non del disciplinare); Alfa raggiunge 1, mancano 1.');
-    expect(testo).toContain('Minimo di ciascuna mandante: 10 % di 3 = 0,3, quindi almeno 1 (arrotondato per eccesso: assunzione del motore, non del disciplinare); Beta raggiunge 2.');
+    expect(testo).toContain('Minimo della mandataria: 40 % di 3 referenze = 1,2 referenze, quindi almeno 2 referenze (arrotondato per eccesso: assunzione del motore, non del disciplinare); Alfa raggiunge 1 referenza, mancano 1 referenza.');
+    expect(testo).toContain('Minimo di ciascuna mandante: 10 % di 3 referenze = 0,3 referenze, quindi almeno 1 referenza (arrotondato per eccesso: assunzione del motore, non del disciplinare); Beta raggiunge 2 referenze.');
   });
 });
 
@@ -121,7 +122,7 @@ describe('componiMotivazione — almeno un membro', () => {
   });
   it('con misura nomina il migliore e quanto gli manca', () => {
     const testo = componiMotivazione(dati({
-      regola, stato: 'scoperto', unita: 'euro', soglia: 50_000_000,
+      regola, stato: 'scoperto', unita: EURO, soglia: 50_000_000,
       righe: [riga('Alfa', 'mandataria', misura(30_000_000)), riga('Beta', 'mandante', misura(10_000_000))],
       misurazione: { soglia: 50_000_000, raggiunto: 30_000_000, massimo: 30_000_000, delta: 20_000_000, minimiRuolo: [] },
     }));

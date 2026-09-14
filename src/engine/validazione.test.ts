@@ -9,6 +9,7 @@ import {
   parametri,
   prestazione,
   raggruppamento,
+  REFERENZE,
   requisito,
   servizio,
   soggetto,
@@ -65,7 +66,7 @@ describe('anomalieStrutturali — lotto e riferimenti', () => {
     const p = parametri({ raggruppamento: raggruppamento([esecutore('s-ignoto', 'mandataria', { 'p-1': 1 })]) });
     expect(trova(anomalieStrutturali(p), 'riferimento_inesistente')).toMatchObject({ entita: 'soggetto', id: 's-ignoto' });
   });
-  it('segnala una quota su una prestazione che il lotto non ha, una volta sola anche se la citano più membri', () => {
+  it('segnala una quota su una prestazione che nessun lotto ha, una volta sola anche se la citano più membri', () => {
     const p = parametri({
       soggetti: [soggetto('s-a'), soggetto('s-b')],
       raggruppamento: raggruppamento([esecutore('s-a', 'mandataria', { 'p-1': 1, 'p-9': 0 }), esecutore('s-b', 'mandante', { 'p-1': 0, 'p-9': 0 })]),
@@ -73,6 +74,41 @@ describe('anomalieStrutturali — lotto e riferimenti', () => {
     const anomalie = anomalieStrutturali(p);
     expect(anomalie.filter((a) => a.codice === 'riferimento_inesistente')).toHaveLength(1);
     expect(trova(anomalie, 'riferimento_inesistente')).toMatchObject({ entita: 'prestazione', id: 'p-9' });
+  });
+  it('una quota su una prestazione di un altro lotto del bando è irrilevante, non un errore', () => {
+    const l1 = lotto({ id: 'l-1', prestazioni: [prestazione('p-1')] });
+    const l2 = lotto({ id: 'l-2', prestazioni: [prestazione('p-2')] });
+    const p = parametri({
+      bando: bando([l1, l2]),
+      lottoId: 'l-1',
+      raggruppamento: raggruppamento([esecutore('s-a', 'mandataria', { 'p-1': 1, 'p-2': 1 })]),
+    });
+    expect(anomalieStrutturali(p)).toEqual([]);
+  });
+  it('un membro che esegue solo nell’altro lotto è senza quote in questo, con il lotto nel messaggio', () => {
+    const l1 = lotto({ id: 'l-1', prestazioni: [prestazione('p-1')] });
+    const l2 = lotto({ id: 'l-2', prestazioni: [prestazione('p-2')] });
+    const p = parametri({
+      bando: bando([l1, l2]),
+      lottoId: 'l-1',
+      soggetti: [soggetto('s-a'), soggetto('s-b')],
+      raggruppamento: raggruppamento([esecutore('s-a', 'mandataria', { 'p-1': 1 }), esecutore('s-b', 'mandante', { 'p-2': 1 })]),
+    });
+    const a = trova(anomalieStrutturali(p), 'membro_senza_quote');
+    expect(a).toMatchObject({ soggettoId: 's-b', lottoId: 'l-1', gravita: 'segnalazione' });
+    expect(a.messaggio).toBe('Il membro s-b non esegue prestazioni nel lotto l-1 (tutte le quote a zero).');
+  });
+  it('segnala come bloccante un id di prestazione duplicato tra lotti', () => {
+    const l1 = lotto({ id: 'l-1', prestazioni: [prestazione('p-1')] });
+    const l2 = lotto({ id: 'l-2', prestazioni: [prestazione('p-1')] });
+    const a = trova(anomalieStrutturali(parametri({ bando: bando([l1, l2]) })), 'identificativo_duplicato');
+    expect(a).toMatchObject({ entita: 'prestazione', id: 'p-1', lottiIds: ['l-1', 'l-2'], gravita: 'bloccante' });
+  });
+  it('segnala un id di requisito duplicato, anche nello stesso lotto', () => {
+    const r = requisito('r-1', { tipo: 'certificazione', norma: 'ISO 9001' }, { tipo: 'ciascun_membro' });
+    const l = lotto({ requisiti: [r, r] });
+    const a = trova(anomalieStrutturali(parametri({ bando: bando([l]) })), 'identificativo_duplicato');
+    expect(a).toMatchObject({ entita: 'requisito', id: 'r-1', lottiIds: ['l-1', 'l-1'] });
   });
   it('segnala un’ausiliaria che indica un requisito inesistente', () => {
     const p = parametri({
@@ -185,7 +221,7 @@ describe('anomalieStrutturali — requisiti e avvalimenti', () => {
 });
 
 describe('anomalieStrutturali — parametri del requisito', () => {
-  const servizi = { tipo: 'servizi', cpv: '1', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3 } as const;
+  const servizi = { tipo: 'servizi', cpv: '1', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3, sostantivo: REFERENZE } as const;
   const fatturato = { tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 1 } as const;
 
   it('segnala come bloccante una soglia zero, nominando requisito e parametro', () => {
@@ -210,6 +246,14 @@ describe('anomalieStrutturali — parametri del requisito', () => {
     ] });
     const anomalie = anomalieStrutturali(parametri({ bando: bando([l]) }));
     expect(codici(anomalie).filter((c) => c === 'parametro_requisito_non_valido')).toHaveLength(2);
+  });
+  it('segnala le cifre comuni del CPV non intere o non positive', () => {
+    const l = lotto({ requisiti: [
+      requisito('r-1', { ...servizi, cifreCpvComuni: 0 }, { tipo: 'somma_membri' }),
+      requisito('r-2', { ...servizi, cifreCpvComuni: 2.5 }, { tipo: 'somma_membri' }),
+    ] });
+    const anomalie = anomalieStrutturali(parametri({ bando: bando([l]) }));
+    expect(anomalie.map((a) => a.codice === 'parametro_requisito_non_valido' && a.parametro)).toEqual(['criterio.cifreCpvComuni', 'criterio.cifreCpvComuni']);
   });
   it('accetta l’importo minimo unitario zero', () => {
     const l = lotto({ requisiti: [requisito('r-1', { ...servizi, importoMinimoUnitario: 0 }, { tipo: 'somma_membri' })] });

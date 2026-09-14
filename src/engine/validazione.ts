@@ -4,9 +4,11 @@
 import { assertNever } from '../assertNever';
 import type {
   Anomalia,
+  Bando,
   DettaglioAnomalia,
   GravitaAnomalia,
   Lotto,
+  LottoId,
   ParametriValutazione,
   Requisito,
   Soggetto,
@@ -28,6 +30,7 @@ function gravitaDi(dettaglio: DettaglioAnomalia): GravitaAnomalia {
     case 'quote_non_totali':
     case 'prestazione_senza_esecutore':
     case 'riferimento_inesistente':
+    case 'identificativo_duplicato':
     case 'regola_somma_su_criterio_di_possesso':
     case 'parametro_requisito_non_valido':
     case 'avvalimento_su_requisito_non_avvalibile':
@@ -54,7 +57,9 @@ function messaggioDi(dettaglio: DettaglioAnomalia): string {
     case 'membro_duplicato':
       return `Il soggetto ${dettaglio.soggettoId} compare più di una volta tra i membri.`;
     case 'membro_senza_quote':
-      return `Il membro ${dettaglio.soggettoId} non esegue alcuna prestazione (tutte le quote a zero).`;
+      return `Il membro ${dettaglio.soggettoId} non esegue prestazioni nel lotto ${dettaglio.lottoId} (tutte le quote a zero).`;
+    case 'identificativo_duplicato':
+      return `L'identificativo di ${dettaglio.entita} «${dettaglio.id}» compare più volte nel bando (${dettaglio.lottiIds.join(', ')}): le quote e i riferimenti si mescolerebbero in silenzio.`;
     case 'quota_fuori_intervallo':
       return `La quota di ${dettaglio.soggettoId} sulla prestazione ${dettaglio.prestazioneId} non è tra 0 e 1: ${String(dettaglio.quota)}.`;
     case 'quote_non_totali':
@@ -144,14 +149,40 @@ function anomalieMembri(parametri: ParametriValutazione): Anomalia[] {
   return anomalie;
 }
 
+/**
+ * Gli id di prestazione e di requisito sono globali sul bando: le quote
+ * del raggruppamento li citano senza dire il lotto. Un duplicato tra lotti
+ * (o nello stesso lotto) mescolerebbe le quote in silenzio.
+ */
+function anomalieIdentificativi(bando: Bando): Anomalia[] {
+  const anomalie: Anomalia[] = [];
+  const controlla = (entita: 'prestazione' | 'requisito', elementi: (lotto: Lotto) => { id: string }[]) => {
+    const lottiPerId = new Map<string, LottoId[]>();
+    for (const lotto of bando.lotti) {
+      for (const { id } of elementi(lotto)) lottiPerId.set(id, [...(lottiPerId.get(id) ?? []), lotto.id]);
+    }
+    for (const [id, lottiIds] of lottiPerId) {
+      if (lottiIds.length > 1) anomalie.push(creaAnomalia({ codice: 'identificativo_duplicato', entita, id, lottiIds }));
+    }
+  };
+  controlla('prestazione', (l) => l.prestazioni);
+  controlla('requisito', (l) => l.requisiti);
+  return anomalie;
+}
+
+/**
+ * Le quote sono una proprietà del raggruppamento sull'intera gara: una
+ * quota su una prestazione di un altro lotto è irrilevante qui, non un
+ * errore. È inesistente solo se non appartiene a nessun lotto del bando.
+ */
 function anomalieQuote(parametri: ParametriValutazione, lotto: Lotto): Anomalia[] {
-  const { raggruppamento } = parametri;
-  const prestazioni = indicizza(lotto.prestazioni);
+  const { raggruppamento, bando } = parametri;
+  const prestazioniDelBando = indicizza(bando.lotti.flatMap((l) => l.prestazioni));
   const anomalie: Anomalia[] = [];
 
   for (const membro of esecutoriDi(raggruppamento)) {
     for (const [prestazioneId, quota] of Object.entries(membro.quote)) {
-      if (!prestazioni.has(prestazioneId)) {
+      if (!prestazioniDelBando.has(prestazioneId)) {
         anomalie.push(creaAnomalia({ codice: 'riferimento_inesistente', entita: 'prestazione', id: prestazioneId }));
       }
       if (!quotaValida(quota)) {
@@ -172,7 +203,7 @@ function anomalieQuote(parametri: ParametriValutazione, lotto: Lotto): Anomalia[
   for (const membro of esecutoriDi(raggruppamento)) {
     const totale = sommaQuote(lotto.prestazioni.map((p) => membro.quote[p.id] ?? 0));
     if (quoteAzzerate(totale)) {
-      anomalie.push(creaAnomalia({ codice: 'membro_senza_quote', soggettoId: membro.soggettoId }));
+      anomalie.push(creaAnomalia({ codice: 'membro_senza_quote', soggettoId: membro.soggettoId, lottoId: lotto.id }));
     }
   }
   return anomalie;
@@ -201,6 +232,7 @@ function anomalieParametri(requisito: Requisito): Anomalia[] {
   const positivo = (v: number) => Number.isFinite(v) && v > 0;
   const nonNegativo = (v: number) => Number.isFinite(v) && v >= 0;
   const frazione = (v: number) => Number.isFinite(v) && v >= 0 && v <= 1;
+  const interoPositivo = (v: number) => Number.isInteger(v) && v > 0;
 
   switch (criterio.tipo) {
     case 'fatturato':
@@ -211,11 +243,13 @@ function anomalieParametri(requisito: Requisito): Anomalia[] {
       controlli.push({ parametro: 'criterio.anni', valore: criterio.anni, valido: positivo });
       controlli.push({ parametro: 'criterio.numeroMinimo', valore: criterio.numeroMinimo, valido: positivo });
       controlli.push({ parametro: 'criterio.importoMinimoUnitario', valore: criterio.importoMinimoUnitario, valido: nonNegativo });
+      controlli.push({ parametro: 'criterio.cifreCpvComuni', valore: criterio.cifreCpvComuni, valido: interoPositivo });
       break;
     case 'servizi_importo':
       controlli.push({ parametro: 'criterio.anni', valore: criterio.anni, valido: positivo });
       controlli.push({ parametro: 'criterio.soglia', valore: criterio.soglia, valido: positivo });
       controlli.push({ parametro: 'criterio.importoMinimoUnitario', valore: criterio.importoMinimoUnitario, valido: nonNegativo });
+      controlli.push({ parametro: 'criterio.cifreCpvComuni', valore: criterio.cifreCpvComuni, valido: interoPositivo });
       break;
     case 'dichiarazione':
     case 'certificazione':
@@ -351,6 +385,7 @@ function raccogliAnomalie(parametri: ParametriValutazione): Anomalia[] {
   const lotto = trovaLotto(parametri.bando, parametri.lottoId);
   const anomalie = [
     ...anomalieDate(parametri),
+    ...anomalieIdentificativi(parametri.bando),
     ...(lotto ? [] : [creaAnomalia({ codice: 'riferimento_inesistente', entita: 'lotto', id: parametri.lottoId })]),
     ...anomalieMembri(parametri),
   ];

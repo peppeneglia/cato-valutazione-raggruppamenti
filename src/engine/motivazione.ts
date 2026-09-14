@@ -4,7 +4,7 @@
 
 import { assertNever } from '../assertNever';
 import type { RegolaComposizione, RuoloEsecutore, SoggettoId, StatoRequisito, Unita, ValoreContributo } from '../domain';
-import { formattaEuro, formattaNumero, formattaPercentuale } from '../formato';
+import { formattaConUnita, formattaNumero, formattaPercentuale } from '../formato';
 import { inEuro } from './importi';
 import { frazioneMinima, type MisurazioneGrezza } from './operatori';
 
@@ -37,14 +37,14 @@ const ASSUNZIONE_ARROTONDAMENTO = 'arrotondato per eccesso: assunzione del motor
 
 // ─── Formattazione ───────────────────────────────────────────
 
+/** Valori interni → testo: gli euro sono in centesimi, i conteggi hanno un nome. */
 function formattaValore(valore: number, unita: Unita | undefined): string {
-  switch (unita) {
+  if (unita === undefined) return formattaNumero(valore);
+  switch (unita.tipo) {
     case 'euro':
-      return formattaEuro(inEuro(valore));
+      return formattaConUnita(inEuro(valore), unita);
     case 'conteggio':
-      return formattaNumero(valore);
-    case undefined:
-      return formattaNumero(valore);
+      return formattaConUnita(valore, unita);
     default:
       return assertNever(unita);
   }

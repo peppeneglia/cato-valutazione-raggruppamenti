@@ -112,7 +112,12 @@ export type FamigliaRequisito =
   | 'referenza'           // servizi o forniture analoghe
   | 'iscrizione';         // CCIAA, albi
 
-export type Unita = 'euro' | 'conteggio';
+/** La parola del disciplinare per ciò che si conta: referenze, forniture, contratti. */
+export type Sostantivo = { singolare: string; plurale: string };
+
+export type Unita =
+  | { tipo: 'euro' }
+  | { tipo: 'conteggio'; sostantivo: Sostantivo };
 
 /** Da dove parte una finestra temporale "a ritroso": lo dice il disciplinare. */
 export type Ancoraggio = 'pubblicazione' | 'riferimento';
@@ -142,16 +147,29 @@ export type Criterio =
   | {
       tipo: 'servizi';
       cpv: string;
+      /** CPV che il disciplinare dichiara equivalenti: un servizio così è certo. */
+      cpvEquivalenti?: string[];
+      /**
+       * Cifre iniziali del CPV che un servizio deve condividere con quello di
+       * gara perché valga una verifica; altrimenti non conta. Se assente, ogni
+       * CPV diverso è da verificare. La regola è un'assunzione del motore
+       * sulla struttura del CPV, il numero è un dato del criterio.
+       */
+      cifreCpvComuni?: number;
       /** Finestra a ritroso in anni: conta chi si sovrappone, senza pro-rata. */
       anni: number;
       ancoraggio: Ancoraggio;
       /** Filtro: i servizi sotto questo importo non contano. */
       importoMinimoUnitario?: number;
       numeroMinimo: number;
+      /** Servizio di punta: `numeroMinimo: 1` con `importoMinimoUnitario`. */
+      sostantivo: Sostantivo;
     }
   | {
       tipo: 'servizi_importo';
       cpv: string;
+      cpvEquivalenti?: string[];
+      cifreCpvComuni?: number;
       anni: number;
       ancoraggio: Ancoraggio;
       importoMinimoUnitario?: number;
@@ -336,7 +354,10 @@ export type DettaglioAnomalia =
   | { codice: 'mandataria_assente' }
   | { codice: 'mandataria_multipla'; soggettiIds: SoggettoId[] }
   | { codice: 'membro_duplicato'; soggettoId: SoggettoId }
-  | { codice: 'membro_senza_quote'; soggettoId: SoggettoId }
+  /** Riferita al lotto in esame: in multi-lotto è normale. */
+  | { codice: 'membro_senza_quote'; soggettoId: SoggettoId; lottoId: LottoId }
+  /** Gli id di prestazione e requisito sono globali sul bando: un duplicato mescola le quote in silenzio. */
+  | { codice: 'identificativo_duplicato'; entita: 'prestazione' | 'requisito'; id: string; lottiIds: LottoId[] }
   | { codice: 'quota_fuori_intervallo'; soggettoId: SoggettoId; prestazioneId: PrestazioneId; quota: number }
   /** Totale > 0 e ≠ 100%. Il totale zero è `prestazione_senza_esecutore`. */
   | { codice: 'quote_non_totali'; prestazioneId: PrestazioneId; totale: number }

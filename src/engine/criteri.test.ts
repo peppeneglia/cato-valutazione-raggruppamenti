@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import type { Criterio } from '../domain';
 import { dataAncoraggio, sogliaInterna, unitaDi, valutaCriterio, type ContestoCriterio } from './criteri';
-import { certificazione, dichiarazione, fatturato, fatturatoGlobale, iscrizione, servizio } from './prova';
+import { certificazione, dichiarazione, fatturato, fatturatoGlobale, iscrizione, REFERENZE, servizio } from './prova';
 
 const CONTESTO: ContestoCriterio = { dataRiferimento: '2026-09-14', dataPubblicazione: '2026-09-01' };
 
 describe('proprietà del criterio', () => {
   it('l’unità discende dal tipo', () => {
-    expect(unitaDi({ tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 1 })).toBe('euro');
-    expect(unitaDi({ tipo: 'servizi', cpv: '1', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3 })).toBe('conteggio');
-    expect(unitaDi({ tipo: 'servizi_importo', cpv: '1', anni: 5, ancoraggio: 'riferimento', soglia: 1 })).toBe('euro');
+    expect(unitaDi({ tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 1 })).toEqual({ tipo: 'euro' });
+    expect(unitaDi({ tipo: 'servizi', cpv: '1', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3, sostantivo: REFERENZE })).toEqual({ tipo: 'conteggio', sostantivo: REFERENZE });
+    expect(unitaDi({ tipo: 'servizi_importo', cpv: '1', anni: 5, ancoraggio: 'riferimento', soglia: 1 })).toEqual({ tipo: 'euro' });
     expect(unitaDi({ tipo: 'certificazione', norma: 'ISO 9001' })).toBeUndefined();
   });
   it('la soglia interna è in centesimi per gli euro e 1 per il possesso', () => {
     expect(sogliaInterna({ tipo: 'fatturato', ambito: { tipo: 'globale' }, esercizi: 3, ancoraggio: 'riferimento', soglia: 3_000_000 })).toBe(300_000_000);
-    expect(sogliaInterna({ tipo: 'servizi', cpv: '1', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3 })).toBe(3);
+    expect(sogliaInterna({ tipo: 'servizi', cpv: '1', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3, sostantivo: REFERENZE })).toBe(3);
     expect(sogliaInterna({ tipo: 'dichiarazione', oggetto: 'x' })).toBe(1);
   });
   it('l’ancoraggio sceglie tra pubblicazione e riferimento', () => {
@@ -140,7 +140,7 @@ describe('criterio fatturato', () => {
 });
 
 describe('criterio servizi', () => {
-  const criterio: Criterio = { tipo: 'servizi', cpv: '33100000', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3 };
+  const criterio: Criterio = { tipo: 'servizi', cpv: '33100000', anni: 5, ancoraggio: 'riferimento', numeroMinimo: 3, sostantivo: REFERENZE };
 
   it('conta i servizi con CPV di gara come certi', () => {
     const c = valutaCriterio(criterio, [servizio('33100000', '2023-01-01', '2024-12-31'), servizio('33100000', '2024-03-01', '2025-06-30')], CONTESTO);
@@ -172,6 +172,29 @@ describe('criterio servizi', () => {
   });
   it('senza servizi lo dice', () => {
     expect(valutaCriterio(criterio, [], CONTESTO).note).toEqual(['nessun servizio nel fascicolo']);
+  });
+  it('un CPV dichiarato equivalente dal disciplinare è certo, non da verificare', () => {
+    const c = valutaCriterio({ ...criterio, cpvEquivalenti: ['33190000'] }, [servizio('33190000', '2024-01-01', '2024-12-31')], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'misura', certo: 1, incerto: 0 });
+    expect(c.note).toEqual([]);
+  });
+  it('con le cifre comuni, un CPV della stessa divisione resta da verificare', () => {
+    const c = valutaCriterio({ ...criterio, cifreCpvComuni: 2 }, [servizio('33192000', '2024-01-01', '2024-12-31')], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'misura', certo: 0, incerto: 1 });
+  });
+  it('con le cifre comuni, un CPV di divisione diversa non conta e la regola è dichiarata', () => {
+    const c = valutaCriterio({ ...criterio, cifreCpvComuni: 2 }, [servizio('80500000', '2024-01-01', '2024-12-31')], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'misura', certo: 0, incerto: 0 });
+    expect(c.usati).toEqual([]);
+    expect(c.note).toEqual(['non analoghi perché non condividono le prime 2 cifre del CPV 33100000 (regola del motore sulla struttura del CPV, non del disciplinare): «Servizio 80500000» (CPV 80500000)']);
+  });
+  it('la divisione si confronta anche con i CPV equivalenti', () => {
+    const c = valutaCriterio({ ...criterio, cpvEquivalenti: ['50400000'], cifreCpvComuni: 2 }, [servizio('50421000', '2024-01-01', '2024-12-31')], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'misura', certo: 0, incerto: 1 });
+  });
+  it('senza cifre comuni, ogni CPV diverso è da verificare', () => {
+    const c = valutaCriterio(criterio, [servizio('80500000', '2024-01-01', '2024-12-31')], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'misura', certo: 0, incerto: 1 });
   });
 });
 

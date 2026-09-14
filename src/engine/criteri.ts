@@ -19,7 +19,7 @@ import type {
 import { formattaData, formattaEuro } from '../formato';
 import { annoDi, entroFinestra, siSovrappongono, sottraiAnni, type Periodo } from './date';
 import { inCentesimi, type Centesimi } from './importi';
-import { coincidono } from './testo';
+import { coincidono, normalizza } from './testo';
 import { descriviVoce } from './voci';
 
 export type ContestoCriterio = {
@@ -47,9 +47,9 @@ export function unitaDi(criterio: Criterio): Unita | undefined {
   switch (criterio.tipo) {
     case 'fatturato':
     case 'servizi_importo':
-      return 'euro';
+      return { tipo: 'euro' };
     case 'servizi':
-      return 'conteggio';
+      return { tipo: 'conteggio', sostantivo: criterio.sostantivo };
     case 'dichiarazione':
     case 'certificazione':
     case 'iscrizione':
@@ -250,6 +250,24 @@ function pesoServizio(criterio: CriterioServizi, importo: number): number {
   }
 }
 
+/**
+ * Come un CPV si colloca rispetto a quello di gara:
+ * uguale o dichiarato equivalente → certo; stessa divisione (prime
+ * `cifreCpvComuni` cifre) o nessuna soglia dichiarata → da verificare;
+ * divisione diversa → non analogo, non conta.
+ */
+type EsitoCpv = 'certo' | 'da_verificare' | 'non_analogo';
+
+function classificaCpv(cpv: string, criterio: CriterioServizi): EsitoCpv {
+  const ammessi = [criterio.cpv, ...(criterio.cpvEquivalenti ?? [])];
+  if (ammessi.some((a) => coincidono(a, cpv))) return 'certo';
+  if (criterio.cifreCpvComuni === undefined) return 'da_verificare';
+  const prefisso = (c: string) => normalizza(c).slice(0, criterio.cifreCpvComuni);
+  return ammessi.some((a) => prefisso(a) === prefisso(cpv)) ? 'da_verificare' : 'non_analogo';
+}
+
+const ASSUNZIONE_CPV = 'regola del motore sulla struttura del CPV, non del disciplinare';
+
 function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], contesto: ContestoCriterio): ContributoGrezzo {
   const fine = dataAncoraggio(criterio.ancoraggio, contesto);
   const finestra: Periodo = { da: sottraiAnni(fine, criterio.anni), a: fine };
@@ -260,6 +278,7 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
   const usati: FattoUsato[] = [];
   const note: string[] = [];
   const fuoriFinestra: string[] = [];
+  const nonAnaloghi: string[] = [];
 
   for (const voce of fascicolo) {
     if (voce.tipo !== 'servizio') continue;
@@ -271,15 +290,28 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
       note.push(`${descriviVoce(voce)}: importo ${formattaEuro(voce.importo)} sotto il minimo unitario di ${formattaEuro(criterio.importoMinimoUnitario ?? 0)}`);
       continue;
     }
-    usati.push({ descrizione: descriviVoce(voce), fonte: voce.periodo.fonte });
-    if (coincidono(voce.cpv, criterio.cpv)) {
-      certo += pesoServizio(criterio, voce.importo);
-    } else {
-      incerto += pesoServizio(criterio, voce.importo);
-      note.push(`${descriviVoce(voce)}: CPV ${voce.cpv} diverso da quello di gara ${criterio.cpv}, analogia da valutare`);
+    const classe = classificaCpv(voce.cpv, criterio);
+    switch (classe) {
+      case 'certo':
+        usati.push({ descrizione: descriviVoce(voce), fonte: voce.periodo.fonte });
+        certo += pesoServizio(criterio, voce.importo);
+        break;
+      case 'da_verificare':
+        usati.push({ descrizione: descriviVoce(voce), fonte: voce.periodo.fonte });
+        incerto += pesoServizio(criterio, voce.importo);
+        note.push(`${descriviVoce(voce)}: CPV ${voce.cpv} diverso da quello di gara ${criterio.cpv}, analogia da valutare`);
+        break;
+      case 'non_analogo':
+        nonAnaloghi.push(`«${voce.oggetto}» (CPV ${voce.cpv})`);
+        break;
+      default:
+        assertNever(classe);
     }
   }
 
+  if (nonAnaloghi.length > 0) {
+    note.push(`non analoghi perché non condividono le prime ${criterio.cifreCpvComuni ?? 0} cifre del CPV ${criterio.cpv} (${ASSUNZIONE_CPV}): ${nonAnaloghi.join(', ')}`);
+  }
   if (fuoriFinestra.length > 0) {
     note.push(`fuori dalla finestra ${formattaData(finestra.da)} – ${formattaData(finestra.a)}: ${fuoriFinestra.join(', ')}`);
   }

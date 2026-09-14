@@ -44,11 +44,12 @@ export function formattaData(data: DataISO): string {
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
+/** "3.000.000 €", "1 referenza", "3 referenze": il sostantivo è quello del disciplinare. */
 export function formattaConUnita(valore: number, unita: Unita): string {
-  switch (unita) {
+  switch (unita.tipo) {
     case 'euro':
       return formattaEuro(valore);
     case 'conteggio':
-      return formattaNumero(valore);
+      return `${formattaNumero(valore)} ${valore === 1 ? unita.sostantivo.singolare : unita.sostantivo.plurale}`;
   }
 }
