@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   /* Brand Cato — navy confermato */
   --c-navy: #0E2847;
   --c-navy-scuro: #09192F;
@@ -10,18 +10,45 @@
   /* Superfici e testo */
   --c-sfondo: #FFFFFF;
   --c-superficie: #F6F7F9;
+  --c-superficie-alta: #EDEFF3;
   --c-bordo: #E3E6EB;
+  --c-bordo-forte: #B9C0CA;
   --c-testo: #12161C;
   --c-testo-tenue: #5A6572;
+  --c-testo-inverso: #FFFFFF;
 
-  /* Stati dei requisiti */
+  /* Stati dei requisiti: colore pieno e sfondo tenue */
   --c-coperto: #1B7F4B;
+  --c-coperto-tenue: #E6F4EC;
   --c-scoperto: #B3261E;
+  --c-scoperto-tenue: #FBEAE8;
   --c-da-verificare: #9A6200;
+  --c-da-verificare-tenue: #FBF1DF;
+
+  /* Anomalie per gravità */
+  --c-bloccante: #B3261E;
+  --c-bloccante-tenue: #FBEAE8;
+  --c-segnalazione: #5A6572;
+  --c-segnalazione-tenue: #EDEFF3;
+
+  /* Avvisi di scadenza: non sono problemi di oggi, sono problemi di fra un mese */
+  --c-avviso: #7A4A00;
+  --c-avviso-tenue: #FFF4E0;
 
   /* Tipografia — PLACEHOLDER, font reale da prendere dal sito */
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-numeri: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --testo-xs: 12px;
+  --testo-sm: 13px;
+  --testo-base: 14px;
+  --testo-lg: 16px;
+  --testo-xl: 20px;
+  --testo-xxl: 26px;
+  --interlinea: 1.45;
+  --peso-normale: 400;
+  --peso-medio: 500;
+  --peso-forte: 600;
 
   /* Spaziature — densa, da strumento di lavoro */
   --sp-1: 4px;
@@ -29,6 +56,18 @@
   --sp-3: 12px;
   --sp-4: 16px;
   --sp-5: 24px;
+  --sp-6: 32px;
 
+  /* Bordi e messa a fuoco */
+  --spessore-bordo: 1px;
+  --spessore-bordo-forte: 3px;
   --raggio: 6px;
+  --raggio-piccolo: 3px;
+  --anello-focus: 2px solid var(--c-accento);
+  --anello-focus-distanza: 2px;
+
+  /* Layout */
+  --larghezza-max: 1440px;
+  --larghezza-input-quota: 5.5em;
+  --larghezza-input-data: 11em;
 }
