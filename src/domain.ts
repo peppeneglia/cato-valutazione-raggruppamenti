@@ -332,6 +332,12 @@ export type EsitoRequisito = {
   contributi: Contributo[];
   misurazione?: Misurazione;
   motivazione: string;
+  /**
+   * Regole del motore, non del disciplinare, che hanno inciso su questo
+   * esito (arrotondamento dei minimi, struttura del CPV). Dichiarate una
+   * volta, qui, perché la persona sappia cosa è stato assunto.
+   */
+  assunzioni: string[];
   rimedi: Rimedio[];
 };
 

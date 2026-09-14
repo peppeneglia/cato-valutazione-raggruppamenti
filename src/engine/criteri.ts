@@ -41,12 +41,14 @@ export type FattoScaduto = {
   scadutoIl: DataISO;
 };
 
-/** Valore, fatti usati, fatti scaduti e note che spiegano cosa non ha contato. */
+/** Valore, fatti usati, fatti scaduti, note che spiegano cosa non ha contato, assunzioni del motore. */
 export type ContributoGrezzo = {
   valore: ValoreContributo;
   usati: FattoUsato[];
   scaduti: FattoScaduto[];
   note: string[];
+  /** Regole del motore, non del disciplinare, che hanno inciso: dichiarate a chi legge. */
+  assunzioni: string[];
 };
 
 // ─── Proprietà del criterio ──────────────────────────────────
@@ -127,16 +129,16 @@ function componiPossesso(
 ): ContributoGrezzo {
   if (valide.length === 0) {
     const note = noteNonValide.length === 0 ? [`nessuna ${descrizioneRichiesta} nel fascicolo`] : noteNonValide;
-    return { valore: ASSENTE, usati: [], scaduti, note };
+    return { valore: ASSENTE, usati: [], scaduti, note, assunzioni: [] };
   }
 
   if (attributoRichiesto === undefined) {
-    return { valore: { tipo: 'possesso', esito: 'posseduto' }, usati: valide.map((p) => p.usato), scaduti, note: [] };
+    return { valore: { tipo: 'possesso', esito: 'posseduto' }, usati: valide.map((p) => p.usato), scaduti, note: [], assunzioni: [] };
   }
 
   const coincidenti = valide.filter((p) => p.attributo !== undefined && coincidono(p.attributo, attributoRichiesto));
   if (coincidenti.length > 0) {
-    return { valore: { tipo: 'possesso', esito: 'posseduto' }, usati: coincidenti.map((p) => p.usato), scaduti, note: [] };
+    return { valore: { tipo: 'possesso', esito: 'posseduto' }, usati: coincidenti.map((p) => p.usato), scaduti, note: [], assunzioni: [] };
   }
 
   return {
@@ -144,6 +146,7 @@ function componiPossesso(
     usati: valide.map((p) => p.usato),
     scaduti,
     note: valide.map((p) => `${descrizioneRichiesta} con «${p.attributo ?? ''}» invece di «${attributoRichiesto}»: equivalenza da valutare`),
+    assunzioni: [],
   };
 }
 
@@ -246,7 +249,7 @@ function valutaFatturato(
     note.push(`nessun fatturato nell'ambito ${descriviAmbito(criterio.ambito)} per ${mancanti.length === 1 ? "l'esercizio" : 'gli esercizi'} ${mancanti.join(', ')}`);
   }
 
-  return { valore: { tipo: 'misura', certo, incerto: 0 }, usati, scaduti: [], note };
+  return { valore: { tipo: 'misura', certo, incerto: 0 }, usati, scaduti: [], note, assunzioni: [] };
 }
 
 // ─── Servizi ─────────────────────────────────────────────────
@@ -280,8 +283,6 @@ function classificaCpv(cpv: string, criterio: CriterioServizi): EsitoCpv {
   const prefisso = (c: string) => normalizza(c).slice(0, criterio.cifreCpvComuni);
   return ammessi.some((a) => prefisso(a) === prefisso(cpv)) ? 'da_verificare' : 'non_analogo';
 }
-
-const ASSUNZIONE_CPV = 'regola del motore sulla struttura del CPV, non del disciplinare';
 
 function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], contesto: ContestoCriterio): ContributoGrezzo {
   const fine = dataAncoraggio(criterio.ancoraggio, contesto);
@@ -324,8 +325,11 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
     }
   }
 
+  const assunzioni: string[] = [];
   if (nonAnaloghi.length > 0) {
-    note.push(`non analoghi perché non condividono le prime ${criterio.cifreCpvComuni ?? 0} cifre del CPV ${criterio.cpv} (${ASSUNZIONE_CPV}): ${nonAnaloghi.join(', ')}`);
+    note.push(`non analoghi per classe CPV, non contati: ${nonAnaloghi.join(', ')}`);
+    const ammessi = [criterio.cpv, ...(criterio.cpvEquivalenti ?? [])].join(' o ');
+    assunzioni.push(`I servizi il cui CPV non condivide le prime ${criterio.cifreCpvComuni ?? 0} cifre con ${ammessi} sono stati esclusi come non analoghi: il numero di cifre è un dato del criterio, la regola sulla struttura del CPV è del motore, non del disciplinare.`);
   }
   if (fuoriFinestra.length > 0) {
     note.push(`fuori dalla finestra ${formattaData(finestra.da)} – ${formattaData(finestra.a)}: ${fuoriFinestra.join(', ')}`);
@@ -334,7 +338,7 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
     note.push('nessun servizio nel fascicolo');
   }
 
-  return { valore: { tipo: 'misura', certo, incerto }, usati, scaduti: [], note };
+  return { valore: { tipo: 'misura', certo, incerto }, usati, scaduti: [], note, assunzioni };
 }
 
 // ─── Ingresso ────────────────────────────────────────────────

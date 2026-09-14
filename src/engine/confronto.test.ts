@@ -6,7 +6,7 @@ import { bando, certificazione, esecutore, lotto, parametri, prestazione, raggru
 const ISO = { tipo: 'certificazione', norma: 'ISO 9001' } as const;
 
 function esito(verdetto: Esito['verdetto'], percorso: Esito['percorsoMinimo'], scoperti = 0): Esito {
-  const requisiti = Array.from({ length: scoperti }, (_, i) => ({ requisitoId: `r-${i}`, stato: 'scoperto' as const, contributi: [], motivazione: '', rimedi: [] }));
+  const requisiti = Array.from({ length: scoperti }, (_, i) => ({ requisitoId: `r-${i}`, stato: 'scoperto' as const, contributi: [], motivazione: '', assunzioni: [], rimedi: [] }));
   return { lottoId: 'l', valutatoAl: '2026-09-14', verdetto, requisiti, anomalie: [], avvisiScadenza: [], percorsoMinimo: percorso };
 }
 

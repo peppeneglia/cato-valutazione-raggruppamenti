@@ -69,6 +69,23 @@ describe('valutaRequisito — contributi', () => {
     const { esito } = valutaRequisito(r, contesto([soggetto('s-a', [certificazione('ISO 9001', 'x')])], [esecutore('s-a', 'mandataria', { 'p-1': 1 }), esecutore('s-x', 'mandante', { 'p-1': 0 })]));
     expect(esito.contributi.map((c) => c.soggettoId)).toEqual(['s-a']);
   });
+  it('dichiara le assunzioni del motore una volta per requisito, anche se incidono su più membri', () => {
+    const criterio = { ...CRITERIO_SERVIZI, cifreCpvComuni: 2, numeroMinimo: 3 } as const;
+    const r = requisito('r', criterio, { tipo: 'somma_membri', minimoMandataria: 0.4 });
+    const c = contesto(
+      [soggetto('s-a', [servizio('80500000', '2024-01-01', '2024-12-31')]), soggetto('s-b', [servizio('50421000', '2024-01-01', '2024-12-31')])],
+      [esecutore('s-a', 'mandataria', { 'p-1': 1 }), esecutore('s-b', 'mandante', { 'p-1': 0 })],
+    );
+    const { esito } = valutaRequisito(r, c);
+    expect(esito.assunzioni).toHaveLength(2);
+    expect(esito.assunzioni[0]).toContain('prime 2 cifre con 33100000');
+    expect(esito.assunzioni[1]).toContain('arrotondato per eccesso a 2 referenze');
+    expect(esito.motivazione).not.toContain('regola del motore');
+  });
+  it('senza regole del motore in gioco le assunzioni sono vuote', () => {
+    const r = requisito('r', CRITERIO_ISO, { tipo: 'ciascun_membro' });
+    expect(valutaRequisito(r, contesto([soggetto('s-a', [certificazione('ISO 9001', 'x')])], [esecutore('s-a', 'mandataria', { 'p-1': 1 })])).esito.assunzioni).toEqual([]);
+  });
   it('i rimedi sono vuoti: si calcolano dopo', () => {
     const r = requisito('r', CRITERIO_ISO, { tipo: 'ciascun_membro' });
     expect(valutaRequisito(r, contesto([soggetto('s-a')], [esecutore('s-a', 'mandataria', { 'p-1': 1 })])).esito.rimedi).toEqual([]);

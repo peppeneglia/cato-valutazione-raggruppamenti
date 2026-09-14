@@ -33,7 +33,6 @@ export type DatiMotivazione = {
 };
 
 const GIUDIZIO = 'Il confronto che manca è un giudizio semantico: decide una persona, non il motore.';
-const ASSUNZIONE_ARROTONDAMENTO = 'arrotondato per eccesso: assunzione del motore, non del disciplinare';
 
 // ─── Formattazione ───────────────────────────────────────────
 
@@ -170,7 +169,7 @@ function minimoDiRuolo(
   const richiesto = frazioneMinima(soglia, frazione);
   const arrotondato = Math.abs(grezzo - richiesto) > 1e-9;
   const calcolo = arrotondato
-    ? `${formattaPercentuale(frazione)} di ${fmt(soglia)} = ${fmt(grezzo)}, quindi almeno ${fmt(richiesto)} (${ASSUNZIONE_ARROTONDAMENTO})`
+    ? `${formattaPercentuale(frazione)} di ${fmt(soglia)} = ${fmt(grezzo)}, quindi almeno ${fmt(richiesto)} (arrotondato per eccesso)`
     : `${formattaPercentuale(frazione)} di ${fmt(soglia)} = ${fmt(richiesto)}`;
 
   const raggiunti = minimi.map((m) => {
@@ -265,4 +264,22 @@ function corpo(dati: DatiMotivazione): string {
 export function componiMotivazione(dati: DatiMotivazione): string {
   const testo = corpo(dati);
   return dati.stato === 'da_verificare' ? `${testo} ${GIUDIZIO}` : testo;
+}
+
+/** L'arrotondamento per eccesso dei minimi per ruolo è una regola del motore: va dichiarata. */
+export function assunzioniArrotondamento(dati: DatiMotivazione): string[] {
+  const { regola, soglia, unita } = dati;
+  if (regola.tipo !== 'somma_membri') return [];
+  const fmt = (v: number) => formattaValore(v, unita);
+  const assunzioni: string[] = [];
+  const dichiara = (frazione: number | undefined, ruolo: string) => {
+    if (frazione === undefined) return;
+    const grezzo = soglia * frazione;
+    const richiesto = frazioneMinima(soglia, frazione);
+    if (Math.abs(grezzo - richiesto) <= 1e-9) return;
+    assunzioni.push(`Il minimo ${ruolo} (${formattaPercentuale(frazione)} di ${fmt(soglia)} = ${fmt(grezzo)}) è stato arrotondato per eccesso a ${fmt(richiesto)}: in uno strumento di verifica si sbaglia dalla parte che costa meno. È un'assunzione del motore, non del disciplinare.`);
+  };
+  dichiara(regola.minimoMandataria, 'della mandataria');
+  dichiara(regola.minimoMandante, 'di ciascuna mandante');
+  return assunzioni;
 }

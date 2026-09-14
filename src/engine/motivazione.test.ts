@@ -104,8 +104,8 @@ describe('componiMotivazione — somma dei membri', () => {
         { soggettoId: 'beta', ruolo: 'mandante', richiesto: 1, raggiunto: 2, delta: 0 },
       ] },
     }));
-    expect(testo).toContain('Minimo della mandataria: 40 % di 3 referenze = 1,2 referenze, quindi almeno 2 referenze (arrotondato per eccesso: assunzione del motore, non del disciplinare); Alfa raggiunge 1 referenza, mancano 1 referenza.');
-    expect(testo).toContain('Minimo di ciascuna mandante: 10 % di 3 referenze = 0,3 referenze, quindi almeno 1 referenza (arrotondato per eccesso: assunzione del motore, non del disciplinare); Beta raggiunge 2 referenze.');
+    expect(testo).toContain('Minimo della mandataria: 40 % di 3 referenze = 1,2 referenze, quindi almeno 2 referenze (arrotondato per eccesso); Alfa raggiunge 1 referenza, mancano 1 referenza.');
+    expect(testo).toContain('Minimo di ciascuna mandante: 10 % di 3 referenze = 0,3 referenze, quindi almeno 1 referenza (arrotondato per eccesso); Beta raggiunge 2 referenze.');
   });
 });
 
