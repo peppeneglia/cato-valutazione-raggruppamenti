@@ -21,3 +21,9 @@
   color: var(--c-testo-tenue);
   max-width: 80em;
 }
+
+.fonte {
+  font-weight: var(--peso-normale);
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+}

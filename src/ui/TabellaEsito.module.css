@@ -123,3 +123,28 @@
 .vuoto {
   color: var(--c-testo-tenue);
 }
+
+/* Perché il motore non decide: una riga per indeterminatezza, due famiglie. */
+.indeterminatezze {
+  margin: var(--sp-1) 0 0;
+  padding-left: var(--sp-4);
+  font-size: var(--testo-sm);
+}
+
+.documento {
+  color: var(--c-da-verificare);
+}
+
+.giudizio {
+  color: var(--c-testo);
+}
+
+.varianti {
+  margin: 0 0 var(--sp-2);
+  padding-left: var(--sp-4);
+  font-size: var(--testo-sm);
+}
+
+.etichettaVariante {
+  font-weight: var(--peso-medio);
+}

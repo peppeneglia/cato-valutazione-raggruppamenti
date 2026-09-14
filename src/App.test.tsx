@@ -23,7 +23,7 @@ function riga(requisitoId: string): HTMLElement {
   return el;
 }
 
-function regione(nome: string): HTMLElement {
+function regione(nome: string | RegExp): HTMLElement {
   return screen.getByRole('region', { name: nome });
 }
 
@@ -51,6 +51,37 @@ describe('pagina — avvio', () => {
       expect(within(riga(id)).getByText('Da verificare')).toBeTruthy();
     }
     expect(within(riga('forniture-analoghe')).getByText('Coperto')).toBeTruthy();
+  });
+});
+
+describe('pagina — il documento che non decide', () => {
+  it('dichiara che il bando è vero e le imprese no, e mostra i tre modi in cui il bando scrive il valore stimato', () => {
+    render(<App />);
+    expect(screen.getByText(/Bando reale: ASL Roma 6, gara n\. 9445747/)).toBeTruthy();
+    expect(within(regione(/Fornitura di farmaci di fascia A e C/)).getByText(/il documento lo scrive in 3 modi/)).toBeTruthy();
+    expect(screen.getByText(/Termine per i chiarimenti/)).toBeTruthy();
+  });
+  it('sulla riga della ISO convivono le due famiglie: il documento non dice, e per un membro decide una persona', () => {
+    render(<App />);
+    const iso = riga('certificazione-qualita');
+    expect(within(iso).getByText('Il disciplinare non dice chi debba possederlo nel raggruppamento.')).toBeTruthy();
+    expect(within(iso).getByText(/^Per Ospedalia Forniture S\.r\.l\. decide una persona/)).toBeTruthy();
+  });
+  it('il fatturato mostra le tre letture con il loro esito', () => {
+    render(<App />);
+    const fatturato = riga('fatturato-globale');
+    expect(within(fatturato).getByText(/Il bando scrive «valore stimato dell'appalto» in più modi/)).toBeTruthy();
+    expect(within(fatturato).getAllByText(/^valore stimato dell'appalto = /)).toHaveLength(3);
+  });
+  it('il percorso nomina la mossa che toglie un’incertezza, e provarla copre il fatturato', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const percorso = regione('Percorso minimo');
+    expect(await within(percorso).findByText(/mosse però tolgono un'incertezza su «Fatturato globale/, undefined, LENTO)).toBeTruthy();
+    const prove = within(percorso).getAllByRole('button', { name: 'Prova' });
+    await user.click(prove[prove.length - 1] as HTMLElement);
+    expect(within(riga('fatturato-globale')).getByText('Coperto')).toBeTruthy();
+    expect(within(regione('Modifiche')).getByText(/^Prova: Avvalimento di Grossfarma/)).toBeTruthy();
   });
 });
 

@@ -8,7 +8,7 @@ import type { Azione, Lavoro } from './lavoro';
 import { composizionePrimaDellUltimaProva, riduci } from './lavoro';
 import type { ParametriValutazione } from './domain';
 import { valutaBase } from './engine';
-import { bando, DATA_RIFERIMENTO, ORIZZONTE_SCADENZE_GIORNI, raggruppamento, soggetti } from './fixture';
+import { bando, DATA_RIFERIMENTO, DICHIARAZIONE_DATI, ORIZZONTE_SCADENZE_GIORNI, raggruppamento, soggetti } from './fixture';
 import { trovaLotto } from './engine/indici';
 import { Anomalie } from './ui/Anomalie';
 import { Assunzioni } from './ui/Assunzioni';
@@ -68,6 +68,7 @@ export default function App() {
     <main className={styles.pagina}>
       <header className={styles.testata}>
         <h1>Valutazione ammissibilità del raggruppamento</h1>
+        <p className={styles.dichiarazione}>{DICHIARAZIONE_DATI}</p>
       </header>
 
       <ConfrontoLotti bando={bando} lottoId={lavoro.lottoId} differita={differita} onSeleziona={(lottoId) => dispatch({ tipo: 'seleziona_lotto', lottoId })} />

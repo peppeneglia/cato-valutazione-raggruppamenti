@@ -3,12 +3,26 @@
 Dato un bando pubblico con i suoi requisiti di partecipazione e un
 raggruppamento temporaneo di imprese con i rispettivi fascicoli, lo strumento
 dice **chi copre cosa, quanto manca in numeri e cosa fare per diventare
-ammissibili** — lotto per lotto, con la provenienza di ogni valore e le
-assunzioni dichiarate.
+ammissibili** — con la provenienza di ogni valore e le assunzioni dichiarate.
+E quando il documento non decide, lo dice invece di scegliere in silenzio.
 
-Progetto personale a scopo dimostrativo, non affiliato ad alcuna azienda. I dati
-della fixture sono inventati: i riferimenti agli articoli del disciplinare sono
-placeholder espliciti.
+Progetto personale a scopo dimostrativo, non affiliato ad alcuna azienda.
+
+## Il caso reale
+
+La fixture è la gara **ASL Roma 6, n. 9445747** — fornitura di farmaci e
+dispositivi da parte di grossista con consegna veloce — letta dal
+disciplinare di gara pubblico, con articolo e pagina per ogni valore
+(`Documenti/estrazione-disciplinare.md`). Le imprese e i loro fascicoli sono
+inventati, e la pagina lo dichiara.
+
+Il disciplinare rompe un modello ingenuo in sette punti, e non con requisiti
+esotici: con l'**indeterminatezza**. Tre requisiti su sei non dicono come si
+posseggono nel raggruppamento; la soglia del fatturato rinvia a un valore che
+il documento scrive in due modi nella stessa pagina; "ultimo triennio" non
+dice da quando; la data di pubblicazione non compare mai; un requisito chiede
+l'iscrizione "in registri o albi se prescritta" senza nominare né il registro
+né la legge. Il modello rappresenta ciascuno di questi casi come dato.
 
 ## Avvio
 
@@ -18,7 +32,7 @@ Richiede Node 20.18.
 npm install
 npm run dev        # sviluppo
 npm run build      # produzione, in dist/
-npm run test       # motore + interfaccia (Vitest, 300+ test)
+npm run test       # motore + interfaccia (Vitest, 360+ test)
 npm run lint
 npm run fixture:esito   # rigenera l'esito atteso della fixture dal motore
 ```
@@ -29,17 +43,24 @@ browser e nulla ne esce.
 ## La tesi
 
 **Il motore non conosce il diritto degli appalti.** Ogni requisito porta con sé
-due dati letti dal disciplinare — il *criterio* (quali fatti del fascicolo lo
-soddisfano) e la *regola di composizione* (come quei fatti si compongono tra più
-soggetti: ciascun membro, somma dei membri, chi esegue una prestazione, almeno
-un membro). Il motore applica quattro operatori a quei dati. Nessuna soglia,
-finestra, minimo per ruolo o avvalibilità è scritta nel codice: arrivano dal
-disciplinare come dati, e la famiglia del requisito è puramente descrittiva.
+due dati letti dal disciplinare — le *letture* (quali fatti del fascicolo lo
+soddisfano, una o più se il testo ammette più letture) e la *regola di
+composizione* (come quei fatti si compongono tra più soggetti: ciascun membro,
+somma dei membri, chi esegue una prestazione, almeno un membro — o *non
+dichiarata*, se il documento tace). Il motore applica quattro operatori a quei
+dati. Nessuna soglia, finestra, minimo per ruolo o avvalibilità è scritta nel
+codice: arrivano dal disciplinare come dati, e la famiglia del requisito è
+puramente descrittiva.
 
 Tre stati, non due: `coperto`, `scoperto`, `da_verificare`. Il terzo non è un
-giallo decorativo: è il motore che dichiara di non poter decidere, perché
-l'equivalenza tra due scope, due attività o due CPV è un giudizio semantico.
-Decide una persona.
+giallo decorativo: è il motore che dichiara di non poter decidere, e dice
+perché in un elenco di **indeterminatezze** con due famiglie dentro. Il
+*documento* non lo dice — regola non dichiarata, criterio non determinato,
+letture discordanti, valore contraddittorio — e allora si chiedono chiarimenti
+alla stazione appaltante, entro il termine del bando. Oppure serve un
+*giudizio* — uno scope, un'attività, un CPV che non coincidono — e allora
+decide una persona con il disciplinare in mano. Un requisito può averle
+entrambe: sulla gara reale la certificazione ISO le ha tutte e due.
 
 ## Cosa fa
 
@@ -48,19 +69,32 @@ Decide una persona.
   ogni membro, il delta, la motivazione in italiano, le fonti.
 - **Distingue "non possiede" da "possiede ma non conta qui"**: chi ha una
   certificazione senza eseguire la prestazione non è una mancanza.
+- **Soglie per rinvio e valori contraddittori**: una soglia può rinviare per
+  nome a un valore del bando, e un valore può avere più candidati, ciascuno
+  con la propria fonte. Il motore valuta sotto ciascuno: esiti uguali → l'esito
+  vale, mostrando la misurazione peggiore; esiti diversi → da verificare, con
+  cosa succede sotto ogni lettura.
+- **Letture alternative di un requisito**: "importo non inferiore alla base
+  d'asta" per un solo contratto o per la somma. Stesso meccanismo.
+- **Ancoraggio non dichiarato**: "nell'ultimo triennio" senza dies a quo si
+  ancora al termine di presentazione, dichiarato come assunzione, con i giorni
+  di arretramento che cambierebbero l'esito, ricavati dai dati.
 - **Avvalimento**: le ausiliarie integrano il fascicolo di un membro specifico,
   solo per i requisiti indicati e solo se il disciplinare li dichiara avvalibili.
 - **Anomalie come dati, non eccezioni**: mandataria assente, quote che non
-  tornano, riferimenti inesistenti, parametri assurdi. Le bloccanti forzano il
+  tornano, riferimenti inesistenti, rinvii a valori che il bando non nomina,
+  ancoraggio a una data che il bando non scrive. Le bloccanti forzano il
   verdetto; le segnalazioni no.
 - **Avvisi di scadenza**: documenti validi oggi che scadono prima del termine di
   presentazione o entro un orizzonte, distinti dalle scoperture.
 - **Rimedi verificati**: un rimedio è proposto solo se, applicato a una copia
-  dell'input, la rivalutazione lo conferma. Mai perché sembra giusto.
-- **Percorso minimo**: la sequenza più breve di mosse (riassegnazione di quota,
-  uscita, ingresso, avvalimento) che porta ad ammissibile; se irraggiungibile, a
-  con riserva, dichiarando cosa resta. Ricerca in ampiezza, senza limiti di
-  profondità: le mosse sono finite.
+  dell'input, la rivalutazione lo conferma. La **richiesta di chiarimenti** è
+  l'eccezione: non cambia i dati, ma dice se il termine per chiederli è già
+  decorso, e allora l'ambiguità resta a rischio del concorrente.
+- **Percorso minimo**: la sequenza più breve di mosse che porta ad
+  ammissibile; se irraggiungibile, a con riserva, dichiarando cosa resta. E
+  quando il massimo è già raggiunto ma una mossa toglie un'incertezza, lo dice:
+  il percorso non deve sembrare inerte.
 - **Confronti**: lo stesso raggruppamento su ogni lotto; la composizione attuale
   contro quella prima dell'ultima prova.
 - **Prova, non applica**: ogni mossa si prova sul foglio di lavoro come modifica
@@ -69,18 +103,24 @@ Decide una persona.
 ## Cosa non fa
 
 Sui requisiti generali verifica che la dichiarazione esista, non che sia vera.
-Non giudica equivalenze. Non modella capacità tecniche non documentali
-(organico, attrezzature). Non tratta il subappalto. Non legge il PDF del
+Non giudica equivalenze. Non modella la certificazione del produttore né quella
+in corso di rilascio, le imprese con meno di un anno di attività, i consorzi
+come entità, le reti e i GEIE, la garanzia provvisoria e le sue riduzioni, la
+comprova tramite FVOE, l'offerta tecnica, gli adempimenti (DGUE, PASSOE,
+contributo ANAC, registrazione alla piattaforma, self cleaning, divieto di
+partecipazione plurima). Non tratta il subappalto. Non legge il PDF del
 disciplinare: i requisiti arrivano già strutturati. Non sostituisce la lettura
-del documento. La pagina lo dichiara in fondo.
+del documento. La pagina lo dichiara in fondo, con la fonte di ogni voce.
 
 ## Struttura
 
 ```
-src/domain.ts          il contratto: tipi del dominio, unioni discriminate
-src/engine/            motore puro: criteri, operatori, validazione, verdetto,
-                       scadenze, rimedi, percorso, confronto
-src/fixture.ts         gara multi-lotto di esempio + esito atteso GENERATO dal motore
+src/domain.ts          il contratto: tipi del dominio, unioni discriminate;
+                       ogni variante cita il caso del disciplinare che l'ha imposta
+src/engine/            motore puro: varianti (letture × candidati), criteri,
+                       operatori, validazione, verdetto, scadenze, rimedi,
+                       percorso, confronto
+src/fixture.ts         la gara ASL Roma 6 + esito atteso GENERATO dal motore
 src/lavoro.ts          il foglio di lavoro: reducer puro con storia annullabile
 src/descrizioni.ts     testo dagli identificativi
 src/formato.ts         euro, date, percentuali in formato italiano
@@ -90,22 +130,34 @@ src/tokens.css         i token del brand (placeholder), unico posto con valori f
 
 Il motore è una funzione pura `valuta(parametri) → Esito`: nessun I/O, nessuna
 data implicita, nessuna mutazione. La data di riferimento è un parametro, e
-spostandola si vede un certificato scadere.
+spostandola si vede un certificato scadere, o un termine per i chiarimenti
+decorrere.
 
 ## Assunzioni dichiarate
 
-Due regole sono del motore e non del disciplinare, e l'esito le espone per
+Quattro regole sono del motore e non del disciplinare, e l'esito le espone per
 codice così che l'interfaccia le raccolga in una legenda:
 
 - **Arrotondamento per eccesso dei minimi per ruolo**: "40 % di 3 referenze =
   1,2, quindi almeno 2". Si sbaglia dalla parte che costa meno.
 - **Classe CPV**: un servizio il cui CPV non condivide le prime *n* cifre con
   quello di gara non è analogo e non conta; *n* è un dato del criterio.
+- **Ancoraggio al termine di presentazione**: una finestra "a ritroso" senza
+  dies a quo dichiarato parte dall'unica data certa del bando. La nota dice di
+  quanto potrebbe arretrare senza cambiare chi conta. Si vede sulle forniture
+  analoghe della gara reale.
+- **Esito concordante**: con letture o candidati diversi nel testo ma
+  concordanti nell'esito, l'esito vale anche se il documento è ambiguo; dove
+  i numeri differiscono si mostra la lettura peggiore. Si vede sulle forniture
+  analoghe della gara reale.
 
 ## Test
 
 Il motore è puro e si testa interamente senza infrastruttura: ogni operatore,
-ogni codice di anomalia, lo stesso fascicolo a due date, il percorso a una, due e
-nessuna mossa, l'equivalenza della ricerca con e senza il limite teorico, la
-purezza di `valuta`. L'interfaccia si testa nel comportamento con Testing
-Library e `user-event`: niente snapshot.
+ogni codice di anomalia, lo stesso fascicolo a due date, il percorso a una, due
+e nessuna mossa, l'equivalenza della ricerca con e senza il limite teorico, la
+purezza di `valuta`, e un test per ogni caso del disciplinare reale: regola non
+dichiarata, criterio non determinato, tre candidati per una soglia, due
+letture, ancoraggio assunto, termine dei chiarimenti prima e dopo, costo del
+memo. L'interfaccia si testa nel comportamento con Testing Library e
+`user-event`: niente snapshot.

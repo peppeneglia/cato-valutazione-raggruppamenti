@@ -44,3 +44,7 @@
   font-size: var(--testo-sm);
   color: var(--c-da-verificare);
 }
+
+.miglioramenti {
+  margin-top: var(--sp-2);
+}

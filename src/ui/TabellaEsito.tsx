@@ -2,7 +2,8 @@
 // il numero che comanda a destra. Le righe sono raggruppate per famiglia,
 // che è descrittiva e serve solo a questo.
 
-import { etichettaFamiglia, nomeSoggetto, type ContestoDescrizioni } from '../descrizioni';
+import { descriviIndeterminatezza, etichettaFamiglia, etichettaStato, nomeSoggetto, type ContestoDescrizioni } from '../descrizioni';
+import { delDocumento } from '../engine/rimedi';
 import type { EsitoRequisito, FamigliaRequisito, Lotto, Membro, Requisito, Rimedio } from '../domain';
 import { formattaConUnita } from '../formato';
 import type { Azione } from '../lavoro';
@@ -67,9 +68,26 @@ function RigaRequisito({ requisito, esito, rimedi, membri, legenda, contesto, di
           {requisito.vincolante ? null : <span className={styles.nonVincolante}>non vincolante</span>}
           {requisito.avvalibile ? <span className={styles.avvalibile}>avvalibile</span> : null}
         </div>
+        {esito.indeterminatezze.length > 0 ? (
+          <ul className={styles.indeterminatezze}>
+            {esito.indeterminatezze.map((i, k) => (
+              <li key={k} className={delDocumento(i) ? styles.documento : styles.giudizio}>{descriviIndeterminatezza(i, contesto)}</li>
+            ))}
+          </ul>
+        ) : null}
         <details className={styles.dettagli}>
           <summary>Motivazione e rimedi</summary>
           <p className={styles.motivazione}>{esito.motivazione}</p>
+          {esito.varianti ? (
+            <ul className={styles.varianti}>
+              {esito.varianti.map((v) => (
+                <li key={v.etichetta}>
+                  <span className={styles.etichettaVariante}>{v.etichetta || 'lettura unica'}</span>: {etichettaStato(v.stato).toLowerCase()}
+                  {v.misurazione && v.misurazione.delta > 0 ? ` (mancano ${formattaConUnita(v.misurazione.delta, v.misurazione.unita)})` : ''}
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <Rimedi rimedi={rimedi} contesto={contesto} dispatch={dispatch} />
         </details>
       </td>

@@ -27,13 +27,33 @@ function Residui({ ids, contesto }: { ids: string[]; contesto: ContestoDescrizio
 
 function Contenuto({ percorso, contesto, dispatch }: { percorso: PercorsoTipo; contesto: ContestoDescrizioni; dispatch: Props['dispatch'] }) {
   switch (percorso.esito) {
-    case 'gia_ammissibile':
+    case 'gia_ammissibile': {
+      const { miglioramenti } = percorso;
+      const risolti = [...new Set(miglioramenti.flatMap((m) => m.requisitiRisolti))];
       return (
         <>
           <p>Nessuna mossa necessaria: il raggruppamento è già <strong>{etichettaVerdetto(percorso.verdetto).toLowerCase()}</strong>.</p>
           <Residui ids={percorso.residui} contesto={contesto} />
+          {miglioramenti.length > 0 ? (
+            <>
+              <p className={styles.miglioramenti}>
+                Nessuna mossa cambia il verdetto; {miglioramenti.length === 1 ? 'una mossa però toglie' : `${miglioramenti.length} mosse però tolgono`} un'incertezza su {risolti.map((id) => `«${nomeRequisito(id, contesto)}»`).join(', ')}:
+              </p>
+              <ol className={styles.mosse}>
+                {miglioramenti.map((m, i) => (
+                  <li key={i} className={styles.mossa}>
+                    <span>{descriviMossa(m.mossa, contesto)}</span>
+                    <button type="button" className={styles.prova} onClick={() => dispatch({ tipo: 'prova_rimedio', mossa: m.mossa })}>
+                      Prova
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </>
+          ) : null}
         </>
       );
+    }
     case 'trovato':
       return (
         <>

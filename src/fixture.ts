@@ -330,6 +330,9 @@ export const raggruppamento: Raggruppamento = {
 export const DATA_RIFERIMENTO = '2024-01-08';
 export const ORIZZONTE_SCADENZE_GIORNI = 90;
 
+/** La pagina lo dice: il bando è vero, le imprese no. */
+export const DICHIARAZIONE_DATI = 'Bando reale: ASL Roma 6, gara n. 9445747, disciplinare di gara pubblico. Le imprese e i loro fascicoli sono di esempio, inventati.';
+
 // ─── Esito atteso ────────────────────────────────────────────
 // GENERATO dal motore (`valuta`) su questa fixture, alla data di riferimento
 // e con l'orizzonte qui sopra, e letto riga per riga prima di essere fissato.

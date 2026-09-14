@@ -14,3 +14,9 @@
   border-bottom: var(--spessore-bordo) solid var(--c-bordo);
   color: var(--c-navy);
 }
+
+.dichiarazione {
+  margin-left: auto;
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
