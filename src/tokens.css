@@ -1,13 +1,18 @@
 :root {
-  /* Brand Cato — navy confermato */
+  /* ─── Brand Cato ───────────────────────────────────────────
+     Il navy è confermato ed è il colore STRUTTURALE: titoli, filetti,
+     lotto attivo. Accento e font sono PLACEHOLDER: i valori reali del
+     brand si sostituiscono qui e solo qui. */
   --c-navy: #0E2847;
   --c-navy-scuro: #09192F;
+  --c-navy-tenue: #E9EEF6;
 
-  /* PLACEHOLDER — da sostituire con i valori reali dal sito di Cato */
-  --c-accento: #2F6FED;
+  --c-accento: #2F6FED;          /* PLACEHOLDER */
   --c-accento-testo: #FFFFFF;
 
-  /* Superfici e testo */
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;   /* PLACEHOLDER */
+
+  /* ─── Superfici e testo ──────────────────────────────────── */
   --c-sfondo: #FFFFFF;
   --c-superficie: #F6F7F9;
   --c-superficie-alta: #EDEFF3;
@@ -17,7 +22,10 @@
   --c-testo-tenue: #5A6572;
   --c-testo-inverso: #FFFFFF;
 
-  /* Stati dei requisiti: colore pieno e sfondo tenue */
+  /* ─── I tre stati: l'unico colore saturo della pagina ─────
+     Tutto il resto (avvisi di scadenza, segnalazioni, note) è tenue,
+     altrimenti gli stati non si vedono. Le anomalie bloccanti usano il
+     colore di "scoperto" perché hanno lo stesso effetto sul verdetto. */
   --c-coperto: #1B7F4B;
   --c-coperto-tenue: #E6F4EC;
   --c-scoperto: #B3261E;
@@ -25,49 +33,51 @@
   --c-da-verificare: #9A6200;
   --c-da-verificare-tenue: #FBF1DF;
 
-  /* Anomalie per gravità */
-  --c-bloccante: #B3261E;
-  --c-bloccante-tenue: #FBEAE8;
-  --c-segnalazione: #5A6572;
-  --c-segnalazione-tenue: #EDEFF3;
-
-  /* Avvisi di scadenza: non sono problemi di oggi, sono problemi di fra un mese */
-  --c-avviso: #7A4A00;
-  --c-avviso-tenue: #FFF4E0;
-
-  /* Tipografia — PLACEHOLDER, font reale da prendere dal sito */
-  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-numeri: ui-monospace, "Cascadia Mono", Consolas, monospace;
-
+  /* ─── Scala tipografica ───────────────────────────────────
+     Una famiglia sola. Pochi livelli, usati con decisione: il verdetto
+     molto più grande di tutto, i titoli appena sopra il corpo, il corpo
+     piccolo. I numeri usano cifre tabellari nella stessa famiglia. */
   --testo-xs: 12px;
   --testo-sm: 13px;
   --testo-base: 14px;
-  --testo-lg: 16px;
-  --testo-xl: 20px;
-  --testo-xxl: 26px;
+  --testo-titolo: 16px;
+  --testo-mossa: 19px;
+  --testo-verdetto: clamp(26px, 1.6vw + 16px, 36px);
+
   --interlinea: 1.45;
+  --interlinea-mossa: 1.35;
+  --interlinea-verdetto: 1.15;
+
   --peso-normale: 400;
   --peso-medio: 500;
   --peso-forte: 600;
+  --peso-verdetto: 700;
 
-  /* Spaziature — densa, da strumento di lavoro */
+  /* ─── Spaziature ──────────────────────────────────────────
+     Strette dentro le tabelle (1–3), larghe TRA i blocchi principali (7–8). */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
   --sp-4: 16px;
   --sp-5: 24px;
   --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
 
-  /* Bordi e messa a fuoco */
+  /* ─── Bordi e messa a fuoco ─────────────────────────────── */
   --spessore-bordo: 1px;
   --spessore-bordo-forte: 3px;
+  --spessore-filetto-verdetto: 4px;
   --raggio: 6px;
   --raggio-piccolo: 3px;
   --anello-focus: 2px solid var(--c-accento);
   --anello-focus-distanza: 2px;
 
-  /* Layout */
+  /* ─── Layout ──────────────────────────────────────────────
+     La soglia delle due colonne è 1100px: le media query non leggono
+     var(), quindi il valore è ripetuto nei moduli con questo commento. */
   --larghezza-max: 1440px;
+  --larghezza-composizione: 400px;
   --larghezza-input-quota: 5.5em;
   --larghezza-input-data: 11em;
 }

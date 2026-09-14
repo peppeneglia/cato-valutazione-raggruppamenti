@@ -23,8 +23,8 @@
   gap: var(--sp-1) var(--sp-3);
   align-items: baseline;
   padding: var(--sp-2) var(--sp-3);
-  background: var(--c-avviso-tenue);
-  border-left: var(--spessore-bordo-forte) solid var(--c-avviso);
+  background: var(--c-superficie);
+  border-left: var(--spessore-bordo-forte) solid var(--c-testo-tenue);
   font-size: var(--testo-sm);
 }
 
@@ -38,12 +38,11 @@
 
 .etichetta {
   font-weight: var(--peso-medio);
-  color: var(--c-avviso);
+  color: var(--c-testo-tenue);
   white-space: nowrap;
 }
 
 .data {
-  font-family: var(--font-numeri);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

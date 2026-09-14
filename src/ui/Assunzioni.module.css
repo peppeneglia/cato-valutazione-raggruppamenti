@@ -30,7 +30,7 @@
   padding: 0 var(--sp-1);
   border: var(--spessore-bordo) solid var(--c-bordo-forte);
   border-radius: var(--raggio-piccolo);
-  font-family: var(--font-numeri);
+  font-variant-numeric: tabular-nums;
   font-size: var(--testo-xs);
   color: var(--c-testo);
   text-decoration: none;

@@ -4,7 +4,7 @@
 }
 
 .titolo {
-  font-size: var(--testo-lg);
+  font-size: var(--testo-titolo);
 }
 
 .dati {
@@ -42,14 +42,13 @@
 
 .idLotto,
 .cig {
-  font-family: var(--font-numeri);
+  font-variant-numeric: tabular-nums;
   font-size: var(--testo-xs);
   color: var(--c-testo-tenue);
   font-weight: var(--peso-normale);
 }
 
 .importoLotto {
-  font-family: var(--font-numeri);
   font-variant-numeric: tabular-nums;
   font-weight: var(--peso-normale);
 }
@@ -68,7 +67,6 @@
 }
 
 .cifra {
-  font-family: var(--font-numeri);
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;

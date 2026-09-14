@@ -8,8 +8,8 @@
   gap: var(--sp-1);
 }
 
-.bloccante { color: var(--c-bloccante); }
-.segnalazione { color: var(--c-segnalazione); }
+.bloccante { color: var(--c-scoperto); }
+.segnalazione { color: var(--c-testo-tenue); }
 
 .spiegazione,
 .vuoto {
@@ -36,19 +36,19 @@
 }
 
 .bloccanteVoce {
-  background: var(--c-bloccante-tenue);
-  border-left-color: var(--c-bloccante);
+  background: var(--c-scoperto-tenue);
+  border-left-color: var(--c-scoperto);
   border-left-style: double;
 }
 
 .segnalazioneVoce {
-  background: var(--c-segnalazione-tenue);
-  border-left-color: var(--c-segnalazione);
+  background: var(--c-superficie-alta);
+  border-left-color: var(--c-testo-tenue);
   border-left-style: dashed;
 }
 
 .codice {
-  font-family: var(--font-numeri);
+  font-variant-numeric: tabular-nums;
   font-size: var(--testo-xs);
   color: var(--c-testo-tenue);
 }

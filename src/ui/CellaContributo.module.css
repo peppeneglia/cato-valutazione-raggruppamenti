@@ -20,7 +20,6 @@
 }
 
 .cifra {
-  font-family: var(--font-numeri);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

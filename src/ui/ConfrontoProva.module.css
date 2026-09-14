@@ -22,7 +22,6 @@
 }
 
 .cifra {
-  font-family: var(--font-numeri);
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;

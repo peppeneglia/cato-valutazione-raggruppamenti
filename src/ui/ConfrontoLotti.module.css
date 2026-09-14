@@ -12,7 +12,6 @@
 }
 
 .cifra {
-  font-family: var(--font-numeri);
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
@@ -39,7 +38,7 @@
 }
 
 .idLotto {
-  font-family: var(--font-numeri);
+  font-variant-numeric: tabular-nums;
   font-size: var(--testo-xs);
   color: var(--c-testo-tenue);
   margin-right: var(--sp-1);

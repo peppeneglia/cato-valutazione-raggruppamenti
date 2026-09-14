@@ -14,8 +14,8 @@ body {
 }
 
 h1, h2, h3 { margin: 0; font-weight: var(--peso-forte); line-height: 1.25; }
-h1 { font-size: var(--testo-xl); }
-h2 { font-size: var(--testo-lg); }
+h1 { font-size: var(--testo-titolo); color: var(--c-navy); }
+h2 { font-size: var(--testo-titolo); color: var(--c-navy); }
 h3 { font-size: var(--testo-base); }
 p { margin: 0; }
 
@@ -35,9 +35,8 @@ button:disabled { cursor: not-allowed; }
 
 details > summary { cursor: pointer; }
 
-/* Il numero comanda: cifre allineate a destra, larghezza fissa. */
+/* Il numero comanda: cifre tabellari nella famiglia unica, allineate a destra. */
 .cifra {
-  font-family: var(--font-numeri);
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;

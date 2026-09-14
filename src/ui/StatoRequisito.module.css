@@ -17,7 +17,7 @@
 .da_verificare { color: var(--c-da-verificare); }
 
 .verdetto {
-  font-size: var(--testo-xl);
+  font-size: var(--testo-mossa);
   font-weight: var(--peso-forte);
   gap: var(--sp-2);
 }

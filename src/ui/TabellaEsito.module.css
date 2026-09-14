@@ -29,8 +29,6 @@
 .famiglia th {
   padding-top: var(--sp-3);
   font-size: var(--testo-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--c-testo-tenue);
   background: var(--c-superficie);
 }
@@ -111,7 +109,6 @@
 }
 
 .cifra {
-  font-family: var(--font-numeri);
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
@@ -120,7 +117,7 @@
 .delta {
   color: var(--c-scoperto);
   font-weight: var(--peso-forte);
-  font-size: var(--testo-lg);
+  font-size: var(--testo-titolo);
 }
 
 .vuoto {

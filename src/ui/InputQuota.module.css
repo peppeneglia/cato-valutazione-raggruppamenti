@@ -10,7 +10,6 @@
   border: var(--spessore-bordo) solid var(--c-bordo-forte);
   border-radius: var(--raggio-piccolo);
   background: var(--c-sfondo);
-  font-family: var(--font-numeri);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
