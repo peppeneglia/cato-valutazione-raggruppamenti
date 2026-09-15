@@ -28,32 +28,44 @@
   }
 }
 
-/* Una riga sottile: il titolo, la gara, la dichiarazione sui dati. Non compete con il verdetto. */
+/* Il titolo della pagina sta sul fondo, senza card: l'occhiello con la
+   stazione appaltante, l'oggetto della gara intero, i fatti che contano. */
 .testata {
   display: grid;
-  gap: var(--sp-1);
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--raggio);
-  background: var(--c-crema);
-  color: var(--c-navy);
+  gap: var(--sp-3);
+  padding-top: var(--sp-2);
 }
 
-.gara {
+.fatti {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-1) var(--sp-4);
-  font-size: var(--testo-sm);
+  gap: var(--sp-2);
 }
 
+/* L'oggetto di una gara è lungo: grande, ma non quanto un titolo di due parole. */
 .oggetto {
-  font-size: var(--testo-base);
-  font-weight: var(--peso-forte);
-  line-height: var(--interlinea);
-  color: var(--c-navy);
+  max-width: 60em;
+  font-size: clamp(20px, 0.8vw + 14px, 26px);
+  font-weight: var(--peso-verdetto);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
-.dato {
-  color: var(--c-testo-tenue);
+/* Un fatto: occhiello sopra, valore sotto, in una piccola card. */
+.fatto {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-2) var(--sp-4);
+  border: var(--spessore-bordo) solid var(--c-bordo-tenue);
+  border-radius: var(--raggio);
+  background: var(--c-sfondo);
+}
+
+.valoreFatto {
+  font-size: var(--testo-titolo);
+  font-weight: var(--peso-verdetto);
+  color: var(--c-titolo);
+  font-variant-numeric: tabular-nums;
 }
 
 .dichiarazione {
@@ -66,8 +78,8 @@
 }
 
 .datiBando > summary {
-  color: var(--c-navy);
-  text-decoration: underline 2px var(--c-accento);
+  color: var(--c-titolo);
+  text-decoration: underline 2px var(--c-azione);
   text-underline-offset: 3px;
   width: max-content;
 }
@@ -105,12 +117,7 @@
   min-width: 0;
 }
 
-.note {
-  display: grid;
-  gap: var(--sp-6);
-  padding-top: var(--sp-6);
-  border-top: var(--spessore-bordo) solid var(--c-bordo);
-}
+
 
 .confronto {
   composes: card from './ui/Card.module.css';
@@ -126,27 +133,20 @@
 }
 
 .torna {
-  padding: var(--sp-1) var(--sp-3);
-  border: var(--spessore-bordo) solid var(--c-bordo);
-  border-radius: var(--raggio-piccolo);
-  background: var(--c-sfondo);
-  font-size: var(--testo-sm);
+  composes: secondario piccolo from './ui/Bottoni.module.css';
 }
 
-.data {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  color: var(--c-testo-tenue);
-}
+
 
 .inputData {
   width: var(--larghezza-input-data);
-  padding: 2px var(--sp-2);
-  border: var(--spessore-bordo) solid var(--c-bordo);
-  border-radius: var(--raggio-piccolo);
-  background: var(--c-sfondo);
+  max-width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--testo-titolo);
+  font-weight: var(--peso-verdetto);
+  color: var(--c-titolo);
   font-variant-numeric: tabular-nums;
 }
 

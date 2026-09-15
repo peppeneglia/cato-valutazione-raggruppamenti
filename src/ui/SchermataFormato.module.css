@@ -1,5 +1,5 @@
 .pagina {
-  max-width: 62em;
+  max-width: 76em;
   margin: 0 auto;
   padding-block: var(--sp-5) var(--sp-8);
   padding-inline: var(--sp-5);
@@ -15,19 +15,10 @@
 }
 
 .torna {
-  padding: var(--sp-1) var(--sp-3);
-  border: var(--spessore-bordo) solid var(--c-accento);
-  border-radius: var(--raggio-piccolo);
-  background: var(--c-sfondo);
-  color: var(--c-navy);
-  font-size: var(--testo-sm);
-  font-weight: var(--peso-forte);
+  composes: secondario piccolo from './Bottoni.module.css';
 }
 
-.torna:hover {
-  background: var(--c-accento);
-  color: var(--c-accento-testo);
-}
+
 
 .intro {
   display: grid;
@@ -38,8 +29,7 @@
   font-size: var(--testo-verdetto);
   font-weight: var(--peso-verdetto);
   line-height: var(--interlinea-verdetto);
-  letter-spacing: -0.01em;
-  color: var(--c-navy);
+  letter-spacing: var(--spaziatura-titolo);
 }
 
 .lead {
@@ -101,7 +91,7 @@
 }
 
 .nome {
-  color: var(--c-navy);
+  color: var(--c-titolo);
   font-weight: var(--peso-forte);
   overflow-wrap: anywhere;
 }
@@ -151,16 +141,16 @@
   width: max-content;
   max-width: 100%;
   font-size: var(--testo-sm);
-  color: var(--c-navy);
-  text-decoration: underline 2px var(--c-accento);
+  color: var(--c-titolo);
+  text-decoration: underline 2px var(--c-azione);
   text-underline-offset: 3px;
 }
 
 .link {
   justify-self: start;
   font-size: var(--testo-sm);
-  color: var(--c-navy);
-  text-decoration: underline 2px var(--c-accento);
+  color: var(--c-titolo);
+  text-decoration: underline 2px var(--c-azione);
   text-underline-offset: 3px;
   overflow-wrap: anywhere;
 }

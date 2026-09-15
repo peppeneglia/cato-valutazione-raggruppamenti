@@ -351,6 +351,11 @@ function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch,
     () => (differita.stato === 'pronto' ? new Map(differita.esito.requisiti.map((r) => [r.requisitoId, r.rimedi])) : ('in_calcolo' as const)),
     [differita],
   );
+  const conteggi = useMemo(() => {
+    const n = { coperto: 0, scoperto: 0, da_verificare: 0 };
+    for (const r of esito.requisiti) n[r.stato] += 1;
+    return n;
+  }, [esito]);
   const frase = useMemo(
     () => fraseVerdetto({
       bando,
@@ -367,15 +372,18 @@ function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch,
   return (
     <main className={styles.pagina}>
       <div className={styles.testata}>
+        <p className="occhiello">{bando.stazioneAppaltante} · Gara in valutazione</p>
         <h1 className={styles.oggetto}>{bando.oggetto}</h1>
-        <p className={styles.gara}>
-          <span className={styles.dato}>{bando.stazioneAppaltante}</span>
-          <span className={styles.dato}>Offerte entro il {formattaData(bando.terminePresentazione)}</span>
-          <label className={styles.data}>
-            <span>Data di riferimento</span>
+        <div className={styles.fatti}>
+          <p className={styles.fatto}>
+            <span className="occhiello">Offerte entro</span>
+            <span className={styles.valoreFatto}>{formattaData(bando.terminePresentazione)}</span>
+          </p>
+          <label className={styles.fatto}>
+            <span className="occhiello">Data di riferimento</span>
             <input type="date" value={lavoro.dataRiferimento} onChange={(e) => dispatch({ tipo: 'imposta_data', valore: e.target.value })} className={styles.inputData} />
           </label>
-        </p>
+        </div>
         {fraseData ? <p className={styles.dichiarazione}>{fraseData}</p> : null}
         <p className={styles.dichiarazione}>{dichiarazioneDati(provenienze.bando, provenienze.fascicoli)}</p>
       </div>
@@ -409,7 +417,7 @@ function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch,
         </section>
       ) : (
         <>
-          <BloccoVerdetto verdetto={esito.verdetto} frase={frase} dispatch={dispatch} />
+          <BloccoVerdetto verdetto={esito.verdetto} frase={frase} conteggi={conteggi} dispatch={dispatch} />
 
           <details className={styles.datiBando}>
             <summary>Dati del bando e del lotto</summary>

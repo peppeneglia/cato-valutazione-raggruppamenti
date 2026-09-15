@@ -96,9 +96,9 @@ async function apri(user: ReturnType<typeof userEvent.setup>, requisitoId: strin
   return dettagli;
 }
 
-/** I requisiti coperti stanno raccolti e chiusi: chi guarda cerca i problemi. */
+/** I requisiti coperti non stanno nel filtro di partenza, «Da risolvere»: chi guarda cerca i problemi. Si mostrano tutti. */
 async function apriCoperti(user: ReturnType<typeof userEvent.setup>): Promise<void> {
-  await user.click(screen.getByRole('button', { name: /^\d+ requisit[oi] copert[oi]$/ }));
+  await user.click(within(screen.getByRole('group', { name: 'Quali requisiti mostrare' })).getByRole('button', { name: /^Tutti \(\d+\)$/ }));
 }
 
 describe('pagina — avvio', () => {
@@ -115,7 +115,7 @@ describe('pagina — avvio', () => {
     expect(await within(lotti).findByText('Ammissibile con riserva', undefined, LENTO)).toBeTruthy();
     expect(within(lotti).queryByText('Calcolo in corso…')).toBeNull();
   });
-  it('cinque requisiti su sei sono da verificare e stanno in riga; l’unico coperto sta raccolto e chiuso', async () => {
+  it('cinque requisiti su sei sono da verificare e stanno in riga; l’unico coperto è fuori dal filtro «Da risolvere»', async () => {
     const user = userEvent.setup();
     await avvia();
     for (const id of ['requisiti-generali', 'registro-imprese', 'registri-di-settore', 'fatturato-globale', 'certificazione-qualita']) {
@@ -236,6 +236,26 @@ describe('schermata iniziale — caricamento da disco', () => {
     await user.upload(screen.getByLabelText('Scegli un file JSON'), fileJson('doppione.json', TESTI[FILE_FASCICOLI]!));
     const errori = await screen.findByRole('region', { name: 'Errori in doppione.json' }, LENTO);
     expect(within(errori).getByText(`un id non ancora usato: «s-farmalazio» è già di ${FARMALAZIO}, in ${FILE_FASCICOLI}`)).toBeTruthy();
+  });
+});
+
+describe('la card del risultato e il filtro dei requisiti', () => {
+  it('la card del risultato conta i requisiti per stato, in cifre', async () => {
+    await avvia();
+    const numeri = within(regione('Verdetto')).getByLabelText('Requisiti per stato');
+    const coppie = [...numeri.querySelectorAll('div')].map((d) => [d.querySelector('dt')?.textContent, d.querySelector('dd')?.textContent]);
+    expect(coppie).toEqual([['Scoperti', '0'], ['Da verificare', '5'], ['Coperto', '1']]);
+  });
+  it('il filtro parte da ciò che è da risolvere, con i conteggi, e mostra i coperti a un clic', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    const filtro = screen.getByRole('group', { name: 'Quali requisiti mostrare' });
+    expect(within(filtro).getAllByRole('button').map((b) => [b.textContent, b.getAttribute('aria-pressed')])).toEqual([
+      ['Da risolvere (5)', 'true'], ['Coperti (1)', 'false'], ['Tutti (6)', 'false'],
+    ]);
+    await user.click(within(filtro).getByRole('button', { name: 'Coperti (1)' }));
+    expect(riga('forniture-analoghe')).toBeTruthy();
+    expect(document.getElementById('requisito-fatturato-globale')).toBeNull();
   });
 });
 
@@ -548,7 +568,7 @@ describe('pagina — prove e annullamento', () => {
     const composizione = regione('Composizione del raggruppamento');
     expect(within(composizione).getByRole('heading', { name: GROSSFARMA })).toBeTruthy();
     expect(within(regione('Modifiche')).getByText(/^Prova: Avvalimento di Grossfarma/)).toBeTruthy();
-    // Coperto, la riga passa nel gruppo chiuso dei coperti.
+    // Coperto, la riga esce dal filtro «Da risolvere».
     expect(document.getElementById('requisito-fatturato-globale')).toBeNull();
     await apriCoperti(user);
     expect(within(riga('fatturato-globale')).getByText('Coperto')).toBeTruthy();

@@ -2,7 +2,7 @@
    generoso tra le card e compatto dentro. Nessuna larghezza minima: a
    400 px tutto va a capo. */
 .pagina {
-  max-width: 62em;
+  max-width: 76em;
   margin: 0 auto;
   padding-block: var(--sp-6) var(--sp-8);
   padding-inline: var(--sp-5);
@@ -35,12 +35,13 @@
   padding-bottom: var(--sp-2);
 }
 
+/* La domanda è il titolo più grande dello strumento: si capisce da lì cosa si fa. */
 .titolo {
+  text-wrap: balance;
   font-size: var(--testo-verdetto);
   font-weight: var(--peso-verdetto);
   line-height: var(--interlinea-verdetto);
-  letter-spacing: -0.01em;
-  color: var(--c-navy);
+  letter-spacing: var(--spaziatura-titolo);
 }
 
 .cosaFa {
@@ -58,12 +59,12 @@
 }
 
 .etichetta {
-  font-size: var(--testo-xs);
-  font-weight: var(--peso-forte);
-  color: var(--c-testo-tenue);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   margin-bottom: var(--sp-1);
+  font-size: var(--testo-occhiello);
+  font-weight: var(--peso-verdetto);
+  letter-spacing: var(--spaziatura-occhiello);
+  text-transform: uppercase;
+  color: var(--c-testo-tenue);
 }
 
 /* ─── Card ─────────────────────────────────────────────────── */
@@ -77,19 +78,20 @@
 .passo {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
   font-size: var(--testo-titolo);
 }
 
 .numero {
   display: inline-grid;
   place-items: center;
-  width: 1.5em;
-  height: 1.5em;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: var(--raggio-piccolo);
   background: var(--c-navy);
-  color: var(--c-sfondo);
-  font-size: var(--testo-xs);
+  color: #FFFFFF;
+  font-size: var(--testo-sm);
   font-variant-numeric: tabular-nums;
 }
 
@@ -114,7 +116,7 @@
   flex: none;
   width: 1rem;
   height: 1rem;
-  accent-color: var(--c-navy);
+  accent-color: var(--c-titolo);
 }
 
 /* ─── Gara ─────────────────────────────────────────────────── */
@@ -148,10 +150,10 @@
   background: var(--c-superficie);
 }
 
-/* La gara scelta è una scelta compiuta: l'oro sul bordo, mai sul fondo. */
+/* La gara scelta, come l'elemento attivo nell'app: il bordo navy pieno. */
 .garaScelta {
-  border-color: var(--c-accento);
-  box-shadow: inset 0 0 0 var(--spessore-bordo) var(--c-accento);
+  border-color: var(--c-azione);
+  box-shadow: inset 0 0 0 var(--spessore-bordo) var(--c-azione);
 }
 
 .garaEtichetta {
@@ -169,7 +171,7 @@
 
 .garaOggetto {
   font-weight: var(--peso-forte);
-  color: var(--c-navy);
+  color: var(--c-titolo);
   overflow-wrap: anywhere;
 }
 
@@ -227,7 +229,7 @@
 
 .caricaTitolo {
   font-size: var(--testo-base);
-  color: var(--c-navy);
+  color: var(--c-titolo);
 }
 
 .caricaSpiegazione {
@@ -236,47 +238,38 @@
 }
 
 .bottoneFile {
+  composes: secondario from './Bottoni.module.css';
   justify-self: start;
-  padding: var(--sp-2) var(--sp-3);
-  border: var(--spessore-bordo) solid var(--c-accento);
-  border-radius: var(--raggio-piccolo);
-  background: var(--c-sfondo);
-  color: var(--c-navy);
-  font-size: var(--testo-sm);
-  font-weight: var(--peso-forte);
   cursor: pointer;
 }
 
-.bottoneFile:hover {
-  background: var(--c-accento);
-  color: var(--c-accento-testo);
-}
+
 
 .bottoneFile:focus-within {
   outline: var(--anello-focus);
   outline-offset: var(--anello-focus-distanza);
 }
 
-/* Il link al formato è un'azione: il bordo sinistro in oro, il testo in navy. */
+/* Il link al formato è un'azione: il bordo sinistro navy, come l'elemento attivo dell'app. */
 .formato {
   display: grid;
   gap: 2px;
   padding: var(--sp-3);
   border: var(--spessore-bordo) solid var(--c-bordo);
-  border-left: var(--spessore-bordo-forte) solid var(--c-accento);
+  border-left: var(--spessore-bordo-forte) solid var(--c-azione);
   border-radius: var(--raggio-piccolo);
   background: var(--c-sfondo);
-  color: var(--c-navy);
+  color: var(--c-titolo);
   text-decoration: none;
 }
 
 .formato:hover {
-  border-color: var(--c-accento);
+  border-color: var(--c-azione);
 }
 
 .formatoTitolo {
   font-weight: var(--peso-forte);
-  text-decoration: underline 2px var(--c-accento);
+  text-decoration: underline 2px var(--c-azione);
   text-underline-offset: 3px;
 }
 
@@ -324,7 +317,7 @@
 }
 
 .impresaInclusa {
-  border-color: var(--c-navy);
+  border-color: var(--c-titolo);
 }
 
 .impresaEtichetta {
@@ -370,25 +363,12 @@
 }
 
 .valuta {
-  padding: var(--sp-3) var(--sp-5);
-  border: var(--spessore-bordo) solid var(--c-accento);
-  border-radius: var(--raggio-piccolo);
-  background: var(--c-accento);
-  color: var(--c-accento-testo);
-  font-size: var(--testo-base);
-  font-weight: var(--peso-forte);
+  composes: primario grande from './Bottoni.module.css';
 }
 
-.valuta:hover:not(:disabled) {
-  background: var(--c-accento-chiaro);
-  border-color: var(--c-accento-chiaro);
-}
 
-.valuta:disabled {
-  background: var(--c-superficie);
-  border-color: var(--c-bordo);
-  color: var(--c-testo-tenue);
-}
+
+
 
 .manca {
   font-size: var(--testo-sm);

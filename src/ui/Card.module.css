@@ -1,12 +1,8 @@
-/* La card: un'area di natura diversa dalle altre. Una sola definizione, che
-   i moduli compongono. Bordo tenue, nessuna ombra, spazio compatto dentro;
-   lo spazio generoso sta tra una card e l'altra, nel contenitore. Mai una
-   card dentro una card, mai una card per riga di tabella. */
 .card {
   min-width: 0;
   padding: var(--sp-5);
-  border: var(--spessore-bordo) solid var(--c-bordo);
-  border-radius: var(--raggio);
+  border: var(--spessore-bordo) solid var(--c-bordo-tenue);
+  border-radius: var(--raggio-card);
   background: var(--c-sfondo);
 }
 
@@ -14,4 +10,12 @@
   .card {
     padding: var(--sp-4);
   }
+}
+
+/* La card scura: intestazione, piè di pagina, risultato. Il contesto scuro
+   ridefinisce i ruoli dei colori per tutto ciò che contiene. */
+.scura {
+  composes: card;
+  composes: contesto-scuro from global;
+  border-color: var(--c-navy);
 }

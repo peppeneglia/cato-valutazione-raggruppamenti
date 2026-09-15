@@ -13,19 +13,10 @@
 }
 
 .prova {
-  padding: 0 var(--sp-2);
-  border: var(--spessore-bordo) solid var(--c-accento);
-  border-radius: var(--raggio-piccolo);
-  background: var(--c-sfondo);
-  color: var(--c-navy);
-  font-size: var(--testo-xs);
-  font-weight: var(--peso-forte);
+  composes: secondario piccolo from './Bottoni.module.css';
 }
 
-.prova:hover {
-  background: var(--c-accento);
-  color: var(--c-accento-testo);
-}
+
 
 .esterno {
   font-size: var(--testo-xs);

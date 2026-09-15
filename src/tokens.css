@@ -1,72 +1,80 @@
 :root {
-  /* ─── Marca — dai token del sito Cato ─────────────────────
-     Il navy è STRUTTURALE: titoli, testo di comando, filetti.
-     L'oro è l'accento e l'accento è SOLO azione: compare esclusivamente
-     su ciò che si può cliccare (bottoni, link, chip del lotto attivo,
-     anello di focus), mai su testo informativo, bordi decorativi o fondi.
-     Il colore saturo dice lo stato, l'oro dice l'azione. */
+  /* ─── Marca — i colori della web app di Cato ──────────────
+     Come nell'app: il navy è il colore delle azioni principali (bottoni
+     pieni, elemento attivo, anello di focus) e delle card che fanno da
+     cornice; l'oro segnala ciò che è da fare o in scadenza; il verde il
+     completato. Il colore saturo dice lo stato. */
   --c-navy: #0F172A;              /* --color-navy */
-  --c-accento: #E5AA3E;           /* --color-gold — SOLO azione */
-  --c-accento-chiaro: #EABA62;    /* --color-gold-light */
-  --c-accento-testo: var(--c-navy);   /* i due colori di marca uno sull'altro, 8.63:1 */
+  --c-navy-chiaro: #1E293B;       /* il navy un gradino sopra: superfici e hover sul navy */
+  --c-oro: #E5AA3E;               /* --color-gold — segnale di attenzione: scadenze, da verificare */
+
+  --c-azione: var(--c-navy);
+  --c-azione-hover: var(--c-navy-chiaro);
+  --c-azione-testo: #FFFFFF;      /* 17,85:1 */
 
   --font-ui: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* ─── Superfici ───────────────────────────────────────────
-     Il corpo resta bianco: è una tabella densa. Il crema è la cornice
-     (testata, note del motore): distingue senza aggiungere bordi. */
+     La pagina è grigio chiarissimo, le card sono bianche sopra: la
+     separazione la fa il fondo, non una fila di bordi. */
+  --c-pagina: #F4F5F7;
   --c-sfondo: #FFFFFF;
-  --c-crema: #FAF8F5;             /* --color-bg-cream */
   --c-superficie: #F1F5F9;        /* --secondary / --muted */
 
   /* ─── Bordi ───────────────────────────────────────────────
-     tenue dentro le tabelle tra riga e riga, medio tra i blocchi.
-     Il loro terzo livello (--color-border-dark) serve solo su fondo navy:
-     si aggiunge quando arriva un fondo navy. */
-  --c-bordo-tenue: #F0F2F5;       /* --color-border-subtle */
+     tenue dentro le tabelle tra riga e riga e attorno alle card, medio
+     sui controlli e tra i blocchi. */
+  --c-bordo-tenue: #EDF0F4;
   --c-bordo: #E2E8F0;             /* --color-border-medium */
 
   /* ─── Testo ───────────────────────────────────────────────── */
+  --c-titolo: var(--c-navy);      /* titoli e testo di comando */
   --c-testo: #101010;             /* --color-text-primary */
-  --c-testo-tenue: #5A626D;       /* un gradino sotto il loro --color-text-secondary #6D747E: passa 4.5:1 su bianco, crema e superficie */
+  --c-testo-tenue: #5A626D;       /* 6,17:1 su bianco, 5,66:1 sulla pagina */
 
-  /* ─── I tre stati: l'unico colore saturo oltre all'oro ────
-     Tutto il resto (avvisi di scadenza, segnalazioni, note) è tenue,
-     altrimenti gli stati non si vedono. Nessun fondo tenue di stato: lo
-     stato si dice con forma, colore e stile del filetto, uguale per tutti
-     e tre. Le anomalie bloccanti usano il colore di "scoperto" perché
-     hanno lo stesso effetto sul verdetto.
-     "Da verificare" è indaco: domanda aperta, non allarme attenuato,
-     e non compete con l'oro. */
-  --c-coperto: #15803D;
-  --c-scoperto: #B91C1C;          /* stessa famiglia del loro --destructive #EF4444, più scuro per il contrasto sul testo piccolo */
-  --c-da-verificare: #4338CA;
+  /* ─── I tre stati ─────────────────────────────────────────
+     Come nell'app: da verificare nella famiglia dell'oro (il loro «da
+     fare»), coperto verde (il loro «completato»), scoperto rosso. Il
+     testo usa la tinta scura, che si legge; l'oro puro solo nei segni.
+     Ogni stato ha la sua tinta di fondo per le etichette a pillola, tutti
+     e tre allo stesso modo. */
+  --c-coperto: #15803D;           /* 5,02:1 su bianco */
+  --c-coperto-tenue: #F0FDF4;
+  --c-scoperto: #B91C1C;          /* 6,47:1 su bianco */
+  --c-scoperto-tenue: #FEF2F2;
+  --c-da-verificare: #B45309;     /* 5,02:1 su bianco, 4,67:1 sulla sua tinta; l'oro puro come testo sarebbe 2,07:1 */
+  --c-da-verificare-tenue: #FDF6E7;
 
   /* ─── Scala tipografica ───────────────────────────────────
-     Una famiglia sola. Pochi livelli, usati con decisione: il verdetto
-     molto più grande di tutto, i titoli appena sopra il corpo, il corpo
-     piccolo. I numeri usano cifre tabellari nella stessa famiglia. */
+     Una famiglia sola, e salti netti: l'occhiello maiuscolo che dice cosa
+     si sta guardando, il titolo della pagina grande, i numeri che contano
+     grandissimi, il corpo piccolo. La gerarchia la fa la dimensione. */
+  --testo-occhiello: 11px;
   --testo-xs: 12px;
   --testo-sm: 13px;
   --testo-base: 14px;
-  --testo-titolo: 16px;
+  --testo-titolo: 17px;
   --testo-mossa: 19px;
-  --testo-verdetto: clamp(26px, 1.6vw + 16px, 36px);
+  --testo-titolo-pagina: clamp(24px, 1.2vw + 18px, 34px);
+  --testo-verdetto: clamp(28px, 2vw + 16px, 44px);
+  --testo-cifra-grande: clamp(34px, 2.4vw + 18px, 52px);
 
   --interlinea: 1.45;
   --interlinea-mossa: 1.35;
-  --interlinea-verdetto: 1.15;
+  --interlinea-verdetto: 1.1;
+
+  --spaziatura-occhiello: 0.08em;
+  --spaziatura-titolo: -0.02em;
 
   /* Nel bundle ci sono solo i pesi 400, 600 e 700 di Manrope (main.tsx):
      un peso che non è tra questi il browser lo arrotonda da solo, quindi
-     ogni livello punta a un file che esiste. La gerarchia la fa la
-     dimensione: al corpo bastano due pesi. */
+     ogni livello punta a un file che esiste. */
   --peso-normale: 400;
   --peso-forte: 600;
   --peso-verdetto: 700;
 
   /* ─── Spaziature ──────────────────────────────────────────
-     Strette dentro le tabelle (1–3), larghe TRA i blocchi principali (7–8). */
+     Strette dentro le tabelle (1–3), larghe TRA le card (5–6). */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
@@ -80,9 +88,10 @@
   --spessore-bordo: 1px;
   --spessore-bordo-forte: 3px;
   --spessore-filetto-verdetto: 4px;
-  --raggio: 8px;                  /* il loro --radius: 0.5rem */
-  --raggio-piccolo: calc(var(--raggio) - 4px);   /* controlli piccoli, derivato come il loro radius-sm */
-  /* Navy, non oro: il focus non è un'azione, è dove si trova il cursore. */
+  --raggio: 10px;                 /* i controlli, come i bottoni dell'app */
+  --raggio-piccolo: calc(var(--raggio) - 4px);
+  --raggio-card: calc(var(--raggio) * 2);   /* le card: derivato, un solo numero da tenere */
+  --raggio-pillola: 999px;
   --anello-focus: 2px solid var(--c-navy);
   --anello-focus-distanza: 2px;
 
@@ -93,4 +102,31 @@
   --larghezza-composizione: 400px;
   --larghezza-input-quota: 5.5em;
   --larghezza-input-data: 11em;
+}
+
+/* ─── Il contesto scuro ─────────────────────────────────────
+   Intestazione, piè di pagina e card del risultato stanno sul navy
+   dell'app. Qui non si aggiungono colori per componente: si ridefiniscono
+   i ruoli, e ogni componente dentro usa gli stessi nomi di sempre. Le tinte
+   degli stati passano alle varianti chiare, misurate sul navy. */
+.contesto-scuro {
+  --c-sfondo: var(--c-navy);
+  --c-superficie: var(--c-navy-chiaro);
+  --c-bordo-tenue: var(--c-navy-chiaro);
+  --c-bordo: #334155;
+  --c-titolo: #FFFFFF;            /* 17,85:1 */
+  --c-testo: #FFFFFF;
+  --c-testo-tenue: #CBD5E1;       /* 12,02:1 */
+  --c-coperto: #4ADE80;           /* 10,25:1 */
+  --c-coperto-tenue: var(--c-navy-chiaro);
+  --c-scoperto: #F87171;          /* 6,45:1 */
+  --c-scoperto-tenue: var(--c-navy-chiaro);
+  --c-da-verificare: var(--c-oro); /* 8,63:1: sul navy l'oro si legge */
+  --c-da-verificare-tenue: var(--c-navy-chiaro);
+  --c-azione: #FFFFFF;            /* sul navy l'azione piena è bianca, con il testo navy: 17,85:1 */
+  --c-azione-hover: #E2E8F0;
+  --c-azione-testo: var(--c-navy);
+  --anello-focus: 2px solid #FFFFFF;
+  background: var(--c-sfondo);
+  color: var(--c-testo);
 }

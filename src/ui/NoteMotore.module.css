@@ -1,14 +1,11 @@
-/* Cornice, non contenuto: il fondo crema la separa dal corpo senza bordi. */
 .pannello {
-  padding: var(--sp-4) var(--sp-5);
-  border-radius: var(--raggio);
-  background: var(--c-crema);
+  composes: card from './Card.module.css';
 }
 
 .titolo {
   font-size: var(--testo-titolo);
   font-weight: var(--peso-forte);
-  color: var(--c-navy);
+  color: var(--c-titolo);
   cursor: pointer;
 }
 

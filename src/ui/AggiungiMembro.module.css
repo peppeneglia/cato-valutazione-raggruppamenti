@@ -14,8 +14,7 @@
   font-size: var(--testo-sm);
 }
 
-.select,
-.bottone {
+.select {
   padding: var(--sp-1) var(--sp-2);
   border: var(--spessore-bordo) solid var(--c-bordo);
   border-radius: var(--raggio-piccolo);
@@ -23,10 +22,7 @@
 }
 
 .bottone {
-  background: var(--c-accento);
-  color: var(--c-accento-testo);
-  border-color: var(--c-accento);
-  font-weight: var(--peso-forte);
+  composes: primario piccolo from './Bottoni.module.css';
 }
 
 .vuoto {

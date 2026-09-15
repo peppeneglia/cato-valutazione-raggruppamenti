@@ -53,7 +53,7 @@
 }
 
 .link {
-  color: var(--c-navy);
-  text-decoration: underline 2px var(--c-accento);
+  color: var(--c-titolo);
+  text-decoration: underline 2px var(--c-azione);
   text-underline-offset: 3px;
 }

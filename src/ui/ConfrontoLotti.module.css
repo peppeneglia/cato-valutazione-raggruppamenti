@@ -22,14 +22,14 @@
   box-shadow: inset var(--spessore-bordo-forte) 0 0 var(--c-navy);
 }
 
-/* L'oro sul segno del link, il testo in navy: oro su bianco come testo non si legge. */
+/* Il lotto si sceglie come un link: testo navy sottolineato. */
 .scelta {
   background: none;
   border: none;
   padding: 0;
   text-align: left;
-  color: var(--c-navy);
-  text-decoration: underline 2px var(--c-accento);
+  color: var(--c-titolo);
+  text-decoration: underline 2px var(--c-azione);
   text-underline-offset: 3px;
 }
 

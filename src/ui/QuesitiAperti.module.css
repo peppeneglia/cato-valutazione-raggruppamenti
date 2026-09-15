@@ -9,16 +9,37 @@
   gap: var(--sp-1);
 }
 
-.termine {
+/* Il termine come la scadenza nell'app: una riga in evidenza, con l'icona nell'oro dell'attenzione. */
+.termine,
+.decorso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--raggio);
   font-size: var(--testo-sm);
   font-weight: var(--peso-forte);
-  color: var(--c-navy);
+}
+
+.termine {
+  background: var(--c-da-verificare-tenue);
+  color: var(--c-titolo);
+}
+
+.termine .icona {
+  color: var(--c-oro);
 }
 
 .decorso {
-  font-size: var(--testo-sm);
-  font-weight: var(--peso-forte);
+  background: var(--c-scoperto-tenue);
   color: var(--c-scoperto);
+}
+
+.icona {
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+  margin-top: 0.1em;
 }
 
 .tenue {

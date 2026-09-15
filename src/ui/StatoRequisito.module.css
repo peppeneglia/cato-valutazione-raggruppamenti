@@ -1,23 +1,30 @@
+/* Lo stato come etichetta a pillola, come nell'app: la forma, la parola e
+   il colore dello stato su una tinta leggera. Le tre tinte sono dello
+   stesso peso: nessuno stato grida più degli altri. */
 .stato {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  font-weight: var(--peso-forte);
+  padding: 2px var(--sp-2) 2px 6px;
+  border-radius: var(--raggio-pillola);
+  font-size: var(--testo-xs);
+  font-weight: var(--peso-verdetto);
   white-space: nowrap;
 }
 
 .forma {
-  width: 1em;
-  height: 1em;
+  width: 1.1em;
+  height: 1.1em;
   flex: none;
 }
 
-.coperto { color: var(--c-coperto); }
-.scoperto { color: var(--c-scoperto); }
-.da_verificare { color: var(--c-da-verificare); }
+.coperto { color: var(--c-coperto); background: var(--c-coperto-tenue); }
+.scoperto { color: var(--c-scoperto); background: var(--c-scoperto-tenue); }
+.da_verificare { color: var(--c-da-verificare); background: var(--c-da-verificare-tenue); }
 
+/* Il verdetto per lotto, nel confronto: la stessa pillola, un gradino più grande. */
 .verdetto {
-  font-size: var(--testo-mossa);
-  font-weight: var(--peso-forte);
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-2);
+  font-size: var(--testo-sm);
   gap: var(--sp-2);
 }

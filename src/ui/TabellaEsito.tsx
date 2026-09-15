@@ -2,7 +2,7 @@
 // stato, nome breve, quanto manca, una frase che dice perché — e tutto
 // il resto nell'espansione: descrizione integrale con la fonte, contributi
 // per membro, motivazione, letture, assunzioni, rimedi. I requisiti
-// coperti stanno raccolti e chiusi: chi guarda cerca i problemi.
+// coperti sono a un filtro di distanza: chi guarda cerca i problemi.
 
 import { useState } from 'react';
 import {
@@ -167,9 +167,18 @@ function RigaRequisito(props: RigaProps) {
 
 const ORDINE = { scoperto: 0, da_verificare: 1, coperto: 2 } as const;
 
+/** Chi guarda cerca i problemi: si parte da quelli, e i coperti sono a un clic. */
+type Filtro = 'da_risolvere' | 'coperti' | 'tutti';
+
+const FILTRI: { chiave: Filtro; etichetta: string }[] = [
+  { chiave: 'da_risolvere', etichetta: 'Da risolvere' },
+  { chiave: 'coperti', etichetta: 'Coperti' },
+  { chiave: 'tutti', etichetta: 'Tutti' },
+];
+
 export function TabellaEsito({ lotto, requisiti, rimediPerRequisito, membri, legenda, contesto, dispatch }: Props) {
   const [aperte, setAperte] = useState<ReadonlySet<string>>(new Set());
-  const [copertiAperti, setCopertiAperti] = useState(false);
+  const [filtro, setFiltro] = useState<Filtro>('da_risolvere');
   const esiti = new Map(requisiti.map((r) => [r.requisitoId, r]));
 
   if (lotto.requisiti.length === 0) {
@@ -192,6 +201,7 @@ export function TabellaEsito({ lotto, requisiti, rimediPerRequisito, membri, leg
   const ordinati = [...lotto.requisiti].sort((a, b) => ORDINE[esiti.get(a.id)?.stato ?? 'scoperto'] - ORDINE[esiti.get(b.id)?.stato ?? 'scoperto']);
   const problemi = ordinati.filter((r) => esiti.get(r.id)?.stato !== 'coperto');
   const coperti = ordinati.filter((r) => esiti.get(r.id)?.stato === 'coperto');
+  const visibili = filtro === 'da_risolvere' ? problemi : filtro === 'coperti' ? coperti : [...problemi, ...coperti];
 
   const riga = (requisito: Requisito) => (
     <RigaRequisito
@@ -210,7 +220,16 @@ export function TabellaEsito({ lotto, requisiti, rimediPerRequisito, membri, leg
 
   return (
     <section aria-labelledby="titolo-esito" className={styles.sezione}>
-      <h2 id="titolo-esito">Esito per requisito</h2>
+      <div className={styles.testata}>
+        <h2 id="titolo-esito">Esito per requisito</h2>
+        <div className={styles.segmenti} role="group" aria-label="Quali requisiti mostrare">
+          {FILTRI.map((f) => (
+            <button key={f.chiave} type="button" className={styles.segmento} aria-pressed={filtro === f.chiave} onClick={() => setFiltro(f.chiave)}>
+              {f.etichetta} <span className={styles.conteggio}>({f.chiave === 'da_risolvere' ? problemi.length : f.chiave === 'coperti' ? coperti.length : ordinati.length})</span>
+            </button>
+          ))}
+        </div>
+      </div>
       <table className={styles.tabella}>
         <thead>
           <tr>
@@ -221,25 +240,15 @@ export function TabellaEsito({ lotto, requisiti, rimediPerRequisito, membri, leg
           </tr>
         </thead>
         <tbody>
-          {problemi.map(riga)}
-          {problemi.length === 0 ? (
+          {visibili.map(riga)}
+          {visibili.length === 0 ? (
             <tr className={styles.riga}>
-              <td colSpan={COLONNE} className={styles.vuoto}>Tutti i requisiti sono coperti.</td>
+              <td colSpan={COLONNE} className={styles.vuoto}>
+                {filtro === 'da_risolvere' ? 'Tutti i requisiti sono coperti.' : 'Nessun requisito è coperto.'}
+              </td>
             </tr>
           ) : null}
         </tbody>
-        {coperti.length > 0 ? (
-          <tbody>
-            <tr className={styles.gruppo}>
-              <td colSpan={COLONNE}>
-                <button type="button" className={styles.apriGruppo} aria-expanded={copertiAperti} onClick={() => setCopertiAperti((v) => !v)}>
-                  {coperti.length === 1 ? '1 requisito coperto' : `${coperti.length} requisiti coperti`}
-                </button>
-              </td>
-            </tr>
-            {copertiAperti ? coperti.map(riga) : null}
-          </tbody>
-        ) : null}
       </table>
     </section>
   );

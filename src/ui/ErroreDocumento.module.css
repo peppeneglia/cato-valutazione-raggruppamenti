@@ -14,7 +14,7 @@
 /* Il nome del file va a capo dove serve: un percorso lungo non allarga la pagina. */
 .file {
   font-weight: var(--peso-forte);
-  color: var(--c-navy);
+  color: var(--c-titolo);
   overflow-wrap: anywhere;
 }
 

@@ -1,7 +1,7 @@
-// La cornice di ogni schermata: in alto il nome e il comando per cambiare
-// gara, sempre uguali; in basso il perimetro —
-// cosa sono i dati, cosa lo strumento non valuta, dove vanno i dati — e il
-// rimando al repository. Il perimetro nasce dai documenti caricati.
+// La cornice di ogni schermata, in due card scure nel navy dell'app: in alto
+// il nome e il comando per cambiare gara, sempre uguali; in basso il
+// perimetro — cosa sono i dati, cosa lo strumento non valuta, dove vanno i
+// dati — e il rimando al repository. Il perimetro nasce dai documenti caricati.
 
 import type { ReactNode } from 'react';
 import styles from './Cornice.module.css';
@@ -24,10 +24,11 @@ export function Segno({ className }: { className?: string }) {
 export function Intestazione({ onCambiaGara }: { onCambiaGara: () => void }) {
   return (
     <header className={styles.intestazione}>
-      <div className={styles.interno}>
+      <div className={styles.barra}>
         <p className={styles.marchio}>
-          <Segno className={styles.segno} />
-          <span>Cato Valutazione Raggruppamenti</span>
+          <span className={styles.logo}><Segno className={styles.segno} /></span>
+          <span className={styles.nome}>Cato</span>
+          <span className={styles.prodotto}> Valutazione Raggruppamenti</span>
         </p>
         <button type="button" className={styles.cambia} onClick={onCambiaGara}>Cambia gara</button>
       </div>
@@ -38,7 +39,7 @@ export function Intestazione({ onCambiaGara }: { onCambiaGara: () => void }) {
 export function PiePagina({ dati }: { dati: ReactNode }) {
   return (
     <footer className={styles.pie}>
-      <div className={`${styles.interno} ${styles.colonne}`}>
+      <div className={styles.pannello}>
         <section aria-labelledby="pie-dati">
           <h2 id="pie-dati" className={styles.etichetta}>I dati</h2>
           <p>{dati}</p>

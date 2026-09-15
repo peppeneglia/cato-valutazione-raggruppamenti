@@ -1,87 +1,118 @@
-/* La cornice è larga quanto la finestra; il contenuto dentro si allinea alla pagina. */
-.interno {
+/* Intestazione e piè di pagina sono card scure, allineate alla larghezza
+   della pagina e staccate dai bordi della finestra. */
+.intestazione,
+.pie {
+  width: 100%;
   max-width: var(--larghezza-max);
-  margin: 0 auto;
+  margin-inline: auto;
   padding-inline: var(--sp-5);
-  min-width: 0;
 }
 
 @media (max-width: 699px) {
-  .interno {
-    padding-inline: var(--sp-4);
+  .intestazione,
+  .pie {
+    padding-inline: var(--sp-3);
   }
 }
 
 /* ─── Intestazione ─────────────────────────────────────────── */
 
+/* Resta in vista mentre si scorre un esito lungo: il comando per cambiare gara è sempre a portata. */
 .intestazione {
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
-  background: var(--c-sfondo);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-top: var(--sp-3);
 }
 
-.intestazione .interno {
+.barra {
+  composes: scura from './Card.module.css';
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-2) var(--sp-4);
-  padding-block: var(--sp-3);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
 }
 
 .marchio {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  font-weight: var(--peso-verdetto);
-  color: var(--c-navy);
-  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Il segno sta in un quadrato bianco, come il logo dell'app: si riconosce anche piccolo. */
+.logo {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: var(--raggio-piccolo);
+  background: #FFFFFF;
 }
 
 .segno {
-  width: 1.1em;
-  height: 1.1em;
-  flex: none;
+  width: 16px;
+  height: 16px;
   color: var(--c-navy);
 }
 
-.cambia {
-  margin-left: auto;
-  padding: var(--sp-1) var(--sp-3);
-  border: var(--spessore-bordo) solid var(--c-accento);
-  border-radius: var(--raggio-piccolo);
-  background: var(--c-sfondo);
-  color: var(--c-navy);
+.nome {
+  font-size: var(--testo-titolo);
+  font-weight: var(--peso-verdetto);
+  letter-spacing: var(--spaziatura-titolo);
+  color: var(--c-titolo);
+}
+
+.prodotto {
   font-size: var(--testo-sm);
-  font-weight: var(--peso-forte);
+  color: var(--c-testo-tenue);
+  white-space: pre;
 }
 
-.cambia:hover {
-  background: var(--c-accento);
-  color: var(--c-accento-testo);
+@media (max-width: 459px) {
+  .prodotto {
+    white-space: normal;
+  }
+}
+
+/* Sul navy l'azione piena è bianca: il comando si vede senza cercarlo. */
+.cambia {
+  composes: primario piccolo from './Bottoni.module.css';
+  margin-left: auto;
 }
 
 /* ─── Piè di pagina ────────────────────────────────────────── */
 
 .pie {
   margin-top: auto;
-  background: var(--c-crema);
+  padding-block: var(--sp-6) var(--sp-4);
+}
+
+.pannello {
+  composes: scura from './Card.module.css';
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5) var(--sp-6);
+  padding: var(--sp-6);
   font-size: var(--testo-sm);
   color: var(--c-testo-tenue);
 }
 
-.colonne {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-5) var(--sp-6);
-  padding-block: var(--sp-6);
+@media (max-width: 699px) {
+  .pannello {
+    padding: var(--sp-5);
+  }
 }
 
 @media (min-width: 900px) {
-  .colonne {
+  .pannello {
     grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 2fr);
   }
 }
 
-.colonne section {
+.pannello section {
   display: grid;
   gap: var(--sp-2);
   align-content: start;
@@ -89,15 +120,19 @@
 }
 
 .etichetta {
-  font-size: var(--testo-xs);
-  font-weight: var(--peso-forte);
-  color: var(--c-navy);
+  font-size: var(--testo-occhiello);
+  font-weight: var(--peso-verdetto);
+  letter-spacing: var(--spaziatura-occhiello);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--c-titolo);
 }
 
 .link {
-  color: var(--c-navy);
-  text-decoration: underline 2px var(--c-accento);
+  color: var(--c-titolo);
+  text-decoration: underline 1px;
   text-underline-offset: 3px;
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
 }

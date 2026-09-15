@@ -1,0 +1,65 @@
+/* I due ruoli dei bottoni, come nell'app di Cato: il primario pieno nel
+   colore dell'azione, il secondario bianco con un bordo chiaro. Una sola
+   definizione, che i moduli compongono. Nel contesto scuro gli stessi nomi
+   si ridefiniscono da soli: il primario diventa bianco con il testo navy. */
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border: var(--spessore-bordo) solid transparent;
+  border-radius: var(--raggio);
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-forte);
+  line-height: 1.2;
+  text-align: center;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.primario {
+  composes: base;
+  background: var(--c-azione);
+  border-color: var(--c-azione);
+  color: var(--c-azione-testo);
+}
+
+.primario:hover:not(:disabled) {
+  background: var(--c-azione-hover);
+  border-color: var(--c-azione-hover);
+}
+
+.primario:disabled {
+  background: var(--c-superficie);
+  border-color: var(--c-bordo);
+  color: var(--c-testo-tenue);
+}
+
+.secondario {
+  composes: base;
+  background: var(--c-sfondo);
+  border-color: var(--c-bordo);
+  color: var(--c-titolo);
+}
+
+.secondario:hover:not(:disabled) {
+  background: var(--c-superficie);
+}
+
+.secondario:disabled {
+  color: var(--c-testo-tenue);
+}
+
+/* Dentro le righe e i pannelli: stesso ruolo, meno ingombro. */
+.piccolo {
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--raggio-piccolo);
+  font-size: var(--testo-xs);
+}
+
+/* L'azione che chiude una schermata: più grande, a pillola. */
+.grande {
+  padding: var(--sp-3) var(--sp-6);
+  border-radius: var(--raggio-pillola);
+  font-size: var(--testo-base);
+}
