@@ -1,0 +1,17 @@
+/* La card: un'area di natura diversa dalle altre. Una sola definizione, che
+   i moduli compongono. Bordo tenue, nessuna ombra, spazio compatto dentro;
+   lo spazio generoso sta tra una card e l'altra, nel contenitore. Mai una
+   card dentro una card, mai una card per riga di tabella. */
+.card {
+  min-width: 0;
+  padding: var(--sp-5);
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio);
+  background: var(--c-sfondo);
+}
+
+@media (max-width: 699px) {
+  .card {
+    padding: var(--sp-4);
+  }
+}

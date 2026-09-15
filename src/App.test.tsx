@@ -13,6 +13,10 @@ import { FILE_BANDO, FILE_FASCICOLI, scaricaDaiDocumenti, TESTI } from './docume
 
 const TESTO_BANDO = TESTI[FILE_BANDO]!;
 
+// Un percorso intero — scelta, caricamento da disco, esito — sono decine di passi utente:
+// con gli altri file in parallelo supera i 5 secondi predefiniti senza che niente sia rotto.
+vi.setConfig({ testTimeout: 15_000 });
+
 beforeEach(() => {
   vi.stubGlobal('fetch', scaricaDaiDocumenti());
   // jsdom non implementa lo scorrimento della finestra.
@@ -22,6 +26,8 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  // L'indirizzo è stato della pagina (la vista del formato): un test non lo lascia al successivo.
+  window.history.replaceState(null, '', '/');
 });
 
 const LENTO = { timeout: 4000 };
@@ -233,21 +239,61 @@ describe('schermata iniziale — caricamento da disco', () => {
   });
 });
 
-describe('cornice: intestazione e piè di pagina', () => {
-  it('nella scelta l’intestazione ha solo il nome: nessuna gara e nessun comando per cambiarla', async () => {
-    await apriScelta();
-    const intestazione = screen.getByRole('banner');
-    expect(within(intestazione).getByText('Cato Valutazione Raggruppamenti')).toBeTruthy();
-    expect(within(intestazione).queryByText(/Gara in valutazione/)).toBeNull();
-    expect(within(intestazione).queryByRole('button', { name: 'Cambia gara' })).toBeNull();
-  });
-  it('nell’esito l’intestazione dice la gara e ha il comando per cambiarla', async () => {
+describe('quesiti aperti', () => {
+  it('raccoglie in una card i quesiti per la stazione appaltante, con il termine, pronti da inviare', async () => {
     await avvia();
+    const quesiti = await screen.findByRole('region', { name: 'Quesiti aperti' }, LENTO);
+    expect(await within(quesiti).findByText('Sette quesiti da inviare alla stazione appaltante entro le 12:00 del 27/12/2023.', undefined, LENTO)).toBeTruthy();
+    expect(within(quesiti).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+      'Requisiti generali', 'Registro delle imprese', 'Registri di settore', 'Fatturato globale', 'Certificazione ISO',
+    ]);
+    expect(within(quesiti).getAllByRole('listitem')).toHaveLength(7);
+    expect(within(quesiti).getByText(/^Quale valore di «valore stimato dell'appalto» vale per il requisito/)).toBeTruthy();
+  });
+  it('oltre il termine dice che andavano posti, e che le ambiguità restano a rischio del concorrente', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    const data = screen.getByLabelText('Data di riferimento');
+    await user.clear(data);
+    await user.type(data, '2024-01-08');
+    const quesiti = regione('Quesiti aperti');
+    expect(await within(quesiti).findByText(/^Sette quesiti che andavano posti entro le 12:00 del 27\/12\/2023: il termine è decorso/, undefined, LENTO)).toBeTruthy();
+  });
+});
+
+describe('cornice: intestazione e piè di pagina', () => {
+  /** L'intestazione, ridotta a ciò che contiene: deve essere la stessa in ogni schermata. */
+  function contenutoIntestazione(): string[] {
     const intestazione = screen.getByRole('banner');
-    expect(within(intestazione).getByText('ASL Roma 6')).toBeTruthy();
-    expect(within(intestazione).getByText(GARA_REALE)).toBeTruthy();
-    expect(within(intestazione).getByRole('button', { name: 'Cambia gara' })).toBeTruthy();
+    return [intestazione.textContent ?? '', ...within(intestazione).getAllByRole('button').map((b) => b.textContent ?? '')];
+  }
+
+  it('l’intestazione è la stessa in ogni schermata: il nome e «Cambia gara», nessuna gara', async () => {
+    const user = userEvent.setup();
+    await apriScelta();
+    const nellaScelta = contenutoIntestazione();
+    expect(nellaScelta).toEqual(['Cato Valutazione RaggruppamentiCambia gara', 'Cambia gara']);
+
+    await scegli(user, [FARMALAZIO, OSPEDALIA], FARMALAZIO);
+    await user.click(screen.getByRole('button', { name: 'Valuta il raggruppamento' }));
+    await screen.findByRole('region', { name: 'Verdetto' }, LENTO);
+    expect(contenutoIntestazione()).toEqual(nellaScelta);
+    // La gara sta intera nel titolo della pagina, non troncata nell'intestazione.
     expect(screen.getByRole('heading', { level: 1, name: GARA_REALE })).toBeTruthy();
+
+    await user.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Cambia gara' }));
+    await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO);
+    await user.click(screen.getByRole('link', { name: /^Il formato che il motore si aspetta/ }));
+    await screen.findByRole('heading', { name: 'Il formato dei requisiti strutturati' }, LENTO);
+    expect(contenutoIntestazione()).toEqual(nellaScelta);
+  });
+  it('sulla scelta «Cambia gara» porta alla gara scelta, con il fuoco', async () => {
+    const user = userEvent.setup();
+    await apriScelta();
+    await user.click(screen.getByRole('radio', { name: GARA_REALE }));
+    await user.click(screen.getByRole('checkbox', { name: inizia(OSPEDALIA) }));
+    await user.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Cambia gara' }));
+    expect(document.activeElement).toBe(screen.getByRole('radio', { name: GARA_REALE }));
   });
   it('il piè di pagina dichiara il perimetro dai documenti, quello della rete e il repository', async () => {
     await apriScelta();
@@ -299,9 +345,9 @@ describe('tornare alla scelta non butta il lavoro', () => {
     await tornaAllaScelta(user);
     await user.click(screen.getByRole('checkbox', { name: inizia(MEDIFARM) }));
     await rientra(user);
-    // 33 % di Medifarm diviso 34:33 → 50,75 % e 49,25 %.
-    expect(quotaInput(FARMALAZIO, FORNITURA).value).toBe('50,75');
-    expect(quotaInput(OSPEDALIA, FORNITURA).value).toBe('49,25');
+    // 33 % di Medifarm diviso 34:33 → 16,75 e 16,25: a punti interi 16 e 16, e il punto che avanza alla mandataria.
+    expect(quotaInput(FARMALAZIO, FORNITURA).value).toBe('51');
+    expect(quotaInput(OSPEDALIA, FORNITURA).value).toBe('49');
     expect(within(regione('Modifiche')).getByText(/^Dalla scelta delle imprese: esce Medifarm Logistica S\.r\.l\., e la quota \(33\s%\) passa a/)).toBeTruthy();
   });
   it('un’altra gara: si riparte da capo', async () => {

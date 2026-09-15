@@ -1,5 +1,5 @@
-// La cornice di ogni schermata: in alto il nome e, quando c'è, la gara che
-// si sta valutando con il comando per cambiarla; in basso il perimetro —
+// La cornice di ogni schermata: in alto il nome e il comando per cambiare
+// gara, sempre uguali; in basso il perimetro —
 // cosa sono i dati, cosa lo strumento non valuta, dove vanno i dati — e il
 // rimando al repository. Il perimetro nasce dai documenti caricati.
 
@@ -17,9 +17,11 @@ export function Segno({ className }: { className?: string }) {
   );
 }
 
-type Gara = { stazioneAppaltante: string; oggetto: string };
-
-export function Intestazione({ gara, onCambiaGara }: { gara?: Gara; onCambiaGara?: () => void }) {
+/**
+ * Uguale in ogni schermata: il nome e il comando per cambiare gara. La gara
+ * non sta qui: sta intera nel titolo della pagina, dove si legge.
+ */
+export function Intestazione({ onCambiaGara }: { onCambiaGara: () => void }) {
   return (
     <header className={styles.intestazione}>
       <div className={styles.interno}>
@@ -27,16 +29,7 @@ export function Intestazione({ gara, onCambiaGara }: { gara?: Gara; onCambiaGara
           <Segno className={styles.segno} />
           <span>Cato Valutazione Raggruppamenti</span>
         </p>
-        {gara ? (
-          <p className={styles.gara} title={gara.oggetto}>
-            <span className={styles.nascosto}>Gara in valutazione: </span>
-            <span className={styles.stazione}>{gara.stazioneAppaltante}</span>
-            <span className={styles.oggetto}>{gara.oggetto}</span>
-          </p>
-        ) : null}
-        {onCambiaGara ? (
-          <button type="button" className={styles.cambia} onClick={onCambiaGara}>Cambia gara</button>
-        ) : null}
+        <button type="button" className={styles.cambia} onClick={onCambiaGara}>Cambia gara</button>
       </div>
     </header>
   );

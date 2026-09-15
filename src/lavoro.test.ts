@@ -157,8 +157,8 @@ describe('sessione — rientrare nell’esito dalla scelta', () => {
   });
   it('un’impresa in meno: la sua quota passa a chi resta in proporzione, e le sue ausiliarie escono con lei', () => {
     const dopo = sessioneAllIngresso(lavorata(), { ...ingresso, imprese: ['s-farmalazio', 's-ospedalia'] }, p);
-    // 15 % di Medifarm diviso 60:25 → 10,59 % e 4,41 % (resti maggiori, al centesimo di punto).
-    expect(quote(dopo.lavoro)).toEqual({ 's-farmalazio': 0.7059, 's-ospedalia': 0.2941 });
+    // 15 % di Medifarm diviso 60:25 → 10,59 e 4,41: a punti interi 10 e 4, e il punto che avanza alla mandataria.
+    expect(quote(dopo.lavoro)).toEqual({ 's-farmalazio': 0.71, 's-ospedalia': 0.29 });
     expect(dopo.lavoro.storia[dopo.lavoro.storia.length - 1]?.etichetta).toBe(
       `Dalla scelta delle imprese: esce Medifarm Logistica S.r.l., e la quota (${formattaPercentuale(0.15)}) passa a Farmadistribuzione Laziale S.p.A. e Ospedalia Forniture S.r.l. in proporzione alle loro.`,
     );

@@ -55,3 +55,72 @@
   color: var(--c-testo-tenue);
   padding: var(--sp-2) 0;
 }
+
+/* Stretto: sei colonne non stanno in 400 px. Ogni lotto diventa un blocco —
+   il lotto in cima, poi le altre voci con il nome della colonna davanti. */
+@media (max-width: 699px) {
+  .tabella,
+  .tabella tbody,
+  .tabella tr,
+  .tabella td {
+    display: block;
+    width: auto;
+  }
+
+  .tabella thead {
+    display: none;
+  }
+
+  .tabella tr {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    gap: 2px var(--sp-3);
+    padding: var(--sp-2) var(--sp-2);
+    border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
+  }
+
+  .tabella td {
+    display: contents;
+    border-bottom: none;
+    padding: 0;
+  }
+
+  .tabella td::before {
+    content: attr(data-etichetta);
+    color: var(--c-testo-tenue);
+    font-size: var(--testo-xs);
+    align-self: baseline;
+  }
+
+  .tabella .lotto {
+    display: block;
+    grid-column: 1 / -1;
+    padding-bottom: var(--sp-1);
+    overflow-wrap: anywhere;
+  }
+
+  .tabella .lotto::before {
+    content: none;
+  }
+
+  /* La didascalia sta sopra a tutta larghezza, non ristretta nella prima colonna. */
+  .tabella caption {
+    display: block;
+  }
+
+  /* Le voci della seconda colonna vanno a capo: un verdetto lungo non esce dalla card. */
+  .tabella td > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .tabella td > span {
+    font-size: var(--testo-base);
+    flex-wrap: wrap;
+  }
+
+  .cifra {
+    text-align: left;
+    white-space: normal;
+  }
+}

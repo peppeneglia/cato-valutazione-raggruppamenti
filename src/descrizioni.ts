@@ -748,3 +748,8 @@ export function perimetroDocumenti(bandi: Provenienza[], fascicoli: Provenienza[
         : ' Tra le imprese alcune sono reali e altre di esempio: lo dice la fonte di ogni fascicolo.';
   return `${frase}${imprese}`;
 }
+
+/** "Un quesito", "Cinque quesiti": il numero in parole all'inizio di una frase. */
+export function formattaNumeroQuesiti(n: number): string {
+  return n === 1 ? 'Un quesito' : `${maiuscola(inParole(n))} quesiti`;
+}

@@ -59,16 +59,16 @@ export function ConfrontoLotti({ bando, lottoId, differita, onSeleziona }: Props
             const selezionato = lotto.id === lottoId;
             return (
               <tr key={lotto.id} className={selezionato ? styles.selezionato : undefined} aria-current={selezionato ? 'true' : undefined}>
-                <td className={styles.cifra}>{voce ? `${voce.posizione}${voce.pariMerito ? ' (pari merito)' : ''}` : '…'}</td>
-                <td>
+                <td className={styles.cifra} data-etichetta="Posizione">{voce ? `${voce.posizione}${voce.pariMerito ? ' (pari merito)' : ''}` : '…'}</td>
+                <td className={styles.lotto}>
                   <button type="button" className={styles.scelta} onClick={() => onSeleziona(lotto.id)} aria-pressed={selezionato}>
                     <span className={styles.idLotto}>{lotto.id}</span> {lotto.oggetto}
                   </button>
                 </td>
-                <td className={styles.cifra}>{formattaEuro(lotto.importo)}</td>
-                <td>{voce ? <VerdettoBadge verdetto={voce.esito.verdetto} /> : <span className={styles.attesa}>Calcolo in corso…</span>}</td>
-                <td>{voce ? descriviPercorso(voce.esito.percorsoMinimo) : <span className={styles.attesa}>…</span>}</td>
-                <td className={styles.cifra}>{voce ? voce.esito.requisiti.filter((r) => r.stato === 'scoperto').length : '…'}</td>
+                <td className={styles.cifra} data-etichetta="Importo">{formattaEuro(lotto.importo)}</td>
+                <td data-etichetta="Verdetto">{voce ? <VerdettoBadge verdetto={voce.esito.verdetto} /> : <span className={styles.attesa}>Calcolo in corso…</span>}</td>
+                <td data-etichetta="Percorso minimo">{voce ? descriviPercorso(voce.esito.percorsoMinimo) : <span className={styles.attesa}>…</span>}</td>
+                <td className={styles.cifra} data-etichetta="Scoperti">{voce ? voce.esito.requisiti.filter((r) => r.stato === 'scoperto').length : '…'}</td>
               </tr>
             );
           })}

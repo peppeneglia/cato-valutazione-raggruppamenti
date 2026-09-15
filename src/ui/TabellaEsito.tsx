@@ -174,7 +174,7 @@ export function TabellaEsito({ lotto, requisiti, rimediPerRequisito, membri, leg
 
   if (lotto.requisiti.length === 0) {
     return (
-      <section aria-labelledby="titolo-esito">
+      <section aria-labelledby="titolo-esito" className={styles.sezione}>
         <h2 id="titolo-esito">Esito per requisito</h2>
         <p className={styles.vuoto}>Il lotto non dichiara requisiti di partecipazione: non c'è niente da coprire.</p>
       </section>

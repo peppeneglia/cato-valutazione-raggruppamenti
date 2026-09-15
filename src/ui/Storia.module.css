@@ -1,9 +1,9 @@
+/* Dentro la card della composizione: separata da un bordo tenue, non una card nella card. */
 .sezione {
   display: grid;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border: var(--spessore-bordo) solid var(--c-bordo);
-  border-radius: var(--raggio);
+  padding-top: var(--sp-3);
+  border-top: var(--spessore-bordo) solid var(--c-bordo-tenue);
 }
 
 .testata {

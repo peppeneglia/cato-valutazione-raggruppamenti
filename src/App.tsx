@@ -50,6 +50,7 @@ import { Intestazione, PiePagina } from './ui/Cornice';
 import { IntestazioneBando } from './ui/IntestazioneBando';
 import { legendaAssunzioni } from './ui/legenda';
 import { NoteMotore } from './ui/NoteMotore';
+import { QuesitiAperti } from './ui/QuesitiAperti';
 import { SchermataFormato } from './ui/SchermataFormato';
 import { SchermataScelta } from './ui/SchermataScelta';
 import { Storia } from './ui/Storia';
@@ -202,10 +203,24 @@ export default function App() {
     (raccolta?.bandi ?? []).flatMap((b) => (b.stato === 'valido' ? [b.documento.provenienza] : [])),
     (raccolta?.fascicoli ?? []).flatMap((f) => (f.stato === 'valido' ? [f.documento.provenienza] : [])),
   );
-  /** Ogni schermata sta nella stessa cornice; la gara in alto solo quando se ne sta valutando una. */
-  const conCornice = (contenuto: ReactNode, gara?: Bando) => (
+  /**
+   * «Cambia gara» c'è in ogni schermata. Dall'esito e dal formato torna alla
+   * scelta; sulla scelta porta alla card della gara, con il fuoco sulla gara scelta.
+   */
+  const cambiaGara = () => {
+    if (schermata !== 'scelta') {
+      torna();
+      return;
+    }
+    const card = document.getElementById('titolo-scelta-gara')?.closest('section');
+    card?.scrollIntoView?.({ block: 'start' });
+    const gara = card?.querySelector<HTMLInputElement>('input[name="gara"]:checked') ?? card?.querySelector<HTMLInputElement>('input[name="gara"]');
+    gara?.focus();
+  };
+  /** Ogni schermata sta nella stessa cornice. */
+  const conCornice = (contenuto: ReactNode) => (
     <div className={styles.app}>
-      <Intestazione gara={gara} onCambiaGara={gara ? torna : undefined} />
+      <Intestazione onCambiaGara={cambiaGara} />
       {contenuto}
       <PiePagina dati={raccolta ? perimetro : 'Caricamento dei documenti…'} />
     </div>
@@ -277,7 +292,6 @@ export default function App() {
         onAzione={suAzione}
         fraseData={sessione.lavoro.dataRiferimento === sessione.dataIniziale ? fraseDataRiferimento(sessione.dataIniziale, proposta) : undefined}
       />,
-      bando,
     );
   }
   if (schermata === 'esito' && pronta) return conCornice(null);
@@ -415,6 +429,7 @@ function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch,
                   dispatch={dispatch}
                 />
               ) : null}
+              {lotto ? <QuesitiAperti lotto={lotto} rimediPerRequisito={rimediPerRequisito} /> : null}
             </div>
             <aside className={styles.laterale}>
               <Composizione lotto={lotto} raggruppamento={lavoro.raggruppamento} soggetti={soggetti} contesto={contesto} dispatch={dispatch} />

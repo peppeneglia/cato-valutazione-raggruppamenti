@@ -1,10 +1,14 @@
-/* Fondo bianco, un filetto nel colore dello stato, la parola dello stato
-   nel colore dello stato e il resto in navy. Nessuna card. */
+/* Una card con il filetto nel colore dello stato sul lato sinistro, la
+   parola dello stato nel colore dello stato e il resto in navy. Il testo
+   resta largo quanto si legge anche quando la card è larga quanto la pagina. */
 .blocco {
+  composes: card from './Card.module.css';
   display: grid;
   gap: var(--sp-3);
-  padding: var(--sp-4) 0 var(--sp-4) var(--sp-5);
   border-left: var(--spessore-filetto-verdetto) solid var(--c-bordo);
+}
+
+.blocco > * {
   max-width: 62em;
 }
 

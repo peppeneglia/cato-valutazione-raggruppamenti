@@ -18,7 +18,8 @@
   display: grid;
   /* Senza il minimo a zero la colonna si allarga fino al figlio più largo e la pagina scorre. */
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-5);
+  /* Spazio generoso tra le card; dentro, compatto. */
+  gap: var(--sp-6);
 }
 
 @media (max-width: 699px) {
@@ -79,7 +80,7 @@
 .corpo {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-7);
+  gap: var(--sp-6);
   align-items: start;
 }
 
@@ -90,13 +91,17 @@
   }
 }
 
-.principale {
-  min-width: 0;
-}
-
+/* La composizione è una card: dentro, la storia delle modifiche e il confronto con la prova precedente. */
 .laterale {
+  composes: card from './ui/Card.module.css';
   display: grid;
   gap: var(--sp-4);
+}
+
+/* La colonna dell'esito: i requisiti e, sotto, i quesiti aperti, due card. */
+.principale {
+  display: grid;
+  gap: var(--sp-6);
   min-width: 0;
 }
 
@@ -108,6 +113,7 @@
 }
 
 .confronto {
+  composes: card from './ui/Card.module.css';
   display: grid;
   gap: var(--sp-3);
 }

@@ -1,4 +1,6 @@
+/* I requisiti sono una card; dentro, la tabella resta una tabella. */
 .sezione {
+  composes: card from './Card.module.css';
   display: grid;
   gap: var(--sp-3);
 }
@@ -255,8 +257,35 @@
   .gruppo > td { display: block; }
   .manca:empty { display: none; }
 
+  .rigaEspansione,
   .rigaEspansione > td {
     display: block;
+  }
+
+  .rigaEspansione > td {
     padding-inline: var(--sp-3);
+  }
+
+  /* Anche la tabella dei membri si impila: il nome sopra, il contributo sotto, e i nomi lunghi vanno a capo. */
+  .membri,
+  .membri tbody,
+  .membri tr,
+  .membri th,
+  .membri td {
+    display: block;
+    width: auto;
+  }
+
+  .membri tr {
+    padding-block: var(--sp-1);
+    border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
+  }
+
+  .membri th,
+  .membri td {
+    border-bottom: none;
+    padding-block: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }

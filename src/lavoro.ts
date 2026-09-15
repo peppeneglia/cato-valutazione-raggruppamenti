@@ -187,25 +187,25 @@ function stessoInsieme(a: SoggettoId[], b: SoggettoId[]): boolean {
   return a.length === b.length && a.every((x) => b.includes(x));
 }
 
-/** Diecimila parti fanno il 100 %: le quote redistribuite si arrotondano al centesimo di punto e tornano esatte. */
+/** Diecimila parti fanno il 100 %: si conta in parti intere per non accumulare errori di virgola mobile. */
 const PARTI = 10_000;
+/** Un punto percentuale, in parti. */
+const PUNTO = PARTI / 100;
 
 /**
- * Divide `parti` intere tra i pesi, in proporzione, con il metodo dei resti
- * maggiori: la somma torna esatta. Pesi tutti nulli: parti uguali.
+ * Divide `parti` tra i pesi in proporzione, a punti percentuali interi per
+ * difetto: nessun ufficio gare scrive 50,75 % in un'offerta. Quello che
+ * avanza dall'arrotondamento va a `beneficiario`, come nelle quote iniziali
+ * va alla mandataria. Pesi tutti nulli: parti uguali.
  */
-function ripartisci(parti: number, pesi: number[]): number[] {
+function ripartisciAPunti(parti: number, pesi: number[], beneficiario: number): number[] {
   const totale = pesi.reduce((s, p) => s + p, 0);
-  const quote = totale > 0 ? pesi.map((p) => (parti * p) / totale) : pesi.map(() => parti / pesi.length);
-  const intere = quote.map(Math.floor);
-  let resto = parti - intere.reduce((s, q) => s + q, 0);
-  const ordine = quote.map((q, i) => ({ i, frazione: q - Math.floor(q) })).sort((a, b) => b.frazione - a.frazione);
-  for (const { i } of ordine) {
-    if (resto <= 0) break;
-    intere[i]! += 1;
-    resto -= 1;
-  }
-  return intere;
+  const aggiunte = pesi.map((p) => {
+    const esatta = totale > 0 ? (parti * p) / totale : parti / pesi.length;
+    return Math.floor(esatta / PUNTO) * PUNTO;
+  });
+  aggiunte[beneficiario]! += parti - aggiunte.reduce((s, a) => s + a, 0);
+  return aggiunte;
 }
 
 function elencoNomi(nomi: string[]): string {
@@ -219,7 +219,9 @@ function elencoNomi(nomi: string[]): string {
  * - chi entra entra da mandante a quota zero su ogni prestazione: la sua
  *   parte la decide chi usa lo strumento;
  * - la quota di chi esce passa a chi resta ed era già presente, in
- *   proporzione alle quote che aveva (in parti uguali se erano tutte a zero);
+ *   proporzione alle quote che aveva (in parti uguali se erano tutte a zero),
+ *   a punti interi, con l'avanzo alla mandataria: 34/33/33 senza la terza
+ *   diventa 51/49, non 50,75/49,25;
  * - se la mandataria scelta è cambiata, cambia il ruolo, e la precedente
  *   diventa mandante.
  * Tutto in un passo solo della storia, con un'etichetta che dice cosa è
@@ -248,7 +250,10 @@ export function riprendiLavoro(lavoro: Lavoro, prima: Ingresso, dopo: Ingresso, 
     const residuo = Math.round(uscenti.reduce((s, m) => s + (m.quote[p.id] ?? 0), 0) * PARTI);
     const restanti = membri.filter((m): m is Extract<Membro, { ruolo: RuoloEsecutore }> => m.ruolo !== 'ausiliaria');
     if (residuo <= 0 || restanti.length === 0) continue;
-    const aggiunte = ripartisci(residuo, restanti.map((m) => m.quote[p.id] ?? 0));
+    // L'avanzo va alla mandataria scelta; se non è tra chi resta, a chi ha la quota più alta.
+    const mandataria = restanti.findIndex((m) => m.soggettoId === dopo.mandataria);
+    const piuAlta = restanti.reduce((j, m, i) => ((m.quote[p.id] ?? 0) > (restanti[j]!.quote[p.id] ?? 0) ? i : j), 0);
+    const aggiunte = ripartisciAPunti(residuo, restanti.map((m) => m.quote[p.id] ?? 0), mandataria >= 0 ? mandataria : piuAlta);
     membri = membri.map((m) => {
       const i = restanti.indexOf(m as Extract<Membro, { ruolo: RuoloEsecutore }>);
       if (i < 0 || m.ruolo === 'ausiliaria') return m;

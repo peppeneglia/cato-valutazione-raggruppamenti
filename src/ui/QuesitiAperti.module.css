@@ -1,0 +1,51 @@
+.card {
+  composes: card from './Card.module.css';
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.testata {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.termine {
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-forte);
+  color: var(--c-navy);
+}
+
+.decorso {
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-forte);
+  color: var(--c-scoperto);
+}
+
+.tenue {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+/* Tra un requisito e l'altro il bordo tenue: dentro la card, non card nella card. */
+.gruppo {
+  display: grid;
+  gap: var(--sp-1);
+  padding-top: var(--sp-3);
+  border-top: var(--spessore-bordo) solid var(--c-bordo-tenue);
+}
+
+.requisito {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+  font-weight: var(--peso-forte);
+}
+
+.elenco {
+  margin: 0;
+  padding-left: var(--sp-5);
+  display: grid;
+  gap: var(--sp-2);
+  font-size: var(--testo-sm);
+  max-width: 80em;
+  overflow-wrap: anywhere;
+}
