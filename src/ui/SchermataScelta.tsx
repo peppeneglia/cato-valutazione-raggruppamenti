@@ -152,7 +152,7 @@ export function SchermataScelta({ bandi, fascicoli, altri, scelta, onScelta, ult
 
   return (
     <main className={styles.pagina}>
-      <header className={styles.intro}>
+      <div className={styles.intro}>
         <h1 className={styles.titolo}>Il raggruppamento può partecipare alla gara?</h1>
         <div className={styles.cosaFa}>
           <div>
@@ -171,7 +171,7 @@ export function SchermataScelta({ bandi, fascicoli, altri, scelta, onScelta, ult
             </p>
           </div>
         </div>
-      </header>
+      </div>
 
       <section className={styles.card} aria-labelledby="titolo-scelta-gara">
         <h2 id="titolo-scelta-gara" className={styles.passo}><span className={styles.numero} aria-hidden="true">1</span>Gara</h2>

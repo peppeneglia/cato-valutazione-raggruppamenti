@@ -1,0 +1,147 @@
+/* La cornice è larga quanto la finestra; il contenuto dentro si allinea alla pagina. */
+.interno {
+  max-width: var(--larghezza-max);
+  margin: 0 auto;
+  padding-inline: var(--sp-5);
+  min-width: 0;
+}
+
+@media (max-width: 699px) {
+  .interno {
+    padding-inline: var(--sp-4);
+  }
+}
+
+.nascosto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ─── Intestazione ─────────────────────────────────────────── */
+
+.intestazione {
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+  background: var(--c-sfondo);
+}
+
+.intestazione .interno {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  padding-block: var(--sp-3);
+}
+
+.marchio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: var(--peso-verdetto);
+  color: var(--c-navy);
+  white-space: nowrap;
+}
+
+.segno {
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+  color: var(--c-navy);
+}
+
+/* La gara sta su una riga sola e si accorcia: il nome intero è nel testo della pagina. */
+.gara {
+  flex: 1 1 16em;
+  display: flex;
+  gap: var(--sp-2);
+  min-width: 0;
+  font-size: var(--testo-sm);
+  padding-left: var(--sp-4);
+  border-left: var(--spessore-bordo) solid var(--c-bordo);
+}
+
+.stazione {
+  flex: none;
+  font-weight: var(--peso-forte);
+  color: var(--c-navy);
+}
+
+.oggetto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-testo-tenue);
+}
+
+.cambia {
+  margin-left: auto;
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--spessore-bordo) solid var(--c-accento);
+  border-radius: var(--raggio-piccolo);
+  background: var(--c-sfondo);
+  color: var(--c-navy);
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-forte);
+}
+
+.cambia:hover {
+  background: var(--c-accento);
+  color: var(--c-accento-testo);
+}
+
+/* Stretto: nome e comando sulla prima riga, la gara sotto a tutta larghezza. */
+@media (max-width: 699px) {
+  .gara {
+    order: 3;
+    flex-basis: 100%;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+
+/* ─── Piè di pagina ────────────────────────────────────────── */
+
+.pie {
+  margin-top: auto;
+  background: var(--c-crema);
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+.colonne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5) var(--sp-6);
+  padding-block: var(--sp-6);
+}
+
+@media (min-width: 900px) {
+  .colonne {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.colonne section {
+  display: grid;
+  gap: var(--sp-2);
+  align-content: start;
+  min-width: 0;
+}
+
+.etichetta {
+  font-size: var(--testo-xs);
+  font-weight: var(--peso-forte);
+  color: var(--c-navy);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.link {
+  color: var(--c-navy);
+  text-decoration: underline 2px var(--c-accento);
+  text-underline-offset: 3px;
+}

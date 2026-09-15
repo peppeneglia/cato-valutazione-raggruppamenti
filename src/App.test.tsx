@@ -135,7 +135,7 @@ describe('schermata iniziale', () => {
     await apriScelta();
     expect(screen.queryByRole('region', { name: 'Verdetto' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'Cosa fa' })).toBeTruthy();
-    expect(screen.getByText(/^Non legge il documento di gara: riceve i requisiti già strutturati\./)).toBeTruthy();
+    expect(within(screen.getByRole('main')).getByText(/^Non legge il documento di gara: riceve i requisiti già strutturati\./)).toBeTruthy();
     expect(screen.getByRole('radio', { name: GARA_REALE })).toHaveProperty('checked', false);
     expect(screen.getByRole('button', { name: 'Valuta il raggruppamento' })).toHaveProperty('disabled', true);
     expect(screen.getByText('Per valutare scegli la gara, almeno due imprese e la mandataria.')).toBeTruthy();
@@ -230,6 +230,33 @@ describe('schermata iniziale — caricamento da disco', () => {
     await user.upload(screen.getByLabelText('Scegli un file JSON'), fileJson('doppione.json', TESTI[FILE_FASCICOLI]!));
     const errori = await screen.findByRole('region', { name: 'Errori in doppione.json' }, LENTO);
     expect(within(errori).getByText(`un id non ancora usato: «s-farmalazio» è già di ${FARMALAZIO}, in ${FILE_FASCICOLI}`)).toBeTruthy();
+  });
+});
+
+describe('cornice: intestazione e piè di pagina', () => {
+  it('nella scelta l’intestazione ha solo il nome: nessuna gara e nessun comando per cambiarla', async () => {
+    await apriScelta();
+    const intestazione = screen.getByRole('banner');
+    expect(within(intestazione).getByText('Cato Valutazione Raggruppamenti')).toBeTruthy();
+    expect(within(intestazione).queryByText(/Gara in valutazione/)).toBeNull();
+    expect(within(intestazione).queryByRole('button', { name: 'Cambia gara' })).toBeNull();
+  });
+  it('nell’esito l’intestazione dice la gara e ha il comando per cambiarla', async () => {
+    await avvia();
+    const intestazione = screen.getByRole('banner');
+    expect(within(intestazione).getByText('ASL Roma 6')).toBeTruthy();
+    expect(within(intestazione).getByText(GARA_REALE)).toBeTruthy();
+    expect(within(intestazione).getByRole('button', { name: 'Cambia gara' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: GARA_REALE })).toBeTruthy();
+  });
+  it('il piè di pagina dichiara il perimetro dai documenti, quello della rete e il repository', async () => {
+    await apriScelta();
+    const pie = screen.getByRole('contentinfo');
+    expect(within(pie).getByText('Il bando disponibile è reale: Disciplinare di gara ASL Roma 6, gara n. 9445747. Le imprese e i loro fascicoli sono di esempio, inventati.')).toBeTruthy();
+    expect(within(pie).getByText(/^Nessun servizio esterno, nessun dato che lascia il browser: i documenti sono caricati dallo stesso server che serve la pagina/)).toBeTruthy();
+    expect(within(pie).getByText(/^Non legge il documento di gara/)).toBeTruthy();
+    expect(within(pie).getByRole('link', { name: 'Il codice sorgente su GitHub' }).getAttribute('href')).toBe('https://github.com/peppeneglia/cato-valutazione-raggruppamenti');
+    expect(document.body.textContent).not.toMatch(/nessuna chiamata di rete/i);
   });
 });
 

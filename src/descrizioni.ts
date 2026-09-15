@@ -726,3 +726,25 @@ export function fraseDataRiferimento(data: string, proposta: { motivo?: string }
     ? `La valutazione parte dal ${formattaData(data)}: ${proposta.motivo}.`
     : `La valutazione parte dal ${formattaData(data)}, la data proposta con il bando.`;
 }
+
+/**
+ * Cosa sono i documenti che la pagina offre, per il piè di pagina: detto
+ * dalla provenienza di ciascuno, come la dichiarazione dell'esito.
+ */
+export function perimetroDocumenti(bandi: Provenienza[], fascicoli: Provenienza[]): string {
+  const reali = bandi.filter((b) => b.natura === 'reale');
+  const esempio = bandi.length - reali.length;
+  let frase: string;
+  if (bandi.length === 0) frase = 'Nessun bando disponibile sul server.';
+  else if (bandi.length === 1) frase = reali.length === 1 ? `Il bando disponibile è reale: ${reali[0]!.documento}.` : `Il bando disponibile è di esempio, inventato: ${bandi[0]!.documento}.`;
+  else if (esempio === 0) frase = `I ${bandi.length} bandi disponibili sono reali: ${reali.map((b) => b.documento).join('; ')}.`;
+  else frase = `Dei ${bandi.length} bandi disponibili, ${reali.length === 1 ? '1 è reale' : `${reali.length} sono reali`} e ${esempio === 1 ? '1 è di esempio' : `${esempio} sono di esempio`}.`;
+  const imprese = fascicoli.length === 0
+    ? ''
+    : fascicoli.every((f) => f.natura === 'esempio')
+      ? ' Le imprese e i loro fascicoli sono di esempio, inventati.'
+      : fascicoli.every((f) => f.natura === 'reale')
+        ? ' Le imprese e i loro fascicoli sono reali.'
+        : ' Tra le imprese alcune sono reali e altre di esempio: lo dice la fonte di ogni fascicolo.';
+  return `${frase}${imprese}`;
+}

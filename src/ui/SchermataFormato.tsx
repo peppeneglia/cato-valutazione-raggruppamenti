@@ -140,7 +140,7 @@ export function SchermataFormato({ esempioBando, esempioFascicoli, scarica, onTo
         <button type="button" className={styles.torna} onClick={onTorna}>← Torna alla scelta</button>
       </p>
 
-      <header className={styles.intro}>
+      <div className={styles.intro}>
         <h1 className={styles.titolo}>Il formato dei requisiti strutturati</h1>
         <p className={styles.lead}>
           È ciò che il motore di valutazione riceve: i requisiti di un bando già strutturati, prodotti a valle
@@ -153,7 +153,7 @@ export function SchermataFormato({ esempioBando, esempioFascicoli, scarica, onTo
           <li><strong>Il documento che non decide si scrive com'è:</strong> una regola non dichiarata, più letture di un requisito, più candidati per lo stesso valore.</li>
           <li><strong>Il controllo è severo:</strong> un campo mancante, di tipo sbagliato o in più è un errore, con il percorso e il nome vicino quando uno è scritto male.</li>
         </ul>
-      </header>
+      </div>
 
       <section className={styles.card} aria-labelledby="titolo-forma-bando">
         <h2 id="titolo-forma-bando">La forma di un bando</h2>

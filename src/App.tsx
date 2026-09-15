@@ -18,14 +18,14 @@
 // mi manca. Ciò che risponde sta in alto e grande; ciò che motiva sotto; ciò
 // che documenta dietro un'interazione.
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Azione, Ingresso, Lavoro, Sessione } from './lavoro';
 import { composizionePrimaDellUltimaProva, riduci, sessioneAllIngresso } from './lavoro';
 import type { Bando, ParametriValutazione, Soggetto } from './domain';
 import { valutaBase } from './engine';
 import { trovaLotto } from './engine/indici';
 import { formattaData, oggiISO } from './formato';
-import { dichiarazioneDati, fraseDataRiferimento, fraseVerdetto } from './descrizioni';
+import { dichiarazioneDati, fraseDataRiferimento, fraseVerdetto, perimetroDocumenti } from './descrizioni';
 import { richiedeChiarimenti } from './engine/rimedi';
 import { caricaRaccolta, leggiDocumento, type Raccolta, type Scarica } from './documenti/carica';
 import type { Provenienza } from './documenti/formato';
@@ -46,6 +46,7 @@ import { BloccoVerdetto } from './ui/BloccoVerdetto';
 import { Composizione } from './ui/Composizione';
 import { ConfrontoLotti } from './ui/ConfrontoLotti';
 import { ConfrontoProva } from './ui/ConfrontoProva';
+import { Intestazione, PiePagina } from './ui/Cornice';
 import { IntestazioneBando } from './ui/IntestazioneBando';
 import { legendaAssunzioni } from './ui/legenda';
 import { NoteMotore } from './ui/NoteMotore';
@@ -197,11 +198,24 @@ export default function App() {
     [bandi, soggetti],
   );
 
+  const perimetro = perimetroDocumenti(
+    (raccolta?.bandi ?? []).flatMap((b) => (b.stato === 'valido' ? [b.documento.provenienza] : [])),
+    (raccolta?.fascicoli ?? []).flatMap((f) => (f.stato === 'valido' ? [f.documento.provenienza] : [])),
+  );
+  /** Ogni schermata sta nella stessa cornice; la gara in alto solo quando se ne sta valutando una. */
+  const conCornice = (contenuto: ReactNode, gara?: Bando) => (
+    <div className={styles.app}>
+      <Intestazione gara={gara} onCambiaGara={gara ? torna : undefined} />
+      {contenuto}
+      <PiePagina dati={raccolta ? perimetro : 'Caricamento dei documenti…'} />
+    </div>
+  );
+
   if (!raccolta) {
-    return (
+    return conCornice(
       <main className={styles.pagina}>
         <p role="status">Caricamento dei documenti…</p>
-      </main>
+      </main>,
     );
   }
 
@@ -209,13 +223,13 @@ export default function App() {
   const esempioFascicoli = raccolta.fascicoli.find((f) => f.stato === 'valido');
 
   if (schermata === 'formato') {
-    return (
+    return conCornice(
       <SchermataFormato
         esempioBando={esempioBando?.stato === 'valido' ? { url: `${BASE_DOCUMENTI}${esempioBando.file}`, documento: esempioBando.documento.provenienza.documento } : undefined}
         esempioFascicoli={esempioFascicoli?.stato === 'valido' ? { url: `${BASE_DOCUMENTI}${esempioFascicoli.file}`, documento: esempioFascicoli.documento.provenienza.documento } : undefined}
         scarica={scarica}
         onTorna={torna}
-      />
+      />,
     );
   }
 
@@ -254,7 +268,7 @@ export default function App() {
     const { bando, provenienza } = pronta.bando.caricato.documento;
     const provenienzeFascicoli = fascicoli.flatMap((f) => (f.caricato.stato === 'valido' ? [f.caricato.documento.provenienza] : []));
     const proposta = pronta.bando.dataRiferimentoProposta !== undefined ? { motivo: pronta.bando.motivoDataProposta } : undefined;
-    return (
+    return conCornice(
       <Valutazione
         bando={bando}
         soggetti={soggetti}
@@ -262,13 +276,13 @@ export default function App() {
         lavoro={sessione.lavoro}
         onAzione={suAzione}
         fraseData={sessione.lavoro.dataRiferimento === sessione.dataIniziale ? fraseDataRiferimento(sessione.dataIniziale, proposta) : undefined}
-        onCambiaGara={torna}
-      />
+      />,
+      bando,
     );
   }
-  if (schermata === 'esito' && pronta) return null;
+  if (schermata === 'esito' && pronta) return conCornice(null);
 
-  return (
+  return conCornice(
     <SchermataScelta
       bandi={bandi}
       fascicoli={fascicoli}
@@ -281,7 +295,7 @@ export default function App() {
       onFormato={() => apri('formato')}
       oggi={oggiISO()}
       onValuta={() => apri('esito')}
-    />
+    />,
   );
 }
 
@@ -296,10 +310,9 @@ type PropsValutazione = {
   onAzione: (azione: Azione) => void;
   /** Da dove viene la data di riferimento, finché è quella di partenza. */
   fraseData: string | undefined;
-  onCambiaGara: () => void;
 };
 
-function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch, fraseData, onCambiaGara }: PropsValutazione) {
+function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch, fraseData }: PropsValutazione) {
   const contesto = useMemo(() => ({ bando, soggetti }), [bando, soggetti]);
   const [vista, setVista] = useState<Vista>('lotto');
 
@@ -339,13 +352,9 @@ function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch,
 
   return (
     <main className={styles.pagina}>
-      <header className={styles.testata}>
-        <div className={styles.rigaTitolo}>
-          <h1 className={styles.titolo}>Valutazione ammissibilità del raggruppamento</h1>
-          <button type="button" className={styles.cambiaGara} onClick={onCambiaGara}>Cambia gara</button>
-        </div>
+      <div className={styles.testata}>
+        <h1 className={styles.oggetto}>{bando.oggetto}</h1>
         <p className={styles.gara}>
-          <span className={styles.oggetto}>{bando.oggetto}</span>
           <span className={styles.dato}>{bando.stazioneAppaltante}</span>
           <span className={styles.dato}>Offerte entro il {formattaData(bando.terminePresentazione)}</span>
           <label className={styles.data}>
@@ -355,7 +364,7 @@ function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch,
         </p>
         {fraseData ? <p className={styles.dichiarazione}>{fraseData}</p> : null}
         <p className={styles.dichiarazione}>{dichiarazioneDati(provenienze.bando, provenienze.fascicoli)}</p>
-      </header>
+      </div>
 
       <BarraLotti
         bando={bando}

@@ -1,4 +1,4 @@
-# Valutazione ammissibilità del raggruppamento
+# Cato Valutazione Raggruppamenti
 
 Dato un bando pubblico con i suoi requisiti di partecipazione e un
 raggruppamento temporaneo di imprese con i rispettivi fascicoli, lo strumento
@@ -58,7 +58,7 @@ Richiede Node 20.18.
 npm install
 npm run dev        # sviluppo
 npm run build      # produzione, in dist/
-npm run test       # motore + interfaccia (Vitest, 360+ test)
+npm run test       # motore + interfaccia (Vitest, 450+ test)
 npm run lint
 npm run esito:atteso    # rigenera l'esito atteso della gara reale dal motore
 ```
@@ -155,6 +155,7 @@ src/documenti/         caricamento e controllo di struttura dei documenti,
 src/engine/esito-atteso-asl-roma-6.json
                        l'esito della gara reale, GENERATO dal motore
 src/lavoro.ts          il foglio di lavoro: reducer puro con storia annullabile
+src/scelta.ts          la scelta di gara, imprese e mandataria: funzioni pure
 src/descrizioni.ts     testo dagli identificativi
 src/formato.ts         euro, date, percentuali in formato italiano
 src/ui/                componenti React, solo token CSS
