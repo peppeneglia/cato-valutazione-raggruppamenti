@@ -8,12 +8,15 @@
     {
       "file": "bandi/asl-roma-6-9445747.json",
       "dataRiferimentoProposta": "2023-12-20",
+      "motivoDataProposta": "prima del termine per i chiarimenti (27/12/2023), così i quesiti sono ancora azionabili; spostandola oltre si vede il termine decorso",
       "note": {
-        "dataRiferimentoProposta": "Una scelta nostra, non un dato della gara: prima del termine per i chiarimenti (27/12/2023), così i quesiti sono ancora azionabili. Spostandola oltre si vede il termine decorso."
+        "dataRiferimentoProposta": "Una scelta nostra, non un dato della gara."
       }
     }
   ],
   "fascicoli": [
-    { "file": "fascicoli/grossisti-farmaceutici-esempio.json" }
+    {
+      "file": "fascicoli/grossisti-farmaceutici-esempio.json"
+    }
   ]
 }

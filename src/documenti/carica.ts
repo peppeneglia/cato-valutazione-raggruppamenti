@@ -26,7 +26,7 @@ export type Caricato<T> =
   | { file: string; stato: 'valido'; documento: T }
   | { file: string; stato: 'non_valido'; errori: ErroreDocumento[] };
 
-export type BandoCaricato = Caricato<DocumentoBando> & { dataRiferimentoProposta?: string };
+export type BandoCaricato = Caricato<DocumentoBando> & { dataRiferimentoProposta?: string; motivoDataProposta?: string };
 
 export type Raccolta = {
   indice: Caricato<Indice>;
@@ -146,7 +146,7 @@ export async function caricaRaccolta(scarica: Scarica, base: string): Promise<Ra
     Promise.all(indice.documento.bandi.map(async (voce): Promise<BandoCaricato> => {
       const t = await scaricaTesto(scarica, base, voce.file);
       const caricato = t.ok ? leggiBando(voce.file, t.testo) : nonValido<DocumentoBando>(voce.file, t.errore);
-      return { ...caricato, dataRiferimentoProposta: voce.dataRiferimentoProposta };
+      return { ...caricato, dataRiferimentoProposta: voce.dataRiferimentoProposta, motivoDataProposta: voce.motivoDataProposta };
     })),
     Promise.all(indice.documento.fascicoli.map(async (voce) => {
       const t = await scaricaTesto(scarica, base, voce.file);

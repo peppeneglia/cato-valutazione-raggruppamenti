@@ -168,6 +168,157 @@ export function riduci(lavoro: Lavoro, azione: Azione, contesto: ContestoDescriz
   }
 }
 
+// ─── Rientrare nell'esito dalla scelta ───────────────────────
+
+/** Con cosa si è entrati nell'esito: la gara, le imprese scelte, la mandataria. */
+export type Ingresso = {
+  bando: string;
+  imprese: SoggettoId[];
+  mandataria: SoggettoId;
+};
+
+/** Il lavoro legato all'ingresso da cui è nato: si conserva finché la gara è la stessa. */
+export type Sessione = {
+  ingresso: Ingresso;
+  lavoro: Lavoro;
+};
+
+function stessoInsieme(a: SoggettoId[], b: SoggettoId[]): boolean {
+  return a.length === b.length && a.every((x) => b.includes(x));
+}
+
+/** Diecimila parti fanno il 100 %: le quote redistribuite si arrotondano al centesimo di punto e tornano esatte. */
+const PARTI = 10_000;
+
+/**
+ * Divide `parti` intere tra i pesi, in proporzione, con il metodo dei resti
+ * maggiori: la somma torna esatta. Pesi tutti nulli: parti uguali.
+ */
+function ripartisci(parti: number, pesi: number[]): number[] {
+  const totale = pesi.reduce((s, p) => s + p, 0);
+  const quote = totale > 0 ? pesi.map((p) => (parti * p) / totale) : pesi.map(() => parti / pesi.length);
+  const intere = quote.map(Math.floor);
+  let resto = parti - intere.reduce((s, q) => s + q, 0);
+  const ordine = quote.map((q, i) => ({ i, frazione: q - Math.floor(q) })).sort((a, b) => b.frazione - a.frazione);
+  for (const { i } of ordine) {
+    if (resto <= 0) break;
+    intere[i]! += 1;
+    resto -= 1;
+  }
+  return intere;
+}
+
+function elencoNomi(nomi: string[]): string {
+  return nomi.length <= 1 ? (nomi[0] ?? '') : `${nomi.slice(0, -1).join(', ')} e ${nomi[nomi.length - 1]}`;
+}
+
+/**
+ * Si torna alla scelta e si rientra con la stessa gara ma un insieme di
+ * imprese diverso. Il lavoro fatto non si butta:
+ * - chi resta tiene le sue quote, le prove e i ruoli;
+ * - chi entra entra da mandante a quota zero su ogni prestazione: la sua
+ *   parte la decide chi usa lo strumento;
+ * - la quota di chi esce passa a chi resta ed era già presente, in
+ *   proporzione alle quote che aveva (in parti uguali se erano tutte a zero);
+ * - se la mandataria scelta è cambiata, cambia il ruolo, e la precedente
+ *   diventa mandante.
+ * Tutto in un passo solo della storia, con un'etichetta che dice cosa è
+ * successo alle quote: si annulla come ogni altra modifica. Le quote che non
+ * tornavano già prima restano come erano: le dice il motore, non si
+ * correggono in silenzio.
+ */
+export function riprendiLavoro(lavoro: Lavoro, prima: Ingresso, dopo: Ingresso, bando: Bando, contesto: ContestoDescrizioni): Lavoro {
+  const entrate = dopo.imprese.filter((id) => !prima.imprese.includes(id));
+  const uscite = prima.imprese.filter((id) => !dopo.imprese.includes(id));
+  const raggruppamento = lavoro.raggruppamento;
+  const presenti = new Set(raggruppamento.membri.map((m) => m.soggettoId));
+  const usciteDavvero = uscite.filter((id) => presenti.has(id));
+  const entrateDavvero = entrate.filter((id) => !presenti.has(id));
+  const prestazioni = bando.lotti.flatMap((l) => l.prestazioni);
+
+  // Chi esce, e le ausiliarie che integravano chi esce.
+  let membri = raggruppamento.membri.filter(
+    (m) => !usciteDavvero.includes(m.soggettoId) && !(m.ruolo === 'ausiliaria' && usciteDavvero.includes(m.ausiliataId)),
+  );
+  const uscenti = raggruppamento.membri.filter((m): m is Extract<Membro, { ruolo: RuoloEsecutore }> => m.ruolo !== 'ausiliaria' && usciteDavvero.includes(m.soggettoId));
+
+  // La quota di chi esce passa a chi resta, prestazione per prestazione.
+  const redistribuite: string[] = [];
+  for (const p of prestazioni) {
+    const residuo = Math.round(uscenti.reduce((s, m) => s + (m.quote[p.id] ?? 0), 0) * PARTI);
+    const restanti = membri.filter((m): m is Extract<Membro, { ruolo: RuoloEsecutore }> => m.ruolo !== 'ausiliaria');
+    if (residuo <= 0 || restanti.length === 0) continue;
+    const aggiunte = ripartisci(residuo, restanti.map((m) => m.quote[p.id] ?? 0));
+    membri = membri.map((m) => {
+      const i = restanti.indexOf(m as Extract<Membro, { ruolo: RuoloEsecutore }>);
+      if (i < 0 || m.ruolo === 'ausiliaria') return m;
+      const nuova = (Math.round((m.quote[p.id] ?? 0) * PARTI) + aggiunte[i]!) / PARTI;
+      return { ...m, quote: { ...m.quote, [p.id]: nuova } };
+    });
+    redistribuite.push(p.id);
+  }
+
+  for (const id of entrateDavvero) {
+    membri = [...membri, { ruolo: 'mandante', soggettoId: id, quote: Object.fromEntries(prestazioni.map((p) => [p.id, 0])) }];
+  }
+
+  const mandatariaCambiata = dopo.mandataria !== prima.mandataria;
+  if (mandatariaCambiata) {
+    membri = membri.map((m) => {
+      if (m.ruolo === 'ausiliaria') return m;
+      if (m.soggettoId === dopo.mandataria) return { ...m, ruolo: 'mandataria' };
+      return m.ruolo === 'mandataria' ? { ...m, ruolo: 'mandante' } : m;
+    });
+  }
+
+  const parti: string[] = [];
+  const nome = (id: SoggettoId) => nomeSoggetto(id, contesto);
+  if (entrateDavvero.length > 0) {
+    parti.push(`${entrateDavvero.length === 1 ? 'entra' : 'entrano'} ${elencoNomi(entrateDavvero.map(nome))} a quota zero`);
+  }
+  if (uscenti.length > 0) {
+    const restanti = membri.filter((m) => m.ruolo !== 'ausiliaria' && !entrateDavvero.includes(m.soggettoId)).map((m) => nome(m.soggettoId));
+    const unica = prestazioni.length === 1 ? prestazioni[0] : undefined;
+    const quanto = unica ? ` (${formattaPercentuale(uscenti.reduce((s, m) => s + (m.quote[unica.id] ?? 0), 0))})` : '';
+    const dove = redistribuite.length > 0 && restanti.length > 0 ? `, e la quota${quanto} passa a ${elencoNomi(restanti)} in proporzione alle loro` : '';
+    parti.push(`${uscenti.length === 1 ? 'esce' : 'escono'} ${elencoNomi(uscenti.map((m) => nome(m.soggettoId)))}${dove}`);
+  }
+  if (mandatariaCambiata && membri.some((m) => m.soggettoId === dopo.mandataria)) {
+    parti.push(`mandataria: ${nome(prima.mandataria)} → ${nome(dopo.mandataria)}`);
+  }
+  if (parti.length === 0) return lavoro;
+  const frase = `Dalla scelta delle imprese: ${parti.join('; ')}`;
+  // Un nome che finisce con il punto (S.r.l.) chiude già la frase.
+  return conPasso(lavoro, frase.endsWith('.') ? frase : `${frase}.`, 'modifica', { ...raggruppamento, membri });
+}
+
+/**
+ * La sessione con cui si entra nell'esito. Stessa gara e stesse imprese: il
+ * lavoro resta com'era, prove comprese. Gara diversa, o nessuna sessione:
+ * si riparte da capo, in parti uguali. Stessa gara con imprese diverse: il
+ * lavoro si riprende (`riprendiLavoro`).
+ */
+export function sessioneAllIngresso(
+  precedente: Sessione | undefined,
+  ingresso: Ingresso,
+  p: { bando: Bando; contesto: ContestoDescrizioni; dataRiferimento: string },
+): Sessione {
+  if (!precedente || precedente.ingresso.bando !== ingresso.bando) {
+    return {
+      ingresso,
+      lavoro: {
+        lottoId: p.bando.lotti[0]?.id ?? '',
+        dataRiferimento: p.dataRiferimento,
+        raggruppamento: raggruppamentoInPartiUguali(p.bando, ingresso.imprese, ingresso.mandataria),
+        storia: [],
+      },
+    };
+  }
+  const { ingresso: prima } = precedente;
+  if (stessoInsieme(prima.imprese, ingresso.imprese) && prima.mandataria === ingresso.mandataria) return precedente;
+  return { ingresso, lavoro: riprendiLavoro(precedente.lavoro, prima, ingresso, p.bando, p.contesto) };
+}
+
 /** La composizione prima dell'ultima prova, se esiste: è con quella che ha senso confrontarsi. */
 export function composizionePrimaDellUltimaProva(lavoro: Lavoro): Passo | undefined {
   for (let i = lavoro.storia.length - 1; i >= 0; i--) {

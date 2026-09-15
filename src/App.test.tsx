@@ -233,6 +233,125 @@ describe('schermata iniziale — caricamento da disco', () => {
   });
 });
 
+describe('tornare alla scelta non butta il lavoro', () => {
+  async function tornaAllaScelta(user: Utente): Promise<void> {
+    await user.click(screen.getByRole('button', { name: 'Cambia gara' }));
+    await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO);
+  }
+  async function rientra(user: Utente): Promise<void> {
+    await user.click(screen.getByRole('button', { name: 'Valuta il raggruppamento' }));
+    await screen.findByRole('region', { name: 'Verdetto' }, LENTO);
+  }
+
+  it('stessa gara e stesse imprese: quote e prove restano come erano', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    const input = quotaInput(OSPEDALIA, FORNITURA);
+    await user.clear(input);
+    await user.type(input, '20');
+    await user.tab();
+    const passi = within(regione('Modifiche')).getAllByRole('listitem').length;
+    await tornaAllaScelta(user);
+    await rientra(user);
+    expect(quotaInput(OSPEDALIA, FORNITURA).value).toBe('20');
+    expect(within(regione('Modifiche')).getAllByRole('listitem')).toHaveLength(passi);
+  });
+  it('un’impresa in più: chi c’era tiene le quote, la nuova entra a zero, e la storia lo dice', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    await tornaAllaScelta(user);
+    await user.click(screen.getByRole('checkbox', { name: inizia(GROSSFARMA) }));
+    await rientra(user);
+    expect(quotaInput(FARMALAZIO, FORNITURA).value).toBe('34');
+    expect(quotaInput(GROSSFARMA, FORNITURA).value).toBe('0');
+    expect(within(regione('Modifiche')).getByText(`Dalla scelta delle imprese: entra ${GROSSFARMA} a quota zero.`)).toBeTruthy();
+  });
+  it('un’impresa in meno: la sua quota passa a chi resta, in proporzione, e la storia lo dice', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    await tornaAllaScelta(user);
+    await user.click(screen.getByRole('checkbox', { name: inizia(MEDIFARM) }));
+    await rientra(user);
+    // 33 % di Medifarm diviso 34:33 → 50,75 % e 49,25 %.
+    expect(quotaInput(FARMALAZIO, FORNITURA).value).toBe('50,75');
+    expect(quotaInput(OSPEDALIA, FORNITURA).value).toBe('49,25');
+    expect(within(regione('Modifiche')).getByText(/^Dalla scelta delle imprese: esce Medifarm Logistica S\.r\.l\., e la quota \(33\s%\) passa a/)).toBeTruthy();
+  });
+  it('un’altra gara: si riparte da capo', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    const input = quotaInput(OSPEDALIA, FORNITURA);
+    await user.clear(input);
+    await user.type(input, '20');
+    await user.tab();
+    await tornaAllaScelta(user);
+    const altro = JSON.parse(TESTO_BANDO) as { bando: { id: string; oggetto: string } };
+    altro.bando.oggetto = 'Un altro bando';
+    await user.upload(screen.getByLabelText('Scegli un file JSON'), fileJson('altro.json', JSON.stringify(altro)));
+    await screen.findByText(/^Bando caricato da altro\.json/, undefined, LENTO);
+    await rientra(user);
+    expect(quotaInput(OSPEDALIA, FORNITURA).value).toBe('33');
+    expect(within(regione('Modifiche')).getByText(/Nessuna modifica/)).toBeTruthy();
+  });
+});
+
+describe('la data di riferimento si dichiara', () => {
+  it('con la data proposta dall’indice ne dice il motivo, finché non la si cambia', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    expect(screen.getByText('La valutazione parte dal 20/12/2023: prima del termine per i chiarimenti (27/12/2023), così i quesiti sono ancora azionabili; spostandola oltre si vede il termine decorso.')).toBeTruthy();
+    const data = screen.getByLabelText('Data di riferimento');
+    await user.clear(data);
+    await user.type(data, '2024-01-08');
+    expect(screen.queryByText(/^La valutazione parte dal 20\/12\/2023/)).toBeNull();
+  });
+  it('per un bando caricato dal disco dice che, in mancanza di indicazione, si parte da oggi', async () => {
+    const user = userEvent.setup();
+    await apriScelta();
+    const altro = JSON.parse(TESTO_BANDO) as { bando: { oggetto: string } };
+    altro.bando.oggetto = 'Bando senza data proposta';
+    await user.upload(screen.getByLabelText('Scegli un file JSON'), fileJson('senza-data.json', JSON.stringify(altro)));
+    await screen.findByText(/^Bando caricato da senza-data\.json/, undefined, LENTO);
+    expect(screen.getAllByText(/^In mancanza di indicazione, la valutazione parte da oggi \(\d{2}\/\d{2}\/\d{4}\)\.$/)).toHaveLength(1);
+    for (const nome of [FARMALAZIO, OSPEDALIA]) await user.click(screen.getByRole('checkbox', { name: inizia(nome) }));
+    await user.click(screen.getByRole('radio', { name: `Mandataria: ${FARMALAZIO}` }));
+    await user.click(screen.getByRole('button', { name: 'Valuta il raggruppamento' }));
+    await screen.findByRole('region', { name: 'Verdetto' }, LENTO);
+    expect(screen.getByText(/^In mancanza di indicazione, la valutazione parte da oggi/)).toBeTruthy();
+  });
+});
+
+describe('il formato dei requisiti strutturati', () => {
+  it('dalla card del caricamento si apre la pagina del formato: la forma, un estratto vero, il file completo', async () => {
+    const user = userEvent.setup();
+    await apriScelta();
+    const link = screen.getByRole('link', { name: /^Il formato che il motore si aspetta/ });
+    expect(link.getAttribute('href')).toBe('?vista=formato');
+    await user.click(link);
+    expect(await screen.findByRole('heading', { name: 'Il formato dei requisiti strutturati' }, LENTO)).toBeTruthy();
+    expect(window.location.search).toBe('?vista=formato');
+    const forma = regione('La forma di un bando');
+    expect(within(forma).getByText('requisiti')).toBeTruthy();
+    expect(within(forma).getAllByText('tipo: «somma_membri»').length).toBeGreaterThan(0);
+    expect(within(forma).getAllByText('uno tra «generale», «economico», «certificazione», «referenza», «iscrizione»')).toHaveLength(1);
+    const estratto = await screen.findByLabelText('Estratto del documento', undefined, LENTO);
+    expect(estratto.textContent).toContain('"note"');
+    expect(estratto.textContent).toContain('… altri 5 elementi nel file completo');
+    expect(screen.getByText(/^Il file completo, \d+ righe$/)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: '← Torna alla scelta' }));
+    expect(await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO)).toBeTruthy();
+  });
+  it('l’indirizzo del formato apre direttamente la pagina, e «Torna alla scelta» funziona anche così', async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(null, '', '/?vista=formato');
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: 'Il formato dei requisiti strutturati' }, LENTO)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: '← Torna alla scelta' }));
+    expect(await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO)).toBeTruthy();
+    expect(window.location.search).toBe('');
+  });
+});
+
 describe('schermata iniziale — documenti del server', () => {
   async function apriErrori(file: string): Promise<HTMLElement> {
     const user = userEvent.setup();

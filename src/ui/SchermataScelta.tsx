@@ -9,6 +9,7 @@
 import { useId } from 'react';
 import type { Caricato } from '../documenti/carica';
 import { contaErrori } from '../documenti/messaggi';
+import { fraseDataRiferimento } from '../descrizioni';
 import { formattaData } from '../formato';
 import {
   cosaManca,
@@ -34,8 +35,11 @@ type Props = {
   onScelta: (scelta: Scelta) => void;
   ultimoCaricamento: EsitoCaricamento | undefined;
   onFile: (file: File) => void;
-  /** Un documento vero del server, da aprire per vedere com'è fatto il formato. */
-  esempioFormato: string | undefined;
+  /** L'indirizzo della pagina del formato: un link vero, che si apre anche in un'altra scheda. */
+  indirizzoFormato: string;
+  onFormato: () => void;
+  /** Oggi, per dichiarare da quando parte la valutazione di un bando senza data proposta. */
+  oggi: string;
   onValuta: () => void;
 };
 
@@ -43,7 +47,7 @@ function nonValido(c: Caricato<unknown>): c is NonValido {
   return c.stato === 'non_valido';
 }
 
-function Gara({ voce, scelta, onScelta }: { voce: VoceBando; scelta: Scelta; onScelta: Props['onScelta'] }) {
+function Gara({ voce, scelta, onScelta, oggi }: { voce: VoceBando; scelta: Scelta; onScelta: Props['onScelta']; oggi: string }) {
   if (voce.caricato.stato !== 'valido') return null;
   const { bando, provenienza } = voce.caricato.documento;
   const requisiti = bando.lotti.reduce((n, l) => n + l.requisiti.length, 0);
@@ -64,13 +68,18 @@ function Gara({ voce, scelta, onScelta }: { voce: VoceBando; scelta: Scelta; onS
             {provenienza.natura === 'reale' ? 'Bando reale' : 'Bando di esempio'}
             {voce.origine === 'disco' ? ` · dal tuo computer: ${voce.caricato.file}` : ''}
           </span>
+          <span className={styles.garaData}>
+            {voce.dataRiferimentoProposta !== undefined
+              ? fraseDataRiferimento(voce.dataRiferimentoProposta, { motivo: voce.motivoDataProposta })
+              : fraseDataRiferimento(oggi, undefined)}
+          </span>
         </span>
       </label>
     </li>
   );
 }
 
-function Caricamento({ ultimo, onFile, esempio }: { ultimo: EsitoCaricamento | undefined; onFile: Props['onFile']; esempio: string | undefined }) {
+function Caricamento({ ultimo, onFile, indirizzoFormato, onFormato }: { ultimo: EsitoCaricamento | undefined; onFile: Props['onFile']; indirizzoFormato: string; onFormato: () => void }) {
   const idSpiegazione = useId();
   return (
     <section className={styles.carica} aria-labelledby={`${idSpiegazione}-titolo`}>
@@ -79,6 +88,21 @@ function Caricamento({ ultimo, onFile, esempio }: { ultimo: EsitoCaricamento | u
         Carica un file JSON con i requisiti strutturati di un bando, oppure con i fascicoli delle tue imprese.
         Il file si legge nel tuo browser e non viene inviato a nessuno.
       </p>
+      {/* Prima del bottone: chi arriva deve vedere che lo strumento legge un formato, non una gara. */}
+      <a
+        className={styles.formato}
+        href={indirizzoFormato}
+        onClick={(e) => {
+          if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          e.preventDefault();
+          onFormato();
+        }}
+      >
+        <span className={styles.formatoTitolo}>Il formato che il motore si aspetta</span>
+        <span className={styles.formatoTesto}>
+          I requisiti strutturati di un bando: la forma dei campi, un estratto vero con le note che citano articolo e pagina, e il file completo.
+        </span>
+      </a>
       <label className={styles.bottoneFile}>
         Scegli un file JSON
         <input
@@ -93,9 +117,6 @@ function Caricamento({ ultimo, onFile, esempio }: { ultimo: EsitoCaricamento | u
           }}
         />
       </label>
-      {esempio ? (
-        <a className={styles.link} href={esempio} target="_blank" rel="noreferrer">Guarda com'è fatto: il bando ASL Roma 6 nel formato</a>
-      ) : null}
       <div aria-live="polite">
         {ultimo?.tipo === 'bando' ? (
           <p className={styles.caricato}>Bando caricato da {ultimo.file} e scelto: «{ultimo.oggetto}».</p>
@@ -121,7 +142,7 @@ function DocumentoNonUtilizzabile({ documento }: { documento: NonValido }) {
   );
 }
 
-export function SchermataScelta({ bandi, fascicoli, altri, scelta, onScelta, ultimoCaricamento, onFile, esempioFormato, onValuta }: Props) {
+export function SchermataScelta({ bandi, fascicoli, altri, scelta, onScelta, ultimoCaricamento, onFile, indirizzoFormato, onFormato, oggi, onValuta }: Props) {
   const imprese = impreseDisponibili(fascicoli);
   const manca = cosaManca(scelta, bandi, imprese);
   const idManca = useId();
@@ -158,7 +179,7 @@ export function SchermataScelta({ bandi, fascicoli, altri, scelta, onScelta, ult
           <div className={styles.gare}>
             {bandiValidi.length > 0 ? (
               <ul className={styles.elenco} aria-label="Gare disponibili">
-                {bandiValidi.map((v) => <Gara key={v.chiave} voce={v} scelta={scelta} onScelta={onScelta} />)}
+                {bandiValidi.map((v) => <Gara key={v.chiave} voce={v} scelta={scelta} onScelta={onScelta} oggi={oggi} />)}
               </ul>
             ) : (
               <p className={styles.vuoto}>Nessuna gara disponibile: caricane una dal tuo computer.</p>
@@ -169,7 +190,7 @@ export function SchermataScelta({ bandi, fascicoli, altri, scelta, onScelta, ult
               </ul>
             ) : null}
           </div>
-          <Caricamento ultimo={ultimoCaricamento} onFile={onFile} esempio={esempioFormato} />
+          <Caricamento ultimo={ultimoCaricamento} onFile={onFile} indirizzoFormato={indirizzoFormato} onFormato={onFormato} />
         </div>
         {/* Gli errori di un file caricato stanno a tutta larghezza: sono da leggere, non da intravedere. */}
         <div aria-live="polite">

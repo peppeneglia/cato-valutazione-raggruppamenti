@@ -17,6 +17,7 @@ export type VoceBando = {
   caricato: Caricato<DocumentoBando>;
   /** Dall'indice, per i bandi del server. Per un file dal disco non c'è: la pagina propone la data di oggi. */
   dataRiferimentoProposta?: string;
+  motivoDataProposta?: string;
 };
 
 export type VoceFascicoli = {

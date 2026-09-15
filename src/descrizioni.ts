@@ -711,3 +711,18 @@ export function effettoDelleQuote(lotto: Lotto, rilevanti: boolean): string | un
     : 'nessun requisito di questo lotto guarda chi esegue le prestazioni';
   return `Qui le quote non cambiano chi copre cosa: ${perche}. Contano per i totali, che devono fare 100 %, e chi è a zero non esegue niente.`;
 }
+
+// ─── Data di riferimento ─────────────────────────────────────
+
+/**
+ * Da dove viene la data da cui parte la valutazione. Sposta gli esiti — un
+ * certificato scaduto, un termine decorso — quindi si dichiara sempre: la
+ * data proposta con il bando e il suo motivo, oppure oggi in mancanza di
+ * indicazione.
+ */
+export function fraseDataRiferimento(data: string, proposta: { motivo?: string } | undefined): string {
+  if (!proposta) return `In mancanza di indicazione, la valutazione parte da oggi (${formattaData(data)}).`;
+  return proposta.motivo
+    ? `La valutazione parte dal ${formattaData(data)}: ${proposta.motivo}.`
+    : `La valutazione parte dal ${formattaData(data)}, la data proposta con il bando.`;
+}

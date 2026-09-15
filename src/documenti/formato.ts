@@ -27,14 +27,17 @@ import type {
 } from '../domain';
 import {
   booleano,
+  conForma,
   elenco,
   facoltativo,
+  formaDi,
   letterale,
   numero,
   oggetto,
   testo,
   unione,
   type EsitoControllo,
+  type Forma,
   type Validatore,
 } from './struttura';
 
@@ -71,6 +74,8 @@ export type VoceIndiceBando = {
   file: string;
   /** Una scelta di chi pubblica i documenti, non un dato della gara. */
   dataRiferimentoProposta: string;
+  /** Perché quella data: la pagina lo dichiara, perché la data sposta gli esiti. */
+  motivoDataProposta?: string;
 };
 
 export type Indice = {
@@ -101,12 +106,14 @@ function fatto<T>(valore: Validatore<T>): Validatore<Fatto<T>> {
   return oggetto<Fatto<T>>({ valore: valore as never, fonte, validoDa: facoltativo(testo), validoA: facoltativo(testo) });
 }
 
-const importo: Validatore<Importo> = (v, p) => {
-  if (typeof v === 'object' && v !== null && !Array.isArray(v)) return oggetto<{ rinvio: string }>({ rinvio: testo })(v, p);
+const rinvio = oggetto<{ rinvio: string }>({ rinvio: testo });
+
+const importo: Validatore<Importo> = conForma<Importo>((v, p) => {
+  if (typeof v === 'object' && v !== null && !Array.isArray(v)) return rinvio(v, p);
   const r = numero(v, p);
   if (r.ok) return r;
   return { ok: false, errori: r.errori.map((e) => ({ ...e, atteso: `${e.atteso}, oppure un rinvio a un valore del bando: { "rinvio": "valore stimato dell'appalto" }` })) };
-};
+}, { tipo: 'alternativa', opzioni: [formaDi(numero), formaDi(rinvio)] });
 
 const sostantivo = oggetto<Sostantivo>({ singolare: testo, plurale: testo });
 
@@ -257,7 +264,7 @@ const documentoFascicoli = oggetto<DocumentoFascicoli>({
 
 const indice = oggetto<Indice>({
   formato: formato(NOME_FORMATO.indice),
-  bandi: elenco(oggetto<VoceIndiceBando>({ file: testo, dataRiferimentoProposta: testo })),
+  bandi: elenco(oggetto<VoceIndiceBando>({ file: testo, dataRiferimentoProposta: testo, motivoDataProposta: facoltativo(testo) })),
   fascicoli: elenco(oggetto<{ file: string }>({ file: testo })),
 });
 
@@ -272,3 +279,7 @@ export function controllaFascicoli(valore: unknown): EsitoControllo<DocumentoFas
 export function controllaIndice(valore: unknown): EsitoControllo<Indice> {
   return indice(valore, []);
 }
+
+/** La forma dei documenti, dagli stessi validatori che li controllano: per la pagina del formato. */
+export const FORMA_BANDO: Forma = formaDi(documentoBando);
+export const FORMA_FASCICOLI: Forma = formaDi(documentoFascicoli);

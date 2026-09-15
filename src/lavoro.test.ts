@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bando, DATA_RIFERIMENTO, raggruppamento, soggetti } from './documenti/documentiDiProva';
 import { formattaPercentuale } from './formato';
-import { composizionePrimaDellUltimaProva, interpretaQuotaPercento, quotaValida, riduci, type Lavoro } from './lavoro';
+import { composizionePrimaDellUltimaProva, interpretaQuotaPercento, quotaValida, riduci, sessioneAllIngresso, type Ingresso, type Lavoro, type Sessione } from './lavoro';
 
 const contesto = { bando, soggetti };
 const FORNITURA = 'Fornitura di farmaci, parafarmaci, dispositivi medici e altro, da grossista con consegna veloce';
@@ -117,5 +117,66 @@ describe('riduci — lotto e data', () => {
     const dopo = riduci(riduci(l, { tipo: 'seleziona_lotto', lottoId: 'altro-lotto' }, contesto), { tipo: 'imposta_data', valore: '2023-12-20' }, contesto);
     expect(dopo).toMatchObject({ lottoId: 'altro-lotto', dataRiferimento: '2023-12-20', storia: [] });
     expect(riduci(l, { tipo: 'seleziona_lotto', lottoId: 'lotto-unico' }, contesto)).toBe(l);
+  });
+});
+
+describe('sessione — rientrare nell’esito dalla scelta', () => {
+  const ingresso: Ingresso = { bando: 'server:b', imprese: ['s-farmalazio', 's-ospedalia', 's-medifarm'], mandataria: 's-farmalazio' };
+  const p = { bando, contesto, dataRiferimento: DATA_RIFERIMENTO };
+  function quote(l: Lavoro): Record<string, number | undefined> {
+    return Object.fromEntries(l.raggruppamento.membri.map((m) => [m.soggettoId, m.ruolo === 'ausiliaria' ? undefined : m.quote.fornitura]));
+  }
+  /** Una sessione su cui si è lavorato: quote sistemate a mano e una prova. */
+  function lavorata(): Sessione {
+    const s = sessioneAllIngresso(undefined, ingresso, p);
+    const l1 = riduci(s.lavoro, { tipo: 'imposta_quota', soggettoId: 's-farmalazio', prestazioneId: 'fornitura', quota: 0.6 }, contesto);
+    const l2 = riduci(l1, { tipo: 'imposta_quota', soggettoId: 's-ospedalia', prestazioneId: 'fornitura', quota: 0.25 }, contesto);
+    const l3 = riduci(l2, { tipo: 'imposta_quota', soggettoId: 's-medifarm', prestazioneId: 'fornitura', quota: 0.15 }, contesto);
+    const l4 = riduci(l3, { tipo: 'aggiungi_ausiliaria', soggettoId: 's-grossfarma', ausiliataId: 's-medifarm', requisitiIds: ['fatturato-globale'] }, contesto);
+    return { ...s, lavoro: l4 };
+  }
+
+  it('la prima volta, o con un’altra gara, si parte da capo in parti uguali', () => {
+    const s = sessioneAllIngresso(undefined, ingresso, p);
+    expect(quote(s.lavoro)).toEqual({ 's-farmalazio': 0.34, 's-ospedalia': 0.33, 's-medifarm': 0.33 });
+    expect(s.lavoro.storia).toEqual([]);
+    const altra = sessioneAllIngresso(lavorata(), { ...ingresso, bando: 'disco:1:altro.json' }, p);
+    expect(altra.lavoro.storia).toEqual([]);
+    expect(quote(altra.lavoro)).toEqual({ 's-farmalazio': 0.34, 's-ospedalia': 0.33, 's-medifarm': 0.33 });
+  });
+  it('stessa gara e stesse imprese, anche in altro ordine: il lavoro resta com’era, identico', () => {
+    const s = lavorata();
+    expect(sessioneAllIngresso(s, { ...ingresso, imprese: ['s-medifarm', 's-farmalazio', 's-ospedalia'] }, p)).toBe(s);
+  });
+  it('un’impresa in più: chi c’era tiene le sue quote, la nuova entra a zero, e la storia lo dice', () => {
+    const s = lavorata();
+    const dopo = sessioneAllIngresso(s, { ...ingresso, imprese: [...ingresso.imprese, 's-nuova'] }, p);
+    expect(quote(dopo.lavoro)).toEqual({ 's-farmalazio': 0.6, 's-ospedalia': 0.25, 's-medifarm': 0.15, 's-grossfarma': undefined, 's-nuova': 0 });
+    expect(dopo.lavoro.storia).toHaveLength(s.lavoro.storia.length + 1);
+    expect(dopo.lavoro.storia[dopo.lavoro.storia.length - 1]?.etichetta).toBe('Dalla scelta delle imprese: entra s-nuova a quota zero.');
+  });
+  it('un’impresa in meno: la sua quota passa a chi resta in proporzione, e le sue ausiliarie escono con lei', () => {
+    const dopo = sessioneAllIngresso(lavorata(), { ...ingresso, imprese: ['s-farmalazio', 's-ospedalia'] }, p);
+    // 15 % di Medifarm diviso 60:25 → 10,59 % e 4,41 % (resti maggiori, al centesimo di punto).
+    expect(quote(dopo.lavoro)).toEqual({ 's-farmalazio': 0.7059, 's-ospedalia': 0.2941 });
+    expect(dopo.lavoro.storia[dopo.lavoro.storia.length - 1]?.etichetta).toBe(
+      `Dalla scelta delle imprese: esce Medifarm Logistica S.r.l., e la quota (${formattaPercentuale(0.15)}) passa a Farmadistribuzione Laziale S.p.A. e Ospedalia Forniture S.r.l. in proporzione alle loro.`,
+    );
+  });
+  it('chi entra non riceve la quota di chi esce: la sua parte la decide chi usa lo strumento', () => {
+    const dopo = sessioneAllIngresso(lavorata(), { ...ingresso, imprese: ['s-farmalazio', 's-ospedalia', 's-nuova'] }, p);
+    expect(quote(dopo.lavoro)['s-nuova']).toBe(0);
+    expect(dopo.lavoro.storia[dopo.lavoro.storia.length - 1]?.etichetta).toMatch(/^Dalla scelta delle imprese: entra s-nuova a quota zero; esce Medifarm Logistica S\.r\.l\., e la quota/);
+  });
+  it('la mandataria cambiata nella scelta cambia il ruolo, e la precedente diventa mandante', () => {
+    const dopo = sessioneAllIngresso(lavorata(), { ...ingresso, mandataria: 's-ospedalia' }, p);
+    expect(dopo.lavoro.raggruppamento.membri.filter((m) => m.ruolo === 'mandataria').map((m) => m.soggettoId)).toEqual(['s-ospedalia']);
+    expect(quote(dopo.lavoro)['s-farmalazio']).toBe(0.6);
+    expect(dopo.lavoro.storia[dopo.lavoro.storia.length - 1]?.etichetta).toBe('Dalla scelta delle imprese: mandataria: Farmadistribuzione Laziale S.p.A. → Ospedalia Forniture S.r.l.');
+  });
+  it('il passo si annulla come ogni altra modifica', () => {
+    const s = lavorata();
+    const dopo = sessioneAllIngresso(s, { ...ingresso, imprese: ['s-farmalazio', 's-ospedalia'] }, p);
+    expect(riduci(dopo.lavoro, { tipo: 'annulla' }, contesto).raggruppamento).toBe(s.lavoro.raggruppamento);
   });
 });

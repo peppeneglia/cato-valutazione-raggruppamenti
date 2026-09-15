@@ -23,7 +23,31 @@ export type ErroreStruttura = {
 
 export type EsitoControllo<T> = { ok: true; valore: T } | { ok: false; errori: ErroreStruttura[] };
 
-export type Validatore<T> = (valore: unknown, percorso: Segmento[]) => EsitoControllo<T>;
+/**
+ * La forma che un validatore controlla, descritta come dato: la pagina del
+ * formato la mostra, e siccome nasce dagli stessi validatori non può dire
+ * una cosa diversa da quella che il controllo pretende.
+ */
+export type Forma =
+  | { tipo: 'testo' }
+  | { tipo: 'numero' }
+  | { tipo: 'booleano' }
+  | { tipo: 'letterale'; valori: (string | number | boolean)[] }
+  | { tipo: 'elenco'; di: Forma; nonVuoto: boolean }
+  | { tipo: 'oggetto'; campi: { nome: string; facoltativo: boolean; forma: Forma }[] }
+  | { tipo: 'unione'; chiave: string; varianti: { valore: string; forma: Forma }[] }
+  | { tipo: 'alternativa'; opzioni: Forma[] };
+
+export type Validatore<T> = ((valore: unknown, percorso: Segmento[]) => EsitoControllo<T>) & { readonly forma?: Forma };
+
+export function conForma<T>(validatore: (valore: unknown, percorso: Segmento[]) => EsitoControllo<T>, forma: Forma): Validatore<T> {
+  return Object.assign(validatore, { forma });
+}
+
+export function formaDi(validatore: Validatore<unknown>): Forma {
+  if (!validatore.forma) throw new Error('Un validatore senza forma: la pagina del formato non potrebbe descriverlo.');
+  return validatore.forma;
+}
 
 type Facoltativo<T> = { readonly facoltativo: Validatore<T> };
 type CampoDi<V> = undefined extends V ? Facoltativo<Exclude<V, undefined>> : Validatore<V>;
@@ -90,23 +114,23 @@ function errore<T>(percorso: Segmento[], atteso: string, valore: unknown): Esito
   return { ok: false, errori: [{ percorso, atteso, trovato: descriviValore(valore) }] };
 }
 
-export const testo: Validatore<string> = (v, p) => (typeof v === 'string' ? { ok: true, valore: v } : errore(p, 'un testo', v));
+export const testo: Validatore<string> = conForma((v, p) => (typeof v === 'string' ? { ok: true, valore: v } : errore(p, 'un testo', v)), { tipo: 'testo' });
 
-export const numero: Validatore<number> = (v, p) => {
+export const numero: Validatore<number> = conForma((v, p) => {
   if (typeof v === 'number' && Number.isFinite(v)) return { ok: true, valore: v };
   if (typeof v === 'string' && /\d/.test(v)) return errore(p, 'un numero, senza virgolette né separatori delle migliaia (per esempio 750000 o 966144.5)', v);
   return errore(p, 'un numero', v);
-};
+}, { tipo: 'numero' });
 
-export const booleano: Validatore<boolean> = (v, p) => (typeof v === 'boolean' ? { ok: true, valore: v } : errore(p, 'true oppure false', v));
+export const booleano: Validatore<boolean> = conForma((v, p) => (typeof v === 'boolean' ? { ok: true, valore: v } : errore(p, 'true oppure false', v)), { tipo: 'booleano' });
 
 export function letterale<const L extends readonly (string | number | boolean)[]>(...ammessi: L): Validatore<L[number]> {
-  return (v, p) => {
+  return conForma((v, p) => {
     if (ammessi.includes(v as L[number])) return { ok: true, valore: v as L[number] };
     const atteso = ammessi.length === 1 ? elencoAmmessi(ammessi) : `uno tra ${elencoAmmessi(ammessi)}`;
     const aiuto = typeof v === 'string' ? suggerimento(v, ammessi.map(String)) : '';
     return errore(p, `${atteso}${aiuto}`, v);
-  };
+  }, { tipo: 'letterale', valori: [...ammessi] });
 }
 
 export function facoltativo<T>(validatore: Validatore<T>): Facoltativo<T> {
@@ -120,7 +144,7 @@ function eOggetto(v: unknown): v is Record<string, unknown> {
 }
 
 export function elenco<T>(validatore: Validatore<T>, opzioni: { nonVuoto?: boolean } = {}): Validatore<T[]> {
-  return (v, p) => {
+  return conForma((v, p) => {
     if (!Array.isArray(v)) return errore(p, 'un elenco tra parentesi quadre', v);
     if (opzioni.nonVuoto && v.length === 0) return errore(p, 'un elenco con almeno un elemento', v);
     const valori: T[] = [];
@@ -132,7 +156,7 @@ export function elenco<T>(validatore: Validatore<T>, opzioni: { nonVuoto?: boole
       else errori.push(...r.errori);
     });
     return errori.length > 0 ? { ok: false, errori } : { ok: true, valore: valori };
-  };
+  }, { tipo: 'elenco', di: formaDi(validatore), nonVuoto: opzioni.nonVuoto ?? false });
 }
 
 /**
@@ -143,7 +167,12 @@ export function elenco<T>(validatore: Validatore<T>, opzioni: { nonVuoto?: boole
  */
 export function oggetto<T>(campi: Campi<T>): Validatore<T> {
   const nomi = Object.keys(campi);
-  return (v, p) => {
+  const voci = Object.entries(campi as Record<string, Validatore<unknown> | Facoltativo<unknown>>);
+  const forma: Forma = {
+    tipo: 'oggetto',
+    campi: voci.map(([nome, c]) => (typeof c === 'function' ? { nome, facoltativo: false, forma: formaDi(c) } : { nome, facoltativo: true, forma: formaDi(c.facoltativo) })),
+  };
+  return conForma((v, p) => {
     if (!eOggetto(v)) return errore(p, 'un oggetto tra parentesi graffe', v);
     const risultato: Record<string, unknown> = {};
     const errori: ErroreStruttura[] = [];
@@ -180,7 +209,7 @@ export function oggetto<T>(campi: Campi<T>): Validatore<T> {
       });
     }
     return errori.length > 0 ? { ok: false, errori } : { ok: true, valore: risultato as T };
-  };
+  }, forma);
 }
 
 function controllaNote(note: unknown, percorso: Segmento[], nomi: readonly string[]): ErroreStruttura[] {
@@ -214,7 +243,7 @@ export function unione<T extends Record<C, string>, C extends string>(
   const varianti = Object.fromEntries(
     Object.entries(campiDelleVarianti).map(([nome, campi]) => [nome, oggetto(campi as Campi<T>)]),
   );
-  return (v, p) => {
+  return conForma((v, p) => {
     if (!eOggetto(v)) return errore(p, `un oggetto tra parentesi graffe con il campo «${chiave}»`, v);
     const qui: Segmento[] = [...p, { tipo: 'campo', nome: chiave }];
     const valore = v[chiave];
@@ -230,5 +259,5 @@ export function unione<T extends Record<C, string>, C extends string>(
       };
     }
     return (varianti as Record<string, Validatore<T>>)[valore]!(v, p);
-  };
+  }, { tipo: 'unione', chiave, varianti: Object.entries(varianti).map(([valore, v]) => ({ valore, forma: formaDi(v) })) });
 }

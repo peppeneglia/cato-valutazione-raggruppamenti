@@ -1,0 +1,176 @@
+.pagina {
+  max-width: 62em;
+  margin: 0 auto;
+  padding-block: var(--sp-5) var(--sp-8);
+  padding-inline: var(--sp-5);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5);
+}
+
+@media (max-width: 699px) {
+  .pagina {
+    padding-inline: var(--sp-4);
+  }
+}
+
+.torna {
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--spessore-bordo) solid var(--c-accento);
+  border-radius: var(--raggio-piccolo);
+  background: var(--c-sfondo);
+  color: var(--c-navy);
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-forte);
+}
+
+.torna:hover {
+  background: var(--c-accento);
+  color: var(--c-accento-testo);
+}
+
+.intro {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.titolo {
+  font-size: var(--testo-verdetto);
+  font-weight: var(--peso-verdetto);
+  line-height: var(--interlinea-verdetto);
+  letter-spacing: -0.01em;
+  color: var(--c-navy);
+}
+
+.lead {
+  font-size: var(--testo-titolo);
+  max-width: 48em;
+}
+
+.fatti {
+  margin: 0;
+  padding-left: var(--sp-4);
+  display: grid;
+  gap: var(--sp-1);
+  max-width: 56em;
+}
+
+.card {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio);
+  background: var(--c-sfondo);
+  min-width: 0;
+}
+
+@media (max-width: 699px) {
+  .card {
+    padding: var(--sp-4);
+  }
+}
+
+.tenue {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+/* ─── L'albero dei campi ───────────────────────────────────── */
+
+.albero {
+  margin: 0;
+  padding-left: var(--sp-4);
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  border-left: var(--spessore-bordo) solid var(--c-bordo);
+  font-size: var(--testo-sm);
+  min-width: 0;
+}
+
+.card > .albero {
+  padding-left: 0;
+  border-left: none;
+}
+
+.albero .albero {
+  margin: 2px 0 var(--sp-1) var(--sp-1);
+}
+
+.campo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--sp-2);
+}
+
+.albero code,
+.codice {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.nome {
+  color: var(--c-navy);
+  font-weight: var(--peso-forte);
+  overflow-wrap: anywhere;
+}
+
+.facoltativo {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+  font-style: italic;
+}
+
+.tipo {
+  color: var(--c-testo-tenue);
+  overflow-wrap: anywhere;
+}
+
+.variante > summary {
+  width: max-content;
+  max-width: 100%;
+}
+
+.variante > summary code {
+  overflow-wrap: anywhere;
+}
+
+/* ─── Codice ───────────────────────────────────────────────── */
+
+/* Va a capo invece di scorrere di lato: nessuna riga allarga la pagina. */
+.codice {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--raggio);
+  background: var(--c-superficie);
+  font-size: var(--testo-xs);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.lungo {
+  max-height: 70vh;
+  overflow-y: auto;
+  margin-top: var(--sp-2);
+}
+
+.completo > summary {
+  width: max-content;
+  max-width: 100%;
+  font-size: var(--testo-sm);
+  color: var(--c-navy);
+  text-decoration: underline 2px var(--c-accento);
+  text-underline-offset: 3px;
+}
+
+.link {
+  justify-self: start;
+  font-size: var(--testo-sm);
+  color: var(--c-navy);
+  text-decoration: underline 2px var(--c-accento);
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}

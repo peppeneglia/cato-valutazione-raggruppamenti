@@ -1,27 +1,31 @@
-// Due schermate, nessun router. La prima chiede cosa valutare; la seconda
-// è l'esito. Il passaggio entra nella cronologia del browser, così Indietro
-// torna alla scelta come ci si aspetta, senza ricaricare niente.
+// Tre schermate, nessun router: la scelta di cosa valutare, l'esito, e il
+// formato dei documenti. I passaggi entrano nella cronologia del browser,
+// così Indietro torna dove ci si aspetta, senza ricaricare niente. Il formato
+// ha anche un indirizzo suo, perché si possa aprire in un'altra scheda.
 //
 // I documenti arrivano dallo stesso server che serve la pagina, oppure dal
 // disco di chi la usa; finché non ci sono, non c'è niente da scegliere.
 //
-// Nell'esito lo stato mutabile è il foglio di lavoro; tutto il resto è
-// derivato dal motore: il canale sincrono (requisiti, anomalie, avvisi,
-// verdetto) risponde a ogni modifica, quello differito (rimedi, percorso,
-// confronti) dopo che la modifica si è assestata.
+// Il foglio di lavoro sta qui e non nell'esito: tornare alla scelta per
+// aggiungere un'impresa non deve buttare le quote appena sistemate. Si
+// riparte da capo solo se cambia la gara.
+//
+// Nell'esito tutto il resto è derivato dal motore: il canale sincrono
+// (requisiti, anomalie, avvisi, verdetto) risponde a ogni modifica, quello
+// differito (rimedi, percorso, confronti) dopo che la modifica si è assestata.
 //
 // L'esito risponde a una domanda: sono dentro su questo lotto, e se no cosa
 // mi manca. Ciò che risponde sta in alto e grande; ciò che motiva sotto; ciò
 // che documenta dietro un'interazione.
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import type { Azione, Lavoro } from './lavoro';
-import { composizionePrimaDellUltimaProva, raggruppamentoInPartiUguali, riduci } from './lavoro';
-import type { Bando, ParametriValutazione, Raggruppamento, Soggetto } from './domain';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { Azione, Ingresso, Lavoro, Sessione } from './lavoro';
+import { composizionePrimaDellUltimaProva, riduci, sessioneAllIngresso } from './lavoro';
+import type { Bando, ParametriValutazione, Soggetto } from './domain';
 import { valutaBase } from './engine';
 import { trovaLotto } from './engine/indici';
 import { formattaData, oggiISO } from './formato';
-import { dichiarazioneDati, fraseVerdetto } from './descrizioni';
+import { dichiarazioneDati, fraseDataRiferimento, fraseVerdetto } from './descrizioni';
 import { richiedeChiarimenti } from './engine/rimedi';
 import { caricaRaccolta, leggiDocumento, type Raccolta, type Scarica } from './documenti/carica';
 import type { Provenienza } from './documenti/formato';
@@ -45,6 +49,7 @@ import { ConfrontoProva } from './ui/ConfrontoProva';
 import { IntestazioneBando } from './ui/IntestazioneBando';
 import { legendaAssunzioni } from './ui/legenda';
 import { NoteMotore } from './ui/NoteMotore';
+import { SchermataFormato } from './ui/SchermataFormato';
 import { SchermataScelta } from './ui/SchermataScelta';
 import { Storia } from './ui/Storia';
 import { TabellaEsito } from './ui/TabellaEsito';
@@ -69,34 +74,52 @@ function useRaccolta(): Raccolta | undefined {
   return raccolta;
 }
 
-type Schermata = 'scelta' | 'esito';
+// ─── Schermate e cronologia ──────────────────────────────────
 
-function schermataDi(stato: unknown): Schermata | undefined {
-  return (stato as { schermata?: Schermata } | null)?.schermata;
+type Schermata = 'scelta' | 'esito' | 'formato';
+
+/** L'indirizzo del formato: si apre anche in un'altra scheda, e sopravvive a un ricaricamento. */
+export const INDIRIZZO_FORMATO = '?vista=formato';
+
+type StatoCronologia = { schermata: Schermata; dallaPagina: true };
+
+function statoDi(stato: unknown): StatoCronologia | undefined {
+  const s = stato as Partial<StatoCronologia> | null;
+  return s?.dallaPagina ? (s as StatoCronologia) : undefined;
+}
+
+function schermataDallIndirizzo(): Schermata {
+  return new URLSearchParams(window.location.search).get('vista') === 'formato' ? 'formato' : 'scelta';
 }
 
 /**
- * La schermata corrente, legata alla cronologia: entrare nell'esito aggiunge
- * un passo, Indietro lo toglie. Un ricaricamento riparte dalla scelta, perché
- * la scelta non sopravvive al ricaricamento.
+ * La schermata corrente, legata alla cronologia: aprirne una aggiunge un
+ * passo, Indietro lo toglie. L'esito non ha indirizzo: un ricaricamento
+ * riparte dalla scelta, perché la scelta non sopravvive al ricaricamento.
  */
-function useSchermata(): { schermata: Schermata; entra: () => void; esci: () => void } {
-  const [schermata, setSchermata] = useState<Schermata>('scelta');
+function useSchermata(): { schermata: Schermata; apri: (s: Exclude<Schermata, 'scelta'>) => void; torna: () => void } {
+  const [schermata, setSchermata] = useState<Schermata>(schermataDallIndirizzo);
   useEffect(() => {
-    if (schermataDi(window.history.state)) window.history.replaceState(null, '');
-    const suPopState = (e: PopStateEvent) => setSchermata(schermataDi(e.state) === 'esito' ? 'esito' : 'scelta');
+    if (statoDi(window.history.state)?.schermata === 'esito') window.history.replaceState(null, '', window.location.pathname);
+    const suPopState = (e: PopStateEvent) => setSchermata(statoDi(e.state)?.schermata ?? schermataDallIndirizzo());
     window.addEventListener('popstate', suPopState);
     return () => window.removeEventListener('popstate', suPopState);
   }, []);
-  const entra = useCallback(() => {
-    window.history.pushState({ schermata: 'esito' }, '');
-    setSchermata('esito');
+  const apri = useCallback((s: Exclude<Schermata, 'scelta'>) => {
+    const stato: StatoCronologia = { schermata: s, dallaPagina: true };
+    window.history.pushState(stato, '', s === 'formato' ? INDIRIZZO_FORMATO : window.location.pathname);
+    setSchermata(s);
   }, []);
-  const esci = useCallback(() => {
-    if (schermataDi(window.history.state) === 'esito') window.history.back();
-    else setSchermata('scelta');
+  const torna = useCallback(() => {
+    // Se il passo l'ha aggiunto la pagina, Indietro è la cosa giusta; se si è arrivati da un link, si torna alla scelta sul posto.
+    if (statoDi(window.history.state)) {
+      window.history.back();
+    } else {
+      window.history.replaceState(null, '', window.location.pathname);
+      setSchermata('scelta');
+    }
   }, []);
-  return { schermata, entra, esci };
+  return { schermata, apri, torna };
 }
 
 function leggiTesto(file: File): Promise<string> {
@@ -108,12 +131,23 @@ function leggiTesto(file: File): Promise<string> {
   });
 }
 
+function ingressoDi(pronta: SceltaPronta): Ingresso {
+  return { bando: pronta.bando.chiave, imprese: pronta.imprese, mandataria: pronta.mandataria };
+}
+
+function stessoIngresso(a: Ingresso, b: Ingresso): boolean {
+  return a.bando === b.bando && a.mandataria === b.mandataria && a.imprese.length === b.imprese.length && a.imprese.every((x) => b.imprese.includes(x));
+}
+
+// ─── Pagina ──────────────────────────────────────────────────
+
 export default function App() {
   const raccolta = useRaccolta();
   const [daDisco, setDaDisco] = useState<{ bandi: VoceBando[]; fascicoli: VoceFascicoli[] }>({ bandi: [], fascicoli: [] });
   const [ultimoCaricamento, setUltimoCaricamento] = useState<EsitoCaricamento>();
   const [scelta, setScelta] = useState<Scelta>(SCELTA_VUOTA);
-  const { schermata, entra, esci } = useSchermata();
+  const [sessione, setSessione] = useState<Sessione & { dataIniziale: string }>();
+  const { schermata, apri, torna } = useSchermata();
   const contatore = useRef(0);
 
   // Cambiare schermata riparte dall'alto: la nuova schermata non eredita lo scorrimento della vecchia.
@@ -123,7 +157,13 @@ export default function App() {
 
   const bandi = useMemo<VoceBando[]>(
     () => [
-      ...(raccolta?.bandi ?? []).map((b): VoceBando => ({ chiave: `server:${b.file}`, origine: 'server', caricato: b, dataRiferimentoProposta: b.dataRiferimentoProposta })),
+      ...(raccolta?.bandi ?? []).map((b): VoceBando => ({
+        chiave: `server:${b.file}`,
+        origine: 'server',
+        caricato: b,
+        dataRiferimentoProposta: b.dataRiferimentoProposta,
+        motivoDataProposta: b.motivoDataProposta,
+      })),
       ...daDisco.bandi,
     ],
     [raccolta, daDisco.bandi],
@@ -134,12 +174,48 @@ export default function App() {
   );
   const imprese = useMemo(() => impreseDisponibili(fascicoli), [fascicoli]);
   const soggetti = useMemo(() => imprese.map((i) => i.soggetto), [imprese]);
+  const pronta = sceltaPronta(scelta, bandi, imprese);
+
+  // Entrando nell'esito — dal bottone o con Avanti del browser — la sessione si allinea alla scelta prima di disegnare.
+  useLayoutEffect(() => {
+    if (schermata !== 'esito' || !pronta) return;
+    const ingresso = ingressoDi(pronta);
+    if (sessione && stessoIngresso(sessione.ingresso, ingresso)) return;
+    const bando = pronta.bando.caricato.documento.bando;
+    const cambiaGara = !sessione || sessione.ingresso.bando !== ingresso.bando;
+    const dataIniziale = cambiaGara ? (pronta.bando.dataRiferimentoProposta ?? oggiISO()) : sessione.dataIniziale;
+    const prossima = sessioneAllIngresso(sessione, ingresso, { bando, contesto: { bando, soggetti }, dataRiferimento: dataIniziale });
+    setSessione({ ...prossima, dataIniziale });
+  }, [schermata, pronta, sessione, soggetti]);
+
+  const suAzione = useCallback(
+    (azione: Azione) => setSessione((s) => {
+      const bando = bandi.find((b) => b.chiave === s?.ingresso.bando)?.caricato;
+      if (!s || bando?.stato !== 'valido') return s;
+      return { ...s, lavoro: riduci(s.lavoro, azione, { bando: bando.documento.bando, soggetti }) };
+    }),
+    [bandi, soggetti],
+  );
 
   if (!raccolta) {
     return (
       <main className={styles.pagina}>
         <p role="status">Caricamento dei documenti…</p>
       </main>
+    );
+  }
+
+  const esempioBando = raccolta.bandi.find((b) => b.stato === 'valido');
+  const esempioFascicoli = raccolta.fascicoli.find((f) => f.stato === 'valido');
+
+  if (schermata === 'formato') {
+    return (
+      <SchermataFormato
+        esempioBando={esempioBando?.stato === 'valido' ? { url: `${BASE_DOCUMENTI}${esempioBando.file}`, documento: esempioBando.documento.provenienza.documento } : undefined}
+        esempioFascicoli={esempioFascicoli?.stato === 'valido' ? { url: `${BASE_DOCUMENTI}${esempioFascicoli.file}`, documento: esempioFascicoli.documento.provenienza.documento } : undefined}
+        scarica={scarica}
+        onTorna={torna}
+      />
     );
   }
 
@@ -174,12 +250,23 @@ export default function App() {
     if (letto.caricato.stato === 'non_valido') setUltimoCaricamento({ tipo: 'errori', caricato: letto.caricato });
   };
 
-  const pronta = sceltaPronta(scelta, bandi, imprese);
-  const esempio = raccolta.bandi.find((b) => b.stato === 'valido');
-
-  if (schermata === 'esito' && pronta) {
-    return <Esito pronta={pronta} fascicoli={fascicoli} soggetti={soggetti} onCambiaGara={esci} />;
+  if (schermata === 'esito' && pronta && sessione && stessoIngresso(sessione.ingresso, ingressoDi(pronta))) {
+    const { bando, provenienza } = pronta.bando.caricato.documento;
+    const provenienzeFascicoli = fascicoli.flatMap((f) => (f.caricato.stato === 'valido' ? [f.caricato.documento.provenienza] : []));
+    const proposta = pronta.bando.dataRiferimentoProposta !== undefined ? { motivo: pronta.bando.motivoDataProposta } : undefined;
+    return (
+      <Valutazione
+        bando={bando}
+        soggetti={soggetti}
+        provenienze={{ bando: provenienza, fascicoli: provenienzeFascicoli }}
+        lavoro={sessione.lavoro}
+        onAzione={suAzione}
+        fraseData={sessione.lavoro.dataRiferimento === sessione.dataIniziale ? fraseDataRiferimento(sessione.dataIniziale, proposta) : undefined}
+        onCambiaGara={torna}
+      />
+    );
   }
+  if (schermata === 'esito' && pronta) return null;
 
   return (
     <SchermataScelta
@@ -190,25 +277,10 @@ export default function App() {
       onScelta={setScelta}
       ultimoCaricamento={ultimoCaricamento}
       onFile={(file) => void suFile(file)}
-      esempioFormato={esempio ? `${BASE_DOCUMENTI}${esempio.file}` : undefined}
-      onValuta={entra}
-    />
-  );
-}
-
-/** Dalla scelta all'esito: la composizione di partenza e i dati che la pagina dichiara. */
-function Esito({ pronta, fascicoli, soggetti, onCambiaGara }: { pronta: SceltaPronta; fascicoli: VoceFascicoli[]; soggetti: Soggetto[]; onCambiaGara: () => void }) {
-  const { bando, provenienza } = pronta.bando.caricato.documento;
-  const provenienzeFascicoli = fascicoli.flatMap((f) => (f.caricato.stato === 'valido' ? [f.caricato.documento.provenienza] : []));
-  const raggruppamento = raggruppamentoInPartiUguali(bando, pronta.imprese, pronta.mandataria);
-  return (
-    <Valutazione
-      bando={bando}
-      soggetti={soggetti}
-      provenienze={{ bando: provenienza, fascicoli: provenienzeFascicoli }}
-      dataRiferimento={pronta.bando.dataRiferimentoProposta ?? oggiISO()}
-      raggruppamento={raggruppamento}
-      onCambiaGara={onCambiaGara}
+      indirizzoFormato={INDIRIZZO_FORMATO}
+      onFormato={() => apri('formato')}
+      oggi={oggiISO()}
+      onValuta={() => apri('esito')}
     />
   );
 }
@@ -220,20 +292,15 @@ type PropsValutazione = {
   bando: Bando;
   soggetti: Soggetto[];
   provenienze: { bando: Provenienza; fascicoli: Provenienza[] };
-  dataRiferimento: string;
-  raggruppamento: Raggruppamento;
+  lavoro: Lavoro;
+  onAzione: (azione: Azione) => void;
+  /** Da dove viene la data di riferimento, finché è quella di partenza. */
+  fraseData: string | undefined;
   onCambiaGara: () => void;
 };
 
-function Valutazione({ bando, soggetti, provenienze, dataRiferimento, raggruppamento, onCambiaGara }: PropsValutazione) {
+function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch, fraseData, onCambiaGara }: PropsValutazione) {
   const contesto = useMemo(() => ({ bando, soggetti }), [bando, soggetti]);
-  const riduttore = useCallback((lavoro: Lavoro, azione: Azione) => riduci(lavoro, azione, contesto), [contesto]);
-  const [lavoro, dispatch] = useReducer(riduttore, undefined, (): Lavoro => ({
-    lottoId: bando.lotti[0]?.id ?? '',
-    dataRiferimento,
-    raggruppamento,
-    storia: [],
-  }));
   const [vista, setVista] = useState<Vista>('lotto');
 
   const parametri = useMemo<ParametriValutazione>(
@@ -286,6 +353,7 @@ function Valutazione({ bando, soggetti, provenienze, dataRiferimento, raggruppam
             <input type="date" value={lavoro.dataRiferimento} onChange={(e) => dispatch({ tipo: 'imposta_data', valore: e.target.value })} className={styles.inputData} />
           </label>
         </p>
+        {fraseData ? <p className={styles.dichiarazione}>{fraseData}</p> : null}
         <p className={styles.dichiarazione}>{dichiarazioneDati(provenienze.bando, provenienze.fascicoli)}</p>
       </header>
 

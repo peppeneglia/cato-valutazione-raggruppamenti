@@ -197,6 +197,12 @@
   overflow-wrap: anywhere;
 }
 
+.garaData {
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+  overflow-wrap: anywhere;
+}
+
 .nonUtilizzabile {
   font-size: var(--testo-sm);
   padding: var(--sp-2) var(--sp-3);
@@ -261,12 +267,32 @@
   outline-offset: var(--anello-focus-distanza);
 }
 
-.link {
-  justify-self: start;
-  font-size: var(--testo-sm);
+/* Il link al formato è un'azione: il bordo sinistro in oro, il testo in navy. */
+.formato {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-3);
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-left: var(--spessore-bordo-forte) solid var(--c-accento);
+  border-radius: var(--raggio-piccolo);
+  background: var(--c-sfondo);
   color: var(--c-navy);
+  text-decoration: none;
+}
+
+.formato:hover {
+  border-color: var(--c-accento);
+}
+
+.formatoTitolo {
+  font-weight: var(--peso-forte);
   text-decoration: underline 2px var(--c-accento);
   text-underline-offset: 3px;
+}
+
+.formatoTesto {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
 }
 
 .caricato {
