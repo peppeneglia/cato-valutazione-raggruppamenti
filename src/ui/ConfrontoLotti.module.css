@@ -12,9 +12,7 @@
 }
 
 .cifra {
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  white-space: nowrap;
+  composes: cifra from global;
 }
 
 .selezionato {

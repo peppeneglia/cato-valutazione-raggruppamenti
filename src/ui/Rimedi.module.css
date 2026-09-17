@@ -1,27 +1,41 @@
 .elenco {
   margin: 0;
-  padding-left: var(--sp-4);
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: var(--sp-1);
+  gap: var(--sp-2);
 }
 
+/* Ogni rimedio è una piccola card bianca: il testo, e la sua azione o la sua etichetta. */
 .voce {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--raggio);
+  background: var(--c-sfondo);
+  font-size: var(--testo-sm);
+}
+
+.testo {
+  flex: 1 1 20em;
+  min-width: 0;
 }
 
 .prova {
   composes: secondario piccolo from './Bottoni.module.css';
 }
 
-
-
 .esterno {
+  flex: none;
+  align-self: flex-start;
+  padding: 2px var(--sp-2);
+  border-radius: var(--raggio-pillola);
+  background: var(--c-superficie);
   font-size: var(--testo-xs);
+  font-weight: var(--peso-forte);
   color: var(--c-testo-tenue);
-  font-style: italic;
 }
 
 .attesa,

@@ -5,6 +5,8 @@ import {
   bando,
   certificazione,
   esecutore,
+  fatturato,
+  fatturatoGlobale,
   lotto,
   parametri,
   prestazione,
@@ -247,6 +249,15 @@ describe('anomalieStrutturali — parametri del requisito', () => {
     const anomalie = anomalieStrutturali(parametri({ bando: bando([l]) }));
     expect(codici(anomalie).filter((c) => c === 'parametro_requisito_non_valido')).toHaveLength(2);
   });
+  it('segnala esercizi, anni e numero minimo non interi: un esercizio e mezzo non esiste', () => {
+    const l = lotto({ requisiti: [
+      requisito('r-1', { ...fatturato, periodo: { tipo: 'a_ritroso', esercizi: 2.5, ancoraggio: 'riferimento' } }, { tipo: 'somma_membri' }),
+      requisito('r-2', { ...servizi, anni: 1.5, numeroMinimo: 2.5 }, { tipo: 'somma_membri' }),
+    ] });
+    const anomalie = anomalieStrutturali(parametri({ bando: bando([l]) }));
+    expect(anomalie.map((a) => a.codice === 'parametro_requisito_non_valido' && a.parametro))
+      .toEqual(['letture[0].criterio.periodo.esercizi', 'letture[0].criterio.anni', 'letture[0].criterio.numeroMinimo']);
+  });
   it('segnala le cifre comuni del CPV non intere o non positive', () => {
     const l = lotto({ requisiti: [
       requisito('r-1', { ...servizi, cifreCpvComuni: 0 }, { tipo: 'somma_membri' }),
@@ -323,6 +334,14 @@ describe('anomalieStrutturali — fascicoli', () => {
   it('segnala un periodo di servizio con inizio dopo la fine', () => {
     const p = parametri({ soggetti: [soggetto('s-a', [servizio('1', '2024-12-31', '2024-01-01')])] });
     expect(trova(anomalieStrutturali(p), 'periodo_invertito').soggettoId).toBe('s-a');
+  });
+  it('segnala, senza bloccare, lo stesso esercizio due volte nello stesso ambito', () => {
+    const p = parametri({ soggetti: [soggetto('s-a', [fatturatoGlobale(2024, 100), fatturatoGlobale(2024, 100), fatturato(2024, 'altro ambito', 100)])] });
+    const anomalie = anomalieStrutturali(p);
+    expect(codici(anomalie)).toEqual(['esercizio_duplicato']);
+    const a = trova(anomalie, 'esercizio_duplicato');
+    expect(a).toMatchObject({ soggettoId: 's-a', esercizio: 2024, gravita: 'segnalazione' });
+    expect(a.messaggio).toContain('conta la prima voce');
   });
   it('segnala una finestra di validità invertita', () => {
     const voce = certificazione('ISO 9001', 'x', '2020-01-01');

@@ -50,18 +50,19 @@ export function formaDi(validatore: Validatore<unknown>): Forma {
 }
 
 type Facoltativo<T> = { readonly facoltativo: Validatore<T> };
-type CampoDi<V> = undefined extends V ? Facoltativo<Exclude<V, undefined>> : Validatore<V>;
+/** Il validatore di un campo: se il campo ammette `undefined` è un facoltativo. Con un tipo generico non ancora noto il condizionale resta sospeso: chi lo istanzia lo dichiara con `as CampoDi<T>`. */
+export type CampoDi<V> = undefined extends V ? Facoltativo<Exclude<V, undefined>> : Validatore<V>;
 /** Un validatore per ogni campo del tipo, nessuno escluso: i facoltativi lo dichiarano. */
 export type Campi<T> = { [K in keyof T]-?: CampoDi<T[K]> };
 
 /** Il campo che ogni oggetto può avere e che il motore non legge: le note di chi ha strutturato il documento. */
-export const CAMPO_NOTE = 'note';
+const CAMPO_NOTE = 'note';
 
 // ─── Descrizioni ─────────────────────────────────────────────
 
 const MAX_TESTO = 60;
 
-export function descriviValore(valore: unknown): string {
+function descriviValore(valore: unknown): string {
   if (valore === undefined) return 'nessun valore';
   if (valore === null) return 'null';
   if (typeof valore === 'string') {

@@ -34,7 +34,9 @@
   display: grid;
   gap: var(--sp-1);
   padding: var(--sp-2) var(--sp-3);
-  border-left: var(--spessore-bordo-forte) double var(--c-scoperto);
+  border: var(--spessore-bordo) solid var(--c-scoperto-tenue);
+  border-radius: var(--raggio);
+  background: var(--c-sfondo);
   font-size: var(--testo-sm);
   min-width: 0;
 }

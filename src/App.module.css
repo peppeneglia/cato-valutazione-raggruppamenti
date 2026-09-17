@@ -73,51 +73,22 @@
   color: var(--c-testo-tenue);
 }
 
-.datiBando {
-  font-size: var(--testo-sm);
-}
-
-.datiBando > summary {
-  color: var(--c-titolo);
-  text-decoration: underline 2px var(--c-azione);
-  text-underline-offset: 3px;
-  width: max-content;
-}
-
-.datiBando[open] > summary {
-  margin-bottom: var(--sp-3);
-}
-
-/* Il corpo: l'esito si legge, la composizione si manipola. Affiancati sopra la soglia, in colonna sotto. */
-.corpo {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-6);
-  align-items: start;
-}
-
-/* 1100px: la soglia delle due colonne, documentata in tokens.css. */
-@media (min-width: 1100px) {
-  .corpo {
-    grid-template-columns: minmax(0, 1fr) var(--larghezza-composizione);
-  }
-}
-
-/* La composizione è una card: dentro, la storia delle modifiche e il confronto con la prova precedente. */
-.laterale {
+/* La composizione è una card a tutta larghezza: dentro, sotto i membri, la
+   storia delle modifiche e il confronto con la prova precedente, affiancati
+   quando c'è spazio. */
+.composizione {
   composes: card from './ui/Card.module.css';
   display: grid;
-  gap: var(--sp-4);
+  gap: var(--sp-5);
 }
 
-/* La colonna dell'esito: i requisiti e, sotto, i quesiti aperti, due card. */
-.principale {
+/* Senza prove il confronto non c'è, e la storia prende tutta la riga. */
+.registro {
   display: grid;
-  gap: var(--sp-6);
-  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(26em, 100%), 1fr));
+  gap: var(--sp-4) var(--sp-6);
+  align-items: start;
 }
-
-
 
 .confronto {
   composes: card from './ui/Card.module.css';
@@ -136,8 +107,6 @@
   composes: secondario piccolo from './ui/Bottoni.module.css';
 }
 
-
-
 .inputData {
   width: var(--larghezza-input-data);
   max-width: 100%;
@@ -149,4 +118,3 @@
   color: var(--c-titolo);
   font-variant-numeric: tabular-nums;
 }
-

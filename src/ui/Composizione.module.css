@@ -1,7 +1,12 @@
 .sezione {
   display: grid;
-  gap: var(--sp-3);
+  gap: var(--sp-4);
   min-width: 0;
+}
+
+.intro {
+  display: grid;
+  gap: var(--sp-1);
 }
 
 .didascalia,
@@ -10,22 +15,24 @@
   color: var(--c-testo-tenue);
 }
 
+/* Un riquadro per membro, affiancati finché ci stanno. */
 .membri {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(18em, 100%), 1fr));
+  gap: var(--sp-3);
 }
 
 .membro {
   display: grid;
-  gap: var(--sp-2);
-  padding: var(--sp-3) 0;
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
-}
-
-.membro:first-child {
-  border-top: var(--spessore-bordo) solid var(--c-bordo);
+  align-content: start;
+  gap: var(--sp-3);
+  min-width: 0;
+  padding: var(--sp-4);
+  border-radius: var(--raggio-card);
+  background: var(--c-superficie);
 }
 
 .testata {
@@ -36,9 +43,11 @@
 }
 
 .nome {
+  min-width: 0;
   font-size: var(--testo-base);
-  font-weight: var(--peso-forte);
-  color: var(--c-testo);
+  font-weight: var(--peso-verdetto);
+  color: var(--c-titolo);
+  overflow-wrap: anywhere;
 }
 
 .campi {
@@ -49,9 +58,9 @@
 }
 
 .select {
-  padding: var(--sp-1) var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
   border: var(--spessore-bordo) solid var(--c-bordo);
-  border-radius: var(--raggio-piccolo);
+  border-radius: var(--raggio);
   background: var(--c-sfondo);
   font-size: var(--testo-sm);
 }
@@ -67,16 +76,8 @@
   color: var(--c-testo-tenue);
 }
 
-.nascosto {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
 .rimuovi {
+  flex: none;
   padding: 0;
   border: none;
   background: none;
@@ -89,34 +90,46 @@
   color: var(--c-scoperto);
 }
 
-.ausiliaria .nome::after {
-  content: '';
-}
-
 .dettaglioAusiliaria {
   font-size: var(--testo-sm);
   color: var(--c-testo-tenue);
 }
 
+.moduli {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-3) var(--sp-6);
+}
+
 .modulo {
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: var(--testo-sm);
+}
+
+.modulo[open] {
+  flex-basis: 100%;
 }
 
 .modulo > summary {
   color: var(--c-titolo);
+  font-weight: var(--peso-forte);
   text-decoration: underline 2px var(--c-azione);
   text-underline-offset: 3px;
   width: max-content;
+  max-width: 100%;
 }
 
 .modulo[open] > summary {
   margin-bottom: var(--sp-2);
 }
 
-/* Perché una quota spostata non cambia l'esito: sta sotto la didascalia, nello stesso registro. */
+/* Perché una quota spostata non cambia l'esito: una nota su fondo tenue, sotto il titolo. */
 .effettoQuote {
   font-size: var(--testo-sm);
-  color: var(--c-testo-tenue);
-  padding-left: var(--sp-3);
-  border-left: var(--spessore-bordo-forte) solid var(--c-bordo);
+  color: var(--c-testo);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--raggio);
+  background: var(--c-superficie);
 }

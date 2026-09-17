@@ -1,12 +1,11 @@
-/* La card del risultato, nel navy dell'app. Il filetto a sinistra nel
-   colore dello stato, la parola dello stato nel colore dello stato, i
-   numeri grandi. Il contesto scuro dà a ogni stato la sua tinta chiara. */
+/* La card del risultato, nel navy dell'app. La parola dello stato e la sua
+   forma nel colore dello stato, i numeri grandi. Il contesto scuro dà a
+   ogni stato la sua tinta chiara. */
 .blocco {
   composes: scura from './Card.module.css';
   display: grid;
   gap: var(--sp-4);
   padding: var(--sp-6);
-  border-left: var(--spessore-filetto-verdetto) solid var(--c-bordo);
 }
 
 @media (max-width: 699px) {
@@ -14,10 +13,6 @@
     padding: var(--sp-5) var(--sp-4);
   }
 }
-
-.coperto { border-left-color: var(--c-coperto); }
-.scoperto { border-left-color: var(--c-scoperto); }
-.da_verificare { border-left-color: var(--c-da-verificare); }
 
 /* ─── In alto: la risposta e i numeri ──────────────────────── */
 

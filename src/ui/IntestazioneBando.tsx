@@ -1,4 +1,8 @@
-// Contesto compatto: bando, lotto selezionato, prestazioni. Non è un hero.
+// I dati della gara, sempre in vista: una card con tre livelli. Il titolo
+// della card; i fatti del bando come riquadri, l'etichetta piccola sopra e il
+// valore grande sotto; poi i valori a cui i requisiti rinviano e il lotto con
+// le sue prestazioni. L'oggetto della gara non si ripete: sta nel titolo
+// della pagina.
 
 import { assertNever } from '../assertNever';
 import type { Bando, Lotto, NaturaPrestazione } from '../domain';
@@ -20,84 +24,101 @@ function etichettaNatura(natura: NaturaPrestazione): string {
   }
 }
 
+function Fatto({ etichetta, valore, nota, cifra }: { etichetta: string; valore: string; nota?: string; cifra?: boolean }) {
+  return (
+    <div className={styles.fatto}>
+      <dt className="occhiello">{etichetta}</dt>
+      <dd className={`${styles.valore} ${cifra ? styles.cifra : ''}`}>{valore}</dd>
+      {nota ? <dd className={styles.nota}>{nota}</dd> : null}
+    </div>
+  );
+}
+
 export function IntestazioneBando({ bando, lotto }: { bando: Bando; lotto: Lotto | undefined }) {
+  const chiarimenti = bando.termineChiarimenti;
   return (
     <section aria-labelledby="titolo-bando" className={styles.sezione}>
-      <h2 id="titolo-bando" className={styles.titolo}>{bando.oggetto}</h2>
-      <dl className={styles.dati}>
-        <div><dt>Stazione appaltante</dt><dd>{bando.stazioneAppaltante}</dd></div>
-        <div><dt>Pubblicazione</dt><dd>{bando.dataPubblicazione === undefined ? 'non indicata nel documento' : formattaData(bando.dataPubblicazione)}</dd></div>
-        <div><dt>Termine di presentazione</dt><dd>{formattaData(bando.terminePresentazione)}</dd></div>
-        {bando.termineChiarimenti ? (
-          <div>
-            <dt>Termine per i chiarimenti</dt>
-            <dd>
-              {descriviTermine(bando.termineChiarimenti).replace(/^entro /, '')}
-              {bando.termineChiarimenti.risposteEntro ? ` (risposte entro il ${formattaData(bando.termineChiarimenti.risposteEntro.valore)})` : ''}
-            </dd>
-          </div>
+      <div className={styles.testata}>
+        <h2 id="titolo-bando">Dati del bando e del lotto</h2>
+        <p className={styles.fonte}><Fonte fonte={bando.fonte} /></p>
+      </div>
+
+      <dl className={styles.fatti}>
+        <Fatto etichetta="Stazione appaltante" valore={bando.stazioneAppaltante} />
+        <Fatto etichetta="Base d'asta" valore={formattaEuro(bando.baseAsta)} cifra />
+        <Fatto etichetta="Termine di presentazione" valore={formattaData(bando.terminePresentazione)} cifra />
+        {chiarimenti ? (
+          <Fatto
+            etichetta="Termine per i chiarimenti"
+            valore={descriviTermine(chiarimenti).replace(/^entro /, '')}
+            nota={chiarimenti.risposteEntro ? `Risposte entro il ${formattaData(chiarimenti.risposteEntro.valore)}` : undefined}
+          />
         ) : null}
-        <div><dt>Base d'asta</dt><dd className={styles.cifra}>{formattaEuro(bando.baseAsta)}</dd></div>
-        <div><dt>Fonte</dt><dd><Fonte fonte={bando.fonte} /></dd></div>
+        <Fatto
+          etichetta="Pubblicazione"
+          valore={bando.dataPubblicazione === undefined ? 'Non indicata' : formattaData(bando.dataPubblicazione)}
+          nota={bando.dataPubblicazione === undefined ? 'Il documento non la scrive' : undefined}
+        />
       </dl>
+
       {bando.valori.length > 0 ? (
-        <dl className={styles.dati}>
-          {bando.valori.map((v) => (
-            <div key={v.nome}>
-              <dt>{v.nome}</dt>
-              <dd>
-                {v.candidati.map((c, i) => (
-                  <span key={i}>
-                    {i > 0 ? ' · ' : ''}
-                    <span className={styles.cifra}>{formattaEuro(c.valore)}</span>
-                    <span className={styles.vuoto}> ({c.fonte.riferimento}{c.fonte.pagina === undefined ? '' : `, p. ${c.fonte.pagina}`})</span>
-                  </span>
-                ))}
-                {v.candidati.length > 1 ? <span className={styles.vuoto}> — il documento lo scrive in {v.candidati.length} modi</span> : null}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <div className={styles.blocco}>
+          <h3 className={styles.sottotitolo}>Valori a cui rinviano i requisiti</h3>
+          <dl className={styles.valori}>
+            {bando.valori.map((v) => (
+              <div key={v.nome} className={styles.valoreBando}>
+                <dt className={styles.nomeValore}>
+                  {v.nome}
+                  {v.candidati.length > 1 ? <span className={styles.avviso}> — il documento lo scrive in {v.candidati.length} modi</span> : null}
+                </dt>
+                <dd className={styles.candidati}>
+                  {v.candidati.map((c, i) => (
+                    <span key={i} className={styles.candidato}>
+                      <span className={`${styles.importo} ${styles.cifra}`}>{formattaEuro(c.valore)}</span>
+                      <span className={styles.nota}>{c.fonte.riferimento}{c.fonte.pagina === undefined ? '' : `, p. ${c.fonte.pagina}`}</span>
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       ) : null}
 
       {lotto ? (
-        <>
-          <h3 className={styles.sottotitolo}>
-            <span className={styles.idLotto}>{lotto.id}</span> {lotto.oggetto}
-            <span className={styles.importoLotto}>{formattaEuro(lotto.importo)}</span>
-            {lotto.cig !== undefined ? <span className={styles.cig}>CIG {lotto.cig}</span> : null}
-          </h3>
-          <table className={styles.prestazioni}>
-            <caption className={styles.didascalia}>Prestazioni del lotto: la scomposizione su cui si assegnano le quote.</caption>
-            <thead>
-              <tr>
-                <th scope="col">Prestazione</th>
-                <th scope="col">Natura</th>
-                <th scope="col" className={styles.cifra}>Importo</th>
-                <th scope="col">Fonte</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className={styles.blocco}>
+          <p className="occhiello">
+            Lotto · {lotto.id}
+            {lotto.cig !== undefined ? ` · CIG ${lotto.cig}` : ''}
+          </p>
+          <div className={styles.lotto}>
+            <h3 className={styles.oggettoLotto}>{lotto.oggetto}</h3>
+            <p className={`${styles.importoLotto} ${styles.cifra}`}>{formattaEuro(lotto.importo)}</p>
+          </div>
+          {lotto.prestazioni.length > 0 ? (
+            <ul className={styles.prestazioni} aria-label="Prestazioni del lotto">
               {lotto.prestazioni.map((p) => (
-                <tr key={p.id} id={`prestazione-${p.id}`}>
-                  <td>{p.descrizione}</td>
-                  <td>{etichettaNatura(p.natura)}</td>
-                  <td className={styles.cifra}>{formattaEuro(p.importo)}</td>
-                  <td><Fonte fonte={p.fonte} /></td>
-                </tr>
+                <li key={p.id} id={`prestazione-${p.id}`} className={styles.prestazione}>
+                  <span className={styles.descrizionePrestazione}>{p.descrizione}</span>
+                  <span className={styles.natura}>{etichettaNatura(p.natura)}</span>
+                  <span className={`${styles.importoPrestazione} ${styles.cifra}`}>{formattaEuro(p.importo)}</span>
+                  <span className={styles.nota}><Fonte fonte={p.fonte} /></span>
+                </li>
               ))}
-            </tbody>
-          </table>
-          {lotto.prestazioni.length === 0 ? <p className={styles.vuoto}>Il lotto non dichiara prestazioni: senza prestazioni non ci sono quote da assegnare.</p> : null}
+            </ul>
+          ) : (
+            <p className={styles.nota}>Il lotto non dichiara prestazioni: senza prestazioni non ci sono quote da assegnare.</p>
+          )}
+          <p className={styles.nota}>Le prestazioni sono la scomposizione su cui si assegnano le quote.</p>
           {lotto.vincoloPrestazionePrincipale ? (
             <p className={styles.vincolo}>
               Vincolo dichiarato: la prestazione principale va eseguita dalla {lotto.vincoloPrestazionePrincipale.esecutore} per almeno il {formattaPercentuale(lotto.vincoloPrestazionePrincipale.quotaMinima)}.{' '}
               <Fonte fonte={lotto.vincoloPrestazionePrincipale.fonte} />
             </p>
           ) : null}
-        </>
+        </div>
       ) : (
-        <p className={styles.vuoto}>Lotto non trovato nel bando: seleziona un lotto dalla tabella sopra.</p>
+        <p className={styles.nota}>Lotto non trovato nel bando: seleziona un lotto dall'elenco sopra.</p>
       )}
     </section>
   );

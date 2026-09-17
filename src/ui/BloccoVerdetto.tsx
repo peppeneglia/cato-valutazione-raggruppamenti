@@ -9,6 +9,7 @@ import type { FraseVerdetto } from '../descrizioni';
 import { formaDelVerdetto } from '../descrizioni';
 import type { StatoRequisito, Verdetto } from '../domain';
 import type { Azione } from '../lavoro';
+import { Calendario } from './Icone';
 import { Forma } from './StatoRequisito';
 import styles from './BloccoVerdetto.module.css';
 
@@ -25,15 +26,6 @@ const NUMERI: { stato: StatoRequisito; etichetta: (n: number) => string }[] = [
   { stato: 'da_verificare', etichetta: () => 'Da verificare' },
   { stato: 'coperto', etichetta: (n) => (n === 1 ? 'Coperto' : 'Coperti') },
 ];
-
-function Calendario() {
-  return (
-    <svg className={styles.icona} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-      <rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export function BloccoVerdetto({ verdetto, frase, conteggi, dispatch }: Props) {
   const forma = formaDelVerdetto(verdetto);
@@ -52,7 +44,8 @@ export function BloccoVerdetto({ verdetto, frase, conteggi, dispatch }: Props) {
           </p>
           {frase.situazione ? <p className={styles.situazione}>{frase.situazione}</p> : null}
         </div>
-        <dl className={styles.numeri} aria-label="Requisiti per stato">
+        {/* Un <dl> da solo non porta il nome: il ruolo di gruppo sì. */}
+        <dl className={styles.numeri} role="group" aria-label="Requisiti per stato">
           {NUMERI.map(({ stato, etichetta }) => (
             <div key={stato} className={`${styles.numero} ${styles[stato]}`}>
               <dt className="occhiello">{etichetta(conteggi[stato])}</dt>
@@ -70,7 +63,7 @@ export function BloccoVerdetto({ verdetto, frase, conteggi, dispatch }: Props) {
 
       {frase.scadenza ? (
         <p className={frase.scadenza.decorsa ? styles.decorsa : styles.scadenza}>
-          <Calendario />
+          <Calendario className={styles.icona} />
           <span>{frase.scadenza.testo}</span>
         </p>
       ) : null}
@@ -85,7 +78,7 @@ export function BloccoVerdetto({ verdetto, frase, conteggi, dispatch }: Props) {
               {frase.mosse.map((m, i) => (
                 <li key={i} className={styles.mossa}>
                   <span>{m.testo}</span>
-                  <button type="button" className={styles.prova} onClick={() => dispatch({ tipo: 'prova_rimedio', mossa: m.mossa })}>
+                  <button type="button" className={styles.prova} aria-label={`Prova: ${m.testo}`} onClick={() => dispatch({ tipo: 'prova_rimedio', mossa: m.mossa })}>
                     Prova
                   </button>
                 </li>

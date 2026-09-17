@@ -90,7 +90,7 @@ function quotaInput(soggetto: string, prestazione: string): HTMLInputElement {
 
 /** Tutto ciò che documenta una riga sta nell'espansione: si apre con Dettagli. */
 async function apri(user: ReturnType<typeof userEvent.setup>, requisitoId: string): Promise<HTMLElement> {
-  await user.click(within(riga(requisitoId)).getByRole('button', { name: 'Dettagli' }));
+  await user.click(within(riga(requisitoId)).getByRole('button', { name: /^Dettagli di / }));
   const dettagli = document.getElementById(`dettagli-${requisitoId}`);
   if (!dettagli) throw new Error(`Espansione ${requisitoId} non trovata`);
   return dettagli;
@@ -160,10 +160,10 @@ describe('schermata iniziale', () => {
     expect(quotaInput(OSPEDALIA, FORNITURA).value).toBe('33');
     expect(quotaInput(MEDIFARM, FORNITURA).value).toBe('33');
   });
-  it('dall’esito «Cambia gara» torna alla scelta senza ricaricare, e la scelta è ancora lì', async () => {
+  it('dall’esito «Torna alla scelta» torna indietro senza ricaricare, e la scelta è ancora lì', async () => {
     const user = userEvent.setup();
     await avvia();
-    await user.click(screen.getByRole('button', { name: 'Cambia gara' }));
+    await user.click(screen.getByRole('button', { name: '← Torna alla scelta' }));
     await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO);
     expect(screen.queryByRole('region', { name: 'Verdetto' })).toBeNull();
     expect(screen.getByRole('radio', { name: GARA_REALE })).toHaveProperty('checked', true);
@@ -285,14 +285,14 @@ describe('cornice: intestazione e piè di pagina', () => {
   /** L'intestazione, ridotta a ciò che contiene: deve essere la stessa in ogni schermata. */
   function contenutoIntestazione(): string[] {
     const intestazione = screen.getByRole('banner');
-    return [intestazione.textContent ?? '', ...within(intestazione).getAllByRole('button').map((b) => b.textContent ?? '')];
+    return [intestazione.textContent ?? '', ...within(intestazione).queryAllByRole('button').map((b) => b.textContent ?? '')];
   }
 
-  it('l’intestazione è la stessa in ogni schermata: il nome e «Cambia gara», nessuna gara', async () => {
+  it('l’intestazione è la stessa in ogni schermata: il marchio e nient’altro, nessuna gara', async () => {
     const user = userEvent.setup();
     await apriScelta();
     const nellaScelta = contenutoIntestazione();
-    expect(nellaScelta).toEqual(['Cato Valutazione RaggruppamentiCambia gara', 'Cambia gara']);
+    expect(nellaScelta).toEqual(['Cato Valutazione Raggruppamenti']);
 
     await scegli(user, [FARMALAZIO, OSPEDALIA], FARMALAZIO);
     await user.click(screen.getByRole('button', { name: 'Valuta il raggruppamento' }));
@@ -301,19 +301,25 @@ describe('cornice: intestazione e piè di pagina', () => {
     // La gara sta intera nel titolo della pagina, non troncata nell'intestazione.
     expect(screen.getByRole('heading', { level: 1, name: GARA_REALE })).toBeTruthy();
 
-    await user.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Cambia gara' }));
+    await user.click(screen.getByRole('button', { name: '← Torna alla scelta' }));
     await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO);
     await user.click(screen.getByRole('link', { name: /^Il formato che il motore si aspetta/ }));
     await screen.findByRole('heading', { name: 'Il formato dei requisiti strutturati' }, LENTO);
     expect(contenutoIntestazione()).toEqual(nellaScelta);
   });
-  it('sulla scelta «Cambia gara» porta alla gara scelta, con il fuoco', async () => {
+  it('il logo porta alla home: dall’intestazione e dal piè di pagina, senza buttare la scelta', async () => {
     const user = userEvent.setup();
-    await apriScelta();
-    await user.click(screen.getByRole('radio', { name: GARA_REALE }));
-    await user.click(screen.getByRole('checkbox', { name: inizia(OSPEDALIA) }));
-    await user.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Cambia gara' }));
-    expect(document.activeElement).toBe(screen.getByRole('radio', { name: GARA_REALE }));
+    await avvia();
+    const logoPie = within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Cato Valutazione Raggruppamenti' });
+    expect(logoPie.getAttribute('href')).toBe('/');
+    await user.click(logoPie);
+    await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO);
+    expect(screen.getByRole('radio', { name: GARA_REALE })).toHaveProperty('checked', true);
+
+    await user.click(screen.getByRole('link', { name: /^Il formato che il motore si aspetta/ }));
+    await screen.findByRole('heading', { name: 'Il formato dei requisiti strutturati' }, LENTO);
+    await user.click(within(screen.getByRole('banner')).getByRole('link', { name: 'Cato Valutazione Raggruppamenti' }));
+    expect(await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO)).toBeTruthy();
   });
   it('il piè di pagina dichiara il perimetro dai documenti, quello della rete e il repository', async () => {
     await apriScelta();
@@ -328,7 +334,7 @@ describe('cornice: intestazione e piè di pagina', () => {
 
 describe('tornare alla scelta non butta il lavoro', () => {
   async function tornaAllaScelta(user: Utente): Promise<void> {
-    await user.click(screen.getByRole('button', { name: 'Cambia gara' }));
+    await user.click(screen.getByRole('button', { name: '← Torna alla scelta' }));
     await screen.findByRole('heading', { name: TITOLO_SCELTA }, LENTO);
   }
   async function rientra(user: Utente): Promise<void> {
@@ -488,7 +494,7 @@ describe('pagina — il documento che non decide', () => {
   it('dichiara che il bando è vero e le imprese no, e mostra i tre modi in cui il bando scrive il valore stimato', async () => {
     await avvia();
     expect(screen.getByText('Bando reale: Disciplinare di gara ASL Roma 6, gara n. 9445747. Le imprese e i loro fascicoli sono di esempio, inventati.')).toBeTruthy();
-    expect(within(regione(/Fornitura di farmaci di fascia A e C/)).getByText(/il documento lo scrive in 3 modi/)).toBeTruthy();
+    expect(within(regione('Dati del bando e del lotto')).getByText(/il documento lo scrive in 3 modi/)).toBeTruthy();
     expect(screen.getByText(/Termine per i chiarimenti/)).toBeTruthy();
   });
   it('sulla riga della ISO convivono le due famiglie: in riga la ragione e la parola, nell’espansione tutto', async () => {
@@ -502,6 +508,24 @@ describe('pagina — il documento che non decide', () => {
     expect(within(dettagli).getByText(/Certificazione del sistema di gestione della qualità UNI EN ISO 9001:2015/)).toBeTruthy();
     expect(within(dettagli).getByRole('rowheader', { name: OSPEDALIA })).toBeTruthy();
   });
+  it('i dettagli si aprono in una card che si chiude con la X, e il fuoco torna su Dettagli', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    const bottone = within(riga('fatturato-globale')).getByRole('button', { name: /^Dettagli di / });
+    await apri(user, 'fatturato-globale');
+    expect(bottone.getAttribute('aria-expanded')).toBe('true');
+    await user.click(screen.getByRole('button', { name: 'Chiudi i dettagli di Fatturato globale' }));
+    expect(document.getElementById('dettagli-fatturato-globale')).toBeNull();
+    expect(bottone.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(bottone);
+  });
+  it('un rimedio da fare fuori dallo strumento lo dice prima del testo', async () => {
+    const user = userEvent.setup();
+    await avvia();
+    const dettagli = await apri(user, 'certificazione-qualita');
+    const chiarimenti = await within(dettagli).findByText(/^Chiedi chiarimenti alla stazione appaltante/, undefined, LENTO);
+    expect(chiarimenti.previousElementSibling?.textContent).toBe('da fare fuori dallo strumento');
+  });
   it('l’espansione del fatturato mostra le tre letture con il loro esito', async () => {
     const user = userEvent.setup();
     await avvia();
@@ -514,7 +538,7 @@ describe('pagina — il documento che non decide', () => {
     await avvia();
     const verdetto = regione('Verdetto');
     expect(await within(verdetto).findByText(/toglierebbero anche l'incertezza su «Fatturato globale»/, undefined, LENTO)).toBeTruthy();
-    const prove = within(verdetto).getAllByRole('button', { name: 'Prova' });
+    const prove = within(verdetto).getAllByRole('button', { name: /^Prova: / });
     await user.click(prove[prove.length - 1] as HTMLElement);
     await apriCoperti(user);
     expect(within(riga('fatturato-globale')).getByText('Coperto')).toBeTruthy();
@@ -561,7 +585,7 @@ describe('pagina — prove e annullamento', () => {
     const user = userEvent.setup();
     await avvia();
     const dettagli = await apri(user, 'fatturato-globale');
-    const prove = await within(dettagli).findAllByRole('button', { name: 'Prova' }, LENTO);
+    const prove = await within(dettagli).findAllByRole('button', { name: /^Prova: / }, LENTO);
     // L'ultima mossa applicabile è l'avvalimento di Grossfarma a favore della mandataria.
     await user.click(prove[prove.length - 1] as HTMLElement);
 
@@ -583,7 +607,7 @@ describe('pagina — prove e annullamento', () => {
     await avvia();
     expect(screen.queryByRole('region', { name: /Conviene di più/ })).toBeNull();
     const dettagli = await apri(user, 'fatturato-globale');
-    const prove = await within(dettagli).findAllByRole('button', { name: 'Prova' }, LENTO);
+    const prove = await within(dettagli).findAllByRole('button', { name: /^Prova: / }, LENTO);
     await user.click(prove[prove.length - 1] as HTMLElement);
     const confronto = await screen.findByRole('region', { name: /Conviene di più/ });
     expect(await within(confronto).findByText('Composizione attuale', undefined, LENTO)).toBeTruthy();
@@ -670,7 +694,7 @@ describe('pagina — membri e ausiliarie', () => {
     await avvia();
     const rigaMandataria = document.getElementById('membro-s-farmalazio');
     if (!rigaMandataria) throw new Error('riga della mandataria non trovata');
-    await user.click(within(rigaMandataria).getByRole('button', { name: 'Rimuovi' }));
+    await user.click(within(rigaMandataria).getByRole('button', { name: /^Rimuovi / }));
     expect(within(regione('Verdetto')).getByText('Il raggruppamento non ha una mandataria.')).toBeTruthy();
     expect(within(regione('Verdetto')).getByText('Non ammissibile')).toBeTruthy();
     // Senza mandataria le quote non totalizzano più il 100 %: due anomalie bloccanti, non una.

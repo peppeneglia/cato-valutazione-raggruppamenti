@@ -36,6 +36,7 @@ import {
   oggetto,
   testo,
   unione,
+  type CampoDi,
   type EsitoControllo,
   type Forma,
   type Validatore,
@@ -43,7 +44,7 @@ import {
 
 // ─── Intestazione ────────────────────────────────────────────
 
-export const VERSIONE_FORMATO = 1;
+const VERSIONE_FORMATO = 1;
 
 export const NOME_FORMATO = {
   bando: 'requisiti-strutturati',
@@ -86,7 +87,7 @@ export type Indice = {
 
 function formato<N extends string>(nome: N): Validatore<Formato<N>> {
   return oggetto<Formato<N>>({
-    nome: letterale(nome) as never,
+    nome: letterale(nome) as CampoDi<N>,
     versione: letterale(VERSIONE_FORMATO),
     descrizione: testo,
   });
@@ -99,11 +100,11 @@ const provenienza = oggetto<Provenienza>({ natura: letterale('reale', 'esempio')
 const fonte = oggetto<Fonte>({ documento: testo, riferimento: testo, pagina: facoltativo(numero) });
 
 function dato<T>(valore: Validatore<T>): Validatore<Dato<T>> {
-  return oggetto<Dato<T>>({ valore: valore as never, fonte });
+  return oggetto<Dato<T>>({ valore: valore as CampoDi<T>, fonte });
 }
 
 function fatto<T>(valore: Validatore<T>): Validatore<Fatto<T>> {
-  return oggetto<Fatto<T>>({ valore: valore as never, fonte, validoDa: facoltativo(testo), validoA: facoltativo(testo) });
+  return oggetto<Fatto<T>>({ valore: valore as CampoDi<T>, fonte, validoDa: facoltativo(testo), validoA: facoltativo(testo) });
 }
 
 const rinvio = oggetto<{ rinvio: string }>({ rinvio: testo });

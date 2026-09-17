@@ -5,7 +5,6 @@
 // Un documento che non si legge, non è JSON o non ha la forma giusta non
 // ferma gli altri: resta nell'elenco con i suoi errori.
 
-import type { Soggetto } from '../domain';
 import {
   controllaBando,
   controllaFascicoli,
@@ -154,9 +153,4 @@ export async function caricaRaccolta(scarica: Scarica, base: string): Promise<Ra
     })),
   ]);
   return { indice, bandi, fascicoli };
-}
-
-/** I soggetti di tutte le raccolte valide, nell'ordine dell'indice. */
-export function soggettiDi(fascicoli: Caricato<DocumentoFascicoli>[]): Soggetto[] {
-  return fascicoli.flatMap((f) => (f.stato === 'valido' ? f.documento.soggetti : []));
 }

@@ -30,11 +30,11 @@ export type Partecipante = {
   valore: ValoreContributo;
 };
 
-export type Conteggio = { soggettoId: SoggettoId; conteggiato: boolean; nota?: string };
+type Conteggio = { soggettoId: SoggettoId; conteggiato: boolean; nota?: string };
 
 export type MisurazioneGrezza = Omit<Misurazione, 'unita'>;
 
-export type EsitoOperatore = {
+type EsitoOperatore = {
   stato: StatoRequisito;
   conteggi: Conteggio[];
   /** Assente quando non c'è una regola che misuri: nessun numero è meglio di un numero inventato. */
@@ -72,10 +72,11 @@ function statoDi(copertura: Copertura, soglia: number): StatoRequisito {
   return 'scoperto';
 }
 
-const PESO: Record<StatoRequisito, number> = { coperto: 0, da_verificare: 1, scoperto: 2 };
+/** L'ordine dei tre stati, dal migliore al peggiore: chi confronta stati lo legge da qui. */
+export const PESO_STATO: Record<StatoRequisito, number> = { coperto: 0, da_verificare: 1, scoperto: 2 };
 
 function peggiore(stati: StatoRequisito[]): StatoRequisito {
-  return stati.reduce<StatoRequisito>((acc, s) => (PESO[s] > PESO[acc] ? s : acc), 'coperto');
+  return stati.reduce<StatoRequisito>((acc, s) => (PESO_STATO[s] > PESO_STATO[acc] ? s : acc), 'coperto');
 }
 
 /** "Almeno la frazione della soglia": si arrotonda per eccesso, mai per difetto. */

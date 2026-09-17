@@ -101,9 +101,11 @@ function sostituisci(raggruppamento: Raggruppamento, nuovo: Membro): Raggruppame
 }
 
 /**
- * Riduce il foglio di lavoro. Le azioni impossibili (membro inesistente,
+ * Riduce il foglio di lavoro. Le modifiche impossibili (membro inesistente,
  * quota fuori intervallo, storia vuota) restituiscono lo stesso oggetto:
- * niente snapshot, niente re-render.
+ * niente snapshot, niente re-render. La prova di una mossa invece entra
+ * sempre nella storia, anche se la composizione non cambia: è ciò che si è
+ * chiesto di vedere, e si annulla come ogni altro passo.
  */
 export function riduci(lavoro: Lavoro, azione: Azione, contesto: ContestoDescrizioni): Lavoro {
   switch (azione.tipo) {
@@ -229,7 +231,7 @@ function elencoNomi(nomi: string[]): string {
  * tornavano già prima restano come erano: le dice il motore, non si
  * correggono in silenzio.
  */
-export function riprendiLavoro(lavoro: Lavoro, prima: Ingresso, dopo: Ingresso, bando: Bando, contesto: ContestoDescrizioni): Lavoro {
+function riprendiLavoro(lavoro: Lavoro, prima: Ingresso, dopo: Ingresso, bando: Bando, contesto: ContestoDescrizioni): Lavoro {
   const entrate = dopo.imprese.filter((id) => !prima.imprese.includes(id));
   const uscite = prima.imprese.filter((id) => !dopo.imprese.includes(id));
   const raggruppamento = lavoro.raggruppamento;

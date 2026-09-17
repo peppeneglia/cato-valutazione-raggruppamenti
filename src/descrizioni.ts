@@ -12,7 +12,6 @@ import type {
   EsitoRequisito,
   EsitoVariante,
   FamigliaRequisito,
-  GravitaAnomalia,
   Indeterminatezza,
   Lotto,
   LottoId,
@@ -145,16 +144,6 @@ export function etichettaAssunzione(codice: CodiceAssunzione): string {
   }
 }
 
-export function etichettaGravita(gravita: GravitaAnomalia): string {
-  switch (gravita) {
-    case 'bloccante':
-      return 'Bloccante';
-    case 'segnalazione':
-      return 'Segnalazione';
-    default:
-      return assertNever(gravita);
-  }
-}
 
 // ─── Criteri ─────────────────────────────────────────────────
 
@@ -337,7 +326,7 @@ export function fraseMossa(mossa: RimedioApplicabile, contesto: ContestoDescrizi
   }
 }
 
-export type MossaProposta = { testo: string; mossa: RimedioApplicabile };
+type MossaProposta = { testo: string; mossa: RimedioApplicabile };
 
 export type FraseVerdetto = {
   /** "Ammissibile con riserva." — la parola dello stato, e il lotto se ce n'è più d'uno. */
@@ -612,6 +601,8 @@ export function descriviAnomalia(a: Anomalia, contesto: ContestoDescrizioni): st
       return `${soggetto(a.soggettoId)} è indicata come ausiliaria per ${requisito(a.requisitoId)}, che il disciplinare non dichiara avvalibile.`;
     case 'data_malformata':
       return a.origine === 'parametri' ? 'La data di riferimento non è una data valida.' : `Una data non è valida in ${a.dove}: «${a.valore}».`;
+    case 'esercizio_duplicato':
+      return `Nel fascicolo di ${soggetto(a.soggettoId)} il fatturato dell'esercizio ${a.esercizio} compare più di una volta: conta la prima voce.`;
     case 'periodo_invertito':
       return `Nel fascicolo di ${soggetto(a.soggettoId)} un periodo finisce prima di iniziare.`;
     case 'termine_presentazione_decorso':
@@ -649,6 +640,7 @@ export function bersaglioAnomalia(anomalia: Anomalia): BersaglioAnomalia | undef
     case 'membro_senza_quote':
     case 'avvalimento_su_requisito_non_avvalibile':
     case 'periodo_invertito':
+    case 'esercizio_duplicato':
       return { tipo: 'membro', id: anomalia.soggettoId };
     case 'quota_fuori_intervallo':
       return { tipo: 'membro', id: anomalia.soggettoId };
@@ -686,14 +678,17 @@ export function bersaglioAnomalia(anomalia: Anomalia): BersaglioAnomalia | undef
  */
 export function dichiarazioneDati(bando: Provenienza, fascicoli: Provenienza[]): string {
   const frase = bando.natura === 'reale' ? `Bando reale: ${bando.documento}.` : `Bando di esempio, inventato: ${bando.documento}.`;
-  const tutteEsempio = fascicoli.length > 0 && fascicoli.every((f) => f.natura === 'esempio');
-  const tutteReali = fascicoli.length > 0 && fascicoli.every((f) => f.natura === 'reale');
-  const imprese = tutteEsempio
-    ? 'Le imprese e i loro fascicoli sono di esempio, inventati.'
-    : tutteReali
-      ? 'Le imprese e i loro fascicoli sono reali.'
-      : 'Tra le imprese alcune sono reali e altre di esempio: lo dice la fonte di ogni fascicolo.';
-  return `${frase} ${imprese}`;
+  return `${frase} ${fraseImprese(fascicoli) ?? IMPRESE_MISTE}`;
+}
+
+const IMPRESE_MISTE = 'Tra le imprese alcune sono reali e altre di esempio: lo dice la fonte di ogni fascicolo.';
+
+/** Cosa sono le imprese, detto dalle provenienze dei fascicoli; `undefined` se non ce ne sono. */
+function fraseImprese(fascicoli: Provenienza[]): string | undefined {
+  if (fascicoli.length === 0) return undefined;
+  if (fascicoli.every((f) => f.natura === 'esempio')) return 'Le imprese e i loro fascicoli sono di esempio, inventati.';
+  if (fascicoli.every((f) => f.natura === 'reale')) return 'Le imprese e i loro fascicoli sono reali.';
+  return IMPRESE_MISTE;
 }
 
 // ─── Quote ───────────────────────────────────────────────────
@@ -739,14 +734,8 @@ export function perimetroDocumenti(bandi: Provenienza[], fascicoli: Provenienza[
   else if (bandi.length === 1) frase = reali.length === 1 ? `Il bando disponibile è reale: ${reali[0]!.documento}.` : `Il bando disponibile è di esempio, inventato: ${bandi[0]!.documento}.`;
   else if (esempio === 0) frase = `I ${bandi.length} bandi disponibili sono reali: ${reali.map((b) => b.documento).join('; ')}.`;
   else frase = `Dei ${bandi.length} bandi disponibili, ${reali.length === 1 ? '1 è reale' : `${reali.length} sono reali`} e ${esempio === 1 ? '1 è di esempio' : `${esempio} sono di esempio`}.`;
-  const imprese = fascicoli.length === 0
-    ? ''
-    : fascicoli.every((f) => f.natura === 'esempio')
-      ? ' Le imprese e i loro fascicoli sono di esempio, inventati.'
-      : fascicoli.every((f) => f.natura === 'reale')
-        ? ' Le imprese e i loro fascicoli sono reali.'
-        : ' Tra le imprese alcune sono reali e altre di esempio: lo dice la fonte di ogni fascicolo.';
-  return `${frase}${imprese}`;
+  const imprese = fraseImprese(fascicoli);
+  return imprese === undefined ? frase : `${frase} ${imprese}`;
 }
 
 /** "Un quesito", "Cinque quesiti": il numero in parole all'inizio di una frase. */

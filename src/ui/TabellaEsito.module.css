@@ -1,8 +1,8 @@
-/* I requisiti sono una card; dentro, la tabella resta una tabella. */
+/* I requisiti sono una card; dentro, una mini card per requisito. */
 .sezione {
   composes: card from './Card.module.css';
   display: grid;
-  gap: var(--sp-3);
+  gap: var(--sp-4);
 }
 
 .testata {
@@ -19,14 +19,14 @@
   flex-wrap: wrap;
   gap: 2px;
   padding: 3px;
-  border-radius: var(--raggio);
+  border-radius: var(--raggio-pillola);
   background: var(--c-superficie);
 }
 
 .segmento {
   padding: var(--sp-1) var(--sp-3);
   border: var(--spessore-bordo) solid transparent;
-  border-radius: var(--raggio-piccolo);
+  border-radius: var(--raggio-pillola);
   background: transparent;
   font-size: var(--testo-sm);
   font-weight: var(--peso-forte);
@@ -48,119 +48,175 @@
   font-variant-numeric: tabular-nums;
 }
 
-.nascosto {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+/* ─── Le mini card ─────────────────────────────────────────── */
+
+.elenco {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--sp-3);
 }
 
-.tabella {
-  table-layout: auto;
+.voce {
+  display: grid;
+  min-width: 0;
 }
 
-.tabella th,
-.tabella td {
-  padding: var(--sp-2) var(--sp-2);
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
-  vertical-align: top;
-  font-size: var(--testo-sm);
+/* In riga: Dettagli, requisito, quanto manca, stato. Stretto: stato e Dettagli sopra, il resto sotto. */
+.scheda {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'dettagli requisito stato'
+    'dettagli manca stato';
+  align-items: center;
+  gap: var(--sp-1) var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio-card);
+  background: var(--c-sfondo);
 }
 
-.tabella thead th {
-  color: var(--c-testo-tenue);
-  font-weight: var(--peso-normale);
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+@media (min-width: 900px) {
+  .scheda {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'dettagli requisito manca stato';
+  }
 }
 
-/* Terzo segnale di stato: il bordo sinistro cambia stile, non solo colore. */
-.riga > td:first-child {
-  border-left: var(--spessore-bordo-forte) solid transparent;
+@media (max-width: 599px) {
+  .scheda {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'dettagli stato'
+      'requisito requisito'
+      'manca manca';
+    gap: var(--sp-2);
+  }
+  .stato { justify-self: end; }
 }
 
-.coperto > td:first-child {
-  border-left-color: var(--c-coperto);
-  border-left-style: solid;
+/* Aperta, la mini card prende il bordo dell'elemento attivo; i dettagli stanno nella card subito sotto. */
+.schedaAperta {
+  border-color: var(--c-azione);
 }
 
-.scoperto > td:first-child {
-  border-left-color: var(--c-scoperto);
-  border-left-style: double;
-}
-
-.da_verificare > td:first-child {
-  border-left-color: var(--c-da-verificare);
-  border-left-style: dashed;
-}
-
-.stato {
-  white-space: nowrap;
-  width: 1%;
-}
-
-.requisito {
-  width: 100%;
-}
-
-.nome {
-  display: block;
-  font-size: var(--testo-base);
-  font-weight: var(--peso-forte);
-  color: var(--c-testo);
-}
-
-.ragione {
-  display: block;
-  color: var(--c-testo-tenue);
-  margin-top: 2px;
-}
-
-.chiarimenti,
-.daValutare {
-  font-weight: var(--peso-forte);
-}
-
-.chiarimenti {
-  color: var(--c-da-verificare);
-}
-
-.daValutare {
-  color: var(--c-testo);
-}
-
-.manca {
-  white-space: nowrap;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--c-scoperto);
-  font-weight: var(--peso-forte);
-}
-
-.da_verificare .manca {
-  color: var(--c-da-verificare);
-}
-
-.azioni {
-  white-space: nowrap;
-  text-align: right;
-  width: 1%;
+.voce:has(.cardDettagli) {
+  gap: var(--sp-2);
 }
 
 .dettagli {
   composes: secondario piccolo from './Bottoni.module.css';
+  grid-area: dettagli;
+  border-radius: var(--raggio-pillola);
 }
 
 .dettagli[aria-expanded='true'] {
-  background: var(--c-superficie);
+  background: var(--c-azione);
   border-color: var(--c-azione);
+  color: var(--c-azione-testo);
 }
 
-/* L'espansione: tutto ciò che documenta la riga. Stretto dentro, come una tabella. */
-.rigaEspansione > td {
-  padding: var(--sp-3) var(--sp-4) var(--sp-4) var(--sp-5);
+.requisito {
+  grid-area: requisito;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nome {
+  font-size: var(--testo-base);
+  font-weight: var(--peso-verdetto);
+  color: var(--c-titolo);
+}
+
+.ragione {
+  font-size: var(--testo-sm);
+  color: var(--c-testo-tenue);
+}
+
+/* Lo stato dice già il colore: l'azione resta nel colore del testo. */
+.azione {
+  font-weight: var(--peso-forte);
+  color: var(--c-testo);
+}
+
+.manca {
+  grid-area: manca;
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-forte);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-testo);
+}
+
+@media (min-width: 900px) {
+  .manca {
+    white-space: nowrap;
+    text-align: right;
+  }
+}
+
+.manca.scoperto {
+  color: var(--c-scoperto);
+}
+
+.stato {
+  grid-area: stato;
+}
+
+/* ─── La card dei dettagli ─────────────────────────────────── */
+
+.cardDettagli {
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio-card);
   background: var(--c-superficie);
+}
+
+@media (max-width: 599px) {
+  .cardDettagli {
+    padding-inline: var(--sp-4);
+  }
+}
+
+.testataDettagli {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.titoloDettagli {
+  display: grid;
+  gap: 2px;
+  font-size: var(--testo-titolo);
+  font-weight: var(--peso-verdetto);
+}
+
+/* La X in alto a destra: un cerchio, grande abbastanza da prenderlo col dito. */
+.chiudi {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 0;
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio-pillola);
+  background: var(--c-sfondo);
+  color: var(--c-titolo);
+}
+
+.chiudi:hover {
+  background: var(--c-bordo-tenue);
+}
+
+.iconaChiudi {
+  width: 16px;
+  height: 16px;
 }
 
 .espansione {
@@ -185,6 +241,7 @@
 .indeterminatezze {
   margin: 0;
   padding-left: var(--sp-4);
+  font-size: var(--testo-sm);
 }
 
 .documento {
@@ -195,15 +252,31 @@
   color: var(--c-testo);
 }
 
+/* I contributi per membro: una tabella dentro un riquadro arrotondato. */
+.membri {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio);
+  background: var(--c-sfondo);
+  overflow: hidden;
+}
+
 .membri th,
 .membri td {
-  padding: var(--sp-1) var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
   border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
-  background: var(--c-sfondo);
+  vertical-align: top;
+}
+
+.membri tr:last-child th,
+.membri tr:last-child td {
+  border-bottom: none;
 }
 
 .membri th {
   text-align: left;
+  font-size: var(--testo-sm);
   font-weight: var(--peso-forte);
   white-space: nowrap;
   width: 1%;
@@ -250,44 +323,8 @@
   color: var(--c-testo-tenue);
 }
 
-/* Stretto: la riga si impila. Stato e Dettagli sopra, requisito e quanto manca a tutta larghezza. */
+/* Stretto: anche la tabella dei membri si impila, il nome sopra, il contributo sotto. */
 @media (max-width: 699px) {
-  .tabella,
-  .tabella tbody {
-    display: block;
-  }
-
-  .tabella thead {
-    display: none;
-  }
-
-  .riga {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
-  }
-
-  .riga > td {
-    border-bottom: none;
-    width: auto;
-  }
-
-  .stato { grid-column: 1; grid-row: 1; }
-  .azioni { grid-column: 2; grid-row: 1; }
-  .requisito { grid-column: 1 / -1; padding-top: 0; }
-  .manca { grid-column: 1 / -1; text-align: left; padding-top: 0; white-space: normal; }
-  .manca:empty { display: none; }
-
-  .rigaEspansione,
-  .rigaEspansione > td {
-    display: block;
-  }
-
-  .rigaEspansione > td {
-    padding-inline: var(--sp-3);
-  }
-
-  /* Anche la tabella dei membri si impila: il nome sopra, il contributo sotto, e i nomi lunghi vanno a capo. */
   .membri,
   .membri tbody,
   .membri tr,
@@ -297,16 +334,22 @@
     width: auto;
   }
 
-  .membri tr {
-    padding-block: var(--sp-1);
-    border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
-  }
-
   .membri th,
   .membri td {
     border-bottom: none;
-    padding-block: 0;
     white-space: normal;
     overflow-wrap: anywhere;
+  }
+
+  .membri th {
+    padding-bottom: 0;
+  }
+
+  .membri tr {
+    border-bottom: var(--spessore-bordo) solid var(--c-bordo-tenue);
+  }
+
+  .membri tr:last-child {
+    border-bottom: none;
   }
 }

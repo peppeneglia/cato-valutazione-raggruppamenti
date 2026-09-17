@@ -3,15 +3,6 @@
   gap: var(--sp-3);
 }
 
-.gruppo {
-  display: grid;
-  gap: var(--sp-1);
-}
-
-
-.segnalazione { color: var(--c-testo-tenue); }
-
-.spiegazione,
 .vuoto {
   font-size: var(--testo-sm);
   color: var(--c-testo-tenue);
@@ -32,24 +23,8 @@
   align-items: baseline;
   padding: var(--sp-2) var(--sp-3);
   font-size: var(--testo-sm);
-  border-left: var(--spessore-bordo-forte) solid;
-}
-
-.bloccanteVoce {
-  border-left-color: var(--c-scoperto);
-  border-left-style: double;
-}
-
-.segnalazioneVoce {
-  background: var(--c-sfondo);
-  border-left-color: var(--c-testo-tenue);
-  border-left-style: dashed;
-}
-
-.codice {
-  font-variant-numeric: tabular-nums;
-  font-size: var(--testo-xs);
-  color: var(--c-testo-tenue);
+  border-radius: var(--raggio);
+  background: var(--c-superficie);
 }
 
 .link {

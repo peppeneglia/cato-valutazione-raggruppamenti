@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "Dato un bando pubblico con i suoi requisiti e un raggruppamento temporaneo di imprese con i rispettivi fascicoli, dice chi copre cosa, quanto manca e come diventare ammissibili.",
+  "engines": {
+    "node": ">=20.18"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -22,6 +26,7 @@
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^20.19.43",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",

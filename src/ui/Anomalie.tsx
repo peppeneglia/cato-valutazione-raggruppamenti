@@ -31,7 +31,7 @@ export function Anomalie({ anomalie, contesto }: { anomalie: Anomalia[]; contest
           {anomalie.map((a, i) => {
             const bersaglio = bersaglioAnomalia(a);
             return (
-              <li key={i} className={`${styles.anomalia} ${styles[`${a.gravita}Voce`]}`}>
+              <li key={i} className={styles.anomalia}>
                 <span>{descriviAnomalia(a, contesto)}</span>
                 {bersaglio ? <LinkBersaglio bersaglio={bersaglio} contesto={contesto} /> : null}
               </li>

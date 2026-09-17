@@ -551,6 +551,8 @@ export type DettaglioAnomalia =
   | { codice: 'avvalimento_su_requisito_non_avvalibile'; soggettoId: SoggettoId; requisitoId: RequisitoId }
   | { codice: 'data_malformata'; origine: 'parametri' | 'bando' | 'fascicolo'; dove: string; valore: string }
   | { codice: 'periodo_invertito'; soggettoId: SoggettoId; dove: string }
+  /** Due voci di fatturato per lo stesso esercizio e ambito: si conterebbero due volte, conta la prima. */
+  | { codice: 'esercizio_duplicato'; soggettoId: SoggettoId; dove: string; esercizio: number }
   | { codice: 'termine_presentazione_decorso'; terminePresentazione: DataISO }
   | { codice: 'vincolo_senza_prestazione_principale' }
   | {

@@ -23,17 +23,18 @@
   gap: var(--sp-1) var(--sp-3);
   align-items: baseline;
   padding: var(--sp-2) var(--sp-3);
-  background: var(--c-sfondo);
-  border-left: var(--spessore-bordo-forte) solid var(--c-testo-tenue);
+  border-radius: var(--raggio);
+  background: var(--c-superficie);
   font-size: var(--testo-sm);
 }
 
+/* Prima del termine è più grave: la tinta dello scoperto. L'etichetta in riga lo dice comunque a parole. */
 .primaDelTermine {
-  border-left-style: double;
+  background: var(--c-scoperto-tenue);
 }
 
 .entroOrizzonte {
-  border-left-style: dashed;
+  background: var(--c-da-verificare-tenue);
 }
 
 .etichetta {

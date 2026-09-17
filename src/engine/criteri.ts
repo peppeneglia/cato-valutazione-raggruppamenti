@@ -15,12 +15,13 @@ import type {
   Fatto,
   Fonte,
   Interpellato,
+  ParametriValutazione,
   Unita,
   ValoreContributo,
   VoceFascicolo,
 } from '../domain';
 import { formattaData, formattaEuro } from '../formato';
-import { annoDi, giorniTra, siSovrappongono, sottraiAnni, type Periodo } from './date';
+import { annoDi, dataValida, giorniTra, siSovrappongono, sottraiAnni, type Periodo } from './date';
 import { inCentesimi, type Centesimi } from './importi';
 import { coincidono, normalizza } from './testo';
 import { descriviVoce } from './voci';
@@ -32,6 +33,11 @@ export type ContestoCriterio = {
   /** L'unica data certa del bando: l'ancoraggio quando il documento non ne dichiara uno. */
   terminePresentazione: DataISO;
 };
+
+/** Le tre date che governano un criterio, lette una volta sola dai parametri. */
+export function contestoCriterioDi({ bando, dataRiferimento }: Pick<ParametriValutazione, 'bando' | 'dataRiferimento'>): ContestoCriterio {
+  return { dataRiferimento, dataPubblicazione: bando.dataPubblicazione, terminePresentazione: bando.terminePresentazione };
+}
 
 /** Il criterio su cui si calcola un contributo: un criterio non determinato non ha contributi. */
 export type CriterioValutabile = Exclude<CriterioRisolto, { tipo: 'non_determinato' }>;
@@ -295,7 +301,7 @@ function descriviAmbito(ambito: AmbitoFatturato): string {
 }
 
 /** "2020–2022" se contigui, altrimenti l'elenco. */
-export function descriviEsercizi(anni: number[]): string {
+function descriviEsercizi(anni: number[]): string {
   const ordinati = [...anni].sort((a, b) => a - b);
   const primo = ordinati[0];
   const ultimo = ordinati[ordinati.length - 1];
@@ -337,6 +343,11 @@ function valutaFatturato(
   for (const voce of fascicolo) {
     if (voce.tipo !== 'fatturato' || !ambitiCoincidono(criterio.ambito, voce.ambito)) continue;
     if (!richiesti.has(voce.esercizio)) continue;
+    // Un esercizio ripetuto è già un'anomalia della validazione: qui conta la prima voce e basta.
+    if (coperti.has(voce.esercizio)) {
+      note.push(`${descriviVoce(voce)}: esercizio ${voce.esercizio} già contato, voce ignorata`);
+      continue;
+    }
     certo += inCentesimi(voce.importo.valore);
     usati.push({ descrizione: descriviVoce(voce), fonte: voce.importo.fonte });
     coperti.add(voce.esercizio);
@@ -409,6 +420,11 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
   for (const voce of fascicolo) {
     if (voce.tipo !== 'servizio') continue;
     const periodo = voce.periodo.valore;
+    // Una data malformata è già un'anomalia della validazione: qui la voce non conta, e il motore non lancia.
+    if (!dataValida(periodo.da) || !dataValida(periodo.a)) {
+      note.push(`${descriviVoce(voce)}: periodo con una data malformata, non contato`);
+      continue;
+    }
     if (!siSovrappongono(periodo, finestra)) {
       fuoriFinestra.push(`«${voce.oggetto}» (${formattaData(periodo.da)} – ${formattaData(periodo.a)})`);
       if (ancoraggioAssunto && periodo.a < finestra.da) {
@@ -417,11 +433,16 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
       }
       continue;
     }
+    // Prima l'analogia, poi l'importo: un servizio non analogo si dichiara tale (e dichiara l'assunzione) anche se è sotto il minimo.
+    const classe = classificaCpv(voce.cpv, criterio);
+    if (classe === 'non_analogo') {
+      nonAnaloghi.push(`«${voce.oggetto}» (CPV ${voce.cpv})`);
+      continue;
+    }
     if (minimo !== undefined && inCentesimi(voce.importo) < minimo) {
       note.push(`${descriviVoce(voce)}: importo ${formattaEuro(voce.importo)} sotto il minimo unitario di ${formattaEuro(criterio.importoMinimoUnitario ?? 0)}`);
       continue;
     }
-    const classe = classificaCpv(voce.cpv, criterio);
     switch (classe) {
       case 'certo':
         usati.push({ descrizione: descriviVoce(voce), fonte: voce.periodo.fonte });
@@ -434,13 +455,10 @@ function valutaServizi(criterio: CriterioServizi, fascicolo: VoceFascicolo[], co
         // Se una fornitura del concorrente è analoga lo sa lui: la stazione appaltante non può rispondere al suo posto.
         giudizi.push({ oggetto: `analogia del CPV ${voce.cpv} con ${criterio.cpv} per «${voce.oggetto}»`, interpella: 'concorrente' });
         break;
-      case 'non_analogo':
-        nonAnaloghi.push(`«${voce.oggetto}» (CPV ${voce.cpv})`);
-        break;
       default:
         assertNever(classe);
     }
-    if (ancoraggioAssunto && classe !== 'non_analogo') {
+    if (ancoraggioAssunto) {
       const giorni = giorniTra(periodo.da, fine);
       if (!margineContate || giorni < margineContate.giorni) margineContate = { giorni, oggetto: voce.oggetto };
     }

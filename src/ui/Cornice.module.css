@@ -1,11 +1,14 @@
 /* Intestazione e piè di pagina sono card scure, allineate alla larghezza
-   della pagina e staccate dai bordi della finestra. */
+   della pagina e staccate dai bordi della finestra. Sono cornice, non
+   contenuto: il testo non si seleziona trascinando. */
 .intestazione,
 .pie {
   width: 100%;
   max-width: var(--larghezza-max);
   margin-inline: auto;
   padding-inline: var(--sp-5);
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 @media (max-width: 699px) {
@@ -15,9 +18,52 @@
   }
 }
 
+/* ─── Marchio ──────────────────────────────────────────────── */
+
+/* Il nome intero in una sola dimensione: un marchio, non un titolo con sottotitolo. */
+.marchio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  border-radius: var(--raggio);
+  color: var(--c-titolo);
+  text-decoration: none;
+}
+
+.marchio:hover .nome {
+  text-decoration: underline 2px;
+  text-underline-offset: 4px;
+}
+
+/* Il segno sta in un quadrato bianco, come il logo dell'app: si riconosce anche piccolo.
+   Il marchio è un'azione (porta alla home) e sta sempre nel contesto scuro: azione bianca, testo navy. */
+.logo {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: var(--raggio);
+  background: var(--c-azione);
+}
+
+.segno {
+  width: 18px;
+  height: 18px;
+  color: var(--c-azione-testo);
+}
+
+.nome {
+  font-size: var(--testo-marchio);
+  font-weight: var(--peso-verdetto);
+  line-height: 1.2;
+  letter-spacing: var(--spaziatura-titolo);
+}
+
 /* ─── Intestazione ─────────────────────────────────────────── */
 
-/* Resta in vista mentre si scorre un esito lungo: il comando per cambiare gara è sempre a portata. */
+/* Resta in vista mentre si scorre un esito lungo: la home è sempre a un clic. */
 .intestazione {
   position: sticky;
   top: 0;
@@ -28,59 +74,8 @@
 .barra {
   composes: scura from './Card.module.css';
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--sp-2) var(--sp-4);
-  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
-}
-
-.marchio {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-width: 0;
-}
-
-/* Il segno sta in un quadrato bianco, come il logo dell'app: si riconosce anche piccolo. */
-.logo {
-  display: inline-grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  flex: none;
-  border-radius: var(--raggio-piccolo);
-  background: #FFFFFF;
-}
-
-.segno {
-  width: 16px;
-  height: 16px;
-  color: var(--c-navy);
-}
-
-.nome {
-  font-size: var(--testo-titolo);
-  font-weight: var(--peso-verdetto);
-  letter-spacing: var(--spaziatura-titolo);
-  color: var(--c-titolo);
-}
-
-.prodotto {
-  font-size: var(--testo-sm);
-  color: var(--c-testo-tenue);
-  white-space: pre;
-}
-
-@media (max-width: 459px) {
-  .prodotto {
-    white-space: normal;
-  }
-}
-
-/* Sul navy l'azione piena è bianca: il comando si vede senza cercarlo. */
-.cambia {
-  composes: primario piccolo from './Bottoni.module.css';
-  margin-left: auto;
+  padding: var(--sp-3) var(--sp-4);
 }
 
 /* ─── Piè di pagina ────────────────────────────────────────── */
@@ -93,8 +88,7 @@
 .pannello {
   composes: scura from './Card.module.css';
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-5) var(--sp-6);
+  gap: var(--sp-5);
   padding: var(--sp-6);
   font-size: var(--testo-sm);
   color: var(--c-testo-tenue);
@@ -106,13 +100,24 @@
   }
 }
 
+.testataPie {
+  padding-bottom: var(--sp-5);
+  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
+}
+
+.colonne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5) var(--sp-6);
+}
+
 @media (min-width: 900px) {
-  .pannello {
+  .colonne {
     grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 2fr);
   }
 }
 
-.pannello section {
+.colonne section {
   display: grid;
   gap: var(--sp-2);
   align-content: start;

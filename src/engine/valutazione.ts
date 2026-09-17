@@ -6,32 +6,39 @@
 // data) manca dall'esito per la stessa ragione.
 
 import type { Anomalia, Esito, ParametriValutazione, RequisitoId } from '../domain';
+import { contestoCriterioDi } from './criteri';
 import { dataValida } from './date';
 import { indicizza, trovaLotto } from './indici';
 import { valutaRequisito, type FattoScadutoDi, type FattoUsatoDa, type MemoCriteri } from './requisito';
 import { avvisiScadenza } from './scadenze';
-import { anomalieFascicoli, anomalieStrutturali } from './validazione';
+import { anomalieDocumento, anomalieFascicoli, anomalieStrutturali, type AnomalieDocumento } from './validazione';
 import { variantiDi, type MemoVarianti } from './varianti';
 import { calcolaVerdetto } from './verdetto';
 
 export type EsitoBase = Omit<Esito, 'percorsoMinimo'>;
 
-export type Valutazione = { esito: EsitoBase; scaduti: Map<RequisitoId, FattoScadutoDi[]> };
+type Valutazione = { esito: EsitoBase; scaduti: Map<RequisitoId, FattoScadutoDi[]> };
 
 /**
  * Ciò che non dipende dal raggruppamento e che la ricerca dei rimedi
  * ricalcolerebbe a ogni stato. Vale per un solo insieme di soggetti:
  * chi cambia i fascicoli (rinnovo simulato) non deve riusarla.
  */
-export type Memo = { criteri: MemoCriteri; varianti: MemoVarianti; anomalieFascicoli: Anomalia[] };
+export type Memo = { criteri: MemoCriteri; varianti: MemoVarianti; anomalieFascicoli: Anomalia[]; anomalieDocumento: AnomalieDocumento };
 
 export function creaMemo(parametri: ParametriValutazione): Memo {
-  return { criteri: new Map(), varianti: new Map(), anomalieFascicoli: anomalieFascicoli(parametri.soggetti) };
+  const varianti: MemoVarianti = new Map();
+  return {
+    criteri: new Map(),
+    varianti,
+    anomalieFascicoli: anomalieFascicoli(parametri.soggetti),
+    anomalieDocumento: anomalieDocumento(parametri, varianti),
+  };
 }
 
 export function valutazione(parametri: ParametriValutazione, memo?: Memo): Valutazione {
   const { bando, lottoId, soggetti, raggruppamento, dataRiferimento, orizzonteScadenzeGiorni } = parametri;
-  const anomalie = anomalieStrutturali(parametri, memo?.anomalieFascicoli);
+  const anomalie = anomalieStrutturali(parametri, memo ? { documento: memo.anomalieDocumento, fascicoli: memo.anomalieFascicoli, varianti: memo.varianti } : {});
   const lotto = trovaLotto(bando, lottoId);
   const dateValide =
     dataValida(dataRiferimento) &&
@@ -47,7 +54,7 @@ export function valutazione(parametri: ParametriValutazione, memo?: Memo): Valut
     prestazioni: indicizza(lotto.prestazioni),
     soggetti: indicizza(soggetti),
     raggruppamento,
-    criterio: { dataRiferimento, dataPubblicazione: bando.dataPubblicazione, terminePresentazione: bando.terminePresentazione },
+    criterio: contestoCriterioDi(parametri),
     memo: memo?.criteri,
   };
 

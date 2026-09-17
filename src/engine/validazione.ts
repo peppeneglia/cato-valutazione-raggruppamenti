@@ -17,10 +17,10 @@ import type {
 } from '../domain';
 import { formattaData, formattaPercentuale } from '../formato';
 import { confrontaDate, dataValida } from './date';
-import { indicizza, trovaLotto } from './indici';
+import { indicizza, senzaDuplicati, trovaLotto } from './indici';
 import { ausiliarieDi, esecutoriDi, mandatarieDi } from './membri';
 import { quotaAlmeno, quotaValida, quoteAzzerate, quoteTotalizzano, sommaQuote } from './quote';
-import { varianti } from './varianti';
+import { variantiDi, type MemoVarianti } from './varianti';
 import { descriviVoce, fattoDiVoce } from './voci';
 
 function gravitaDi(dettaglio: DettaglioAnomalia): GravitaAnomalia {
@@ -48,6 +48,7 @@ function gravitaDi(dettaglio: DettaglioAnomalia): GravitaAnomalia {
       return dettaglio.origine === 'fascicolo' ? 'segnalazione' : 'bloccante';
     case 'membro_senza_quote':
     case 'periodo_invertito':
+    case 'esercizio_duplicato':
     case 'termine_presentazione_decorso':
       return 'segnalazione';
     default:
@@ -83,6 +84,8 @@ function messaggioDi(dettaglio: DettaglioAnomalia): string {
       return `${dettaglio.soggettoId} è indicata come ausiliaria per il requisito ${dettaglio.requisitoId}, che il disciplinare non dichiara avvalibile.`;
     case 'data_malformata':
       return `Data malformata in ${dettaglio.dove}: «${dettaglio.valore}» (atteso AAAA-MM-GG).`;
+    case 'esercizio_duplicato':
+      return `In ${dettaglio.dove} l'esercizio ${dettaglio.esercizio} compare più di una volta: conta la prima voce.`;
     case 'periodo_invertito':
       return `Periodo con inizio successivo alla fine in ${dettaglio.dove} (${dettaglio.soggettoId}).`;
     case 'termine_presentazione_decorso':
@@ -274,7 +277,7 @@ function controlliCriterio(criterio: Criterio, prefisso: string): Controllo[] {
     case 'fatturato':
       switch (criterio.periodo.tipo) {
         case 'a_ritroso':
-          controlli.push({ parametro: `${prefisso}.periodo.esercizi`, valore: criterio.periodo.esercizi, valido: positivo });
+          controlli.push({ parametro: `${prefisso}.periodo.esercizi`, valore: criterio.periodo.esercizi, valido: interoPositivo });
           break;
         case 'esercizi':
           controlli.push({ parametro: `${prefisso}.periodo.anni`, valore: criterio.periodo.anni.length, valido: positivo });
@@ -286,13 +289,13 @@ function controlliCriterio(criterio: Criterio, prefisso: string): Controllo[] {
       controlli.push({ parametro: `${prefisso}.soglia`, valore: numerico(criterio.soglia), valido: positivo });
       break;
     case 'servizi':
-      controlli.push({ parametro: `${prefisso}.anni`, valore: criterio.anni, valido: positivo });
-      controlli.push({ parametro: `${prefisso}.numeroMinimo`, valore: criterio.numeroMinimo, valido: positivo });
+      controlli.push({ parametro: `${prefisso}.anni`, valore: criterio.anni, valido: interoPositivo });
+      controlli.push({ parametro: `${prefisso}.numeroMinimo`, valore: criterio.numeroMinimo, valido: interoPositivo });
       controlli.push({ parametro: `${prefisso}.importoMinimoUnitario`, valore: numerico(criterio.importoMinimoUnitario), valido: nonNegativo });
       controlli.push({ parametro: `${prefisso}.cifreCpvComuni`, valore: criterio.cifreCpvComuni, valido: interoPositivo });
       break;
     case 'servizi_importo':
-      controlli.push({ parametro: `${prefisso}.anni`, valore: criterio.anni, valido: positivo });
+      controlli.push({ parametro: `${prefisso}.anni`, valore: criterio.anni, valido: interoPositivo });
       controlli.push({ parametro: `${prefisso}.soglia`, valore: numerico(criterio.soglia), valido: positivo });
       controlli.push({ parametro: `${prefisso}.importoMinimoUnitario`, valore: numerico(criterio.importoMinimoUnitario), valido: nonNegativo });
       controlli.push({ parametro: `${prefisso}.cifreCpvComuni`, valore: criterio.cifreCpvComuni, valido: interoPositivo });
@@ -347,13 +350,13 @@ function ePossesso(criterio: Criterio): boolean {
   }
 }
 
-function anomalieRequisiti(lotto: Lotto, bando: Bando): Anomalia[] {
+function anomalieRequisiti(lotto: Lotto, bando: Bando, memoVarianti?: MemoVarianti): Anomalia[] {
   const prestazioni = indicizza(lotto.prestazioni);
   const anomalie: Anomalia[] = [];
   for (const requisito of lotto.requisiti) {
     const { regola } = requisito;
     anomalie.push(...anomalieParametri(requisito));
-    anomalie.push(...varianti(requisito, bando).anomalie.map(creaAnomalia));
+    anomalie.push(...variantiDi(requisito, bando, memoVarianti).anomalie.map(creaAnomalia));
     switch (regola.tipo) {
       case 'somma_membri':
         if (requisito.letture.some((l) => ePossesso(l.criterio))) {
@@ -430,45 +433,67 @@ function anomalieVoce(soggetto: Soggetto, voce: VoceFascicolo): Anomalia[] {
   return anomalie;
 }
 
-/** Non dipende dal raggruppamento: la ricerca dei rimedi la calcola una volta sola. */
-export function anomalieFascicoli(soggetti: Soggetto[]): Anomalia[] {
-  return soggetti.flatMap((s) => s.fascicolo.flatMap((v) => anomalieVoce(s, v)));
+/** Lo stesso esercizio due volte nello stesso ambito: il criterio conterebbe due volte lo stesso anno. */
+function anomalieEserciziDuplicati(soggetto: Soggetto): Anomalia[] {
+  const visti = new Set<string>();
+  const anomalie: Anomalia[] = [];
+  for (const voce of soggetto.fascicolo) {
+    if (voce.tipo !== 'fatturato') continue;
+    const chiave = `${JSON.stringify(voce.ambito)} ${voce.esercizio}`;
+    if (visti.has(chiave)) {
+      anomalie.push(creaAnomalia({ codice: 'esercizio_duplicato', soggettoId: soggetto.id, dove: `${soggetto.denominazione} · ${descriviVoce(voce)}`, esercizio: voce.esercizio }));
+    }
+    visti.add(chiave);
+  }
+  return anomalie;
 }
 
-/** La stessa anomalia rilevata da più punti (es. per ogni membro) si riporta una volta. */
-function senzaDuplicati(anomalie: Anomalia[]): Anomalia[] {
-  const viste = new Set<string>();
-  return anomalie.filter((a) => {
-    const chiave = JSON.stringify(a);
-    if (viste.has(chiave)) return false;
-    viste.add(chiave);
-    return true;
-  });
+/** Non dipende dal raggruppamento: la ricerca dei rimedi la calcola una volta sola. */
+export function anomalieFascicoli(soggetti: Soggetto[]): Anomalia[] {
+  return soggetti.flatMap((s) => [...s.fascicolo.flatMap((v) => anomalieVoce(s, v)), ...anomalieEserciziDuplicati(s)]);
 }
+
+/** Le anomalie del bando e del lotto: non dipendono dal raggruppamento. */
+export type AnomalieDocumento = { bando: Anomalia[]; prestazioni: Anomalia[]; requisiti: Anomalia[] };
+
+/** Calcolate una volta sola dalla ricerca dei rimedi, che rivaluta lo stesso lotto a ogni stato. */
+export function anomalieDocumento(parametri: ParametriValutazione, memoVarianti?: MemoVarianti): AnomalieDocumento {
+  const lotto = trovaLotto(parametri.bando, parametri.lottoId);
+  return {
+    bando: [...anomalieIdentificativi(parametri.bando), ...anomalieValori(parametri.bando)],
+    prestazioni: lotto ? anomaliePrestazioni(lotto) : [],
+    requisiti: lotto ? anomalieRequisiti(lotto, parametri.bando, memoVarianti) : [],
+  };
+}
+
+/** Ciò che non cambia con il raggruppamento e che chi rivaluta molte volte può passare già calcolato. */
+export type Precalcolate = { documento?: AnomalieDocumento; fascicoli?: Anomalia[]; varianti?: MemoVarianti };
 
 /**
  * Tutte le anomalie strutturali dell'input. I controlli che dipendono dal
  * lotto vengono saltati se il lotto non esiste: quella è già un'anomalia.
  */
-export function anomalieStrutturali(parametri: ParametriValutazione, fascicoliPrecalcolate?: Anomalia[]): Anomalia[] {
-  return senzaDuplicati(raccogliAnomalie(parametri, fascicoliPrecalcolate ?? anomalieFascicoli(parametri.soggetti)));
+export function anomalieStrutturali(parametri: ParametriValutazione, precalcolate: Precalcolate = {}): Anomalia[] {
+  const documento = precalcolate.documento ?? anomalieDocumento(parametri, precalcolate.varianti);
+  const fascicoli = precalcolate.fascicoli ?? anomalieFascicoli(parametri.soggetti);
+  // La stessa anomalia rilevata da più punti (es. per ogni membro) si riporta una volta.
+  return senzaDuplicati(raccogliAnomalie(parametri, documento, fascicoli));
 }
 
-function raccogliAnomalie(parametri: ParametriValutazione, anomalieDeiFascicoli: Anomalia[]): Anomalia[] {
+function raccogliAnomalie(parametri: ParametriValutazione, documento: AnomalieDocumento, anomalieDeiFascicoli: Anomalia[]): Anomalia[] {
   const lotto = trovaLotto(parametri.bando, parametri.lottoId);
   const anomalie = [
     ...anomalieDate(parametri),
-    ...anomalieIdentificativi(parametri.bando),
-    ...anomalieValori(parametri.bando),
+    ...documento.bando,
     ...(lotto ? [] : [creaAnomalia({ codice: 'riferimento_inesistente', entita: 'lotto', id: parametri.lottoId })]),
     ...anomalieMembri(parametri),
   ];
   if (lotto) {
     anomalie.push(
-      ...anomaliePrestazioni(lotto),
+      ...documento.prestazioni,
       ...anomalieQuote(parametri, lotto),
       ...anomalieAvvalimenti(parametri, lotto),
-      ...anomalieRequisiti(lotto, parametri.bando),
+      ...documento.requisiti,
       ...anomalieVincolo(parametri, lotto),
     );
   }

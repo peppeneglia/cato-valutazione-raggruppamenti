@@ -43,7 +43,10 @@ export function AggiungiAusiliaria({ lotto, raggruppamento, soggetti, contesto, 
       onSubmit={(e) => {
         e.preventDefault();
         if (!ausiliaria || !ausiliata) return;
-        dispatch({ tipo: 'aggiungi_ausiliaria', soggettoId: ausiliaria.id, ausiliataId: ausiliata.soggettoId, requisitiIds });
+        // Solo i requisiti di questo lotto: una spunta rimasta da un altro lotto non entra nell'avvalimento.
+        const scelti = requisitiIds.filter((id) => avvalibili.some((r) => r.id === id));
+        if (scelti.length === 0) return;
+        dispatch({ tipo: 'aggiungi_ausiliaria', soggettoId: ausiliaria.id, ausiliataId: ausiliata.soggettoId, requisitiIds: scelti });
         setRequisitiIds([]);
       }}
     >

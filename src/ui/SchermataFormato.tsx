@@ -3,7 +3,7 @@
 // dagli stessi validatori che controllano i file, così non può divergere —
 // poi un estratto vero con le note, e sotto il file completo.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { estratto, stampaCompatta } from '../documenti/estratto';
 import { FORMA_BANDO, FORMA_FASCICOLI } from '../documenti/formato';
 import type { Scarica } from '../documenti/carica';
@@ -37,46 +37,104 @@ function inParole(forma: Forma): string {
   }
 }
 
-/**
- * Le forme già scritte per intero, per chiave strutturale: la seconda volta
- * che compare la stessa forma (una fonte, un dato con la sua fonte) si
- * richiama per nome invece di ripeterla, e la struttura vera resta visibile.
- */
-type Visti = Map<string, string>;
+type Oggetto = Extract<Forma, { tipo: 'oggetto' }>;
 
-function Sotto({ forma, visti }: { forma: Forma; visti: Visti }) {
-  const interna = forma.tipo === 'elenco' ? forma.di : forma;
-  if (interna.tipo === 'oggetto') return <Campi forma={interna} visti={visti} />;
-  if (interna.tipo === 'unione') {
-    return (
-      <ul className={styles.albero}>
-        {interna.varianti.map((v) => (
-          <li key={v.valore}>
-            <details className={styles.variante}>
-              <summary><code>{interna.chiave}: «{v.valore}»</code></summary>
-              {v.forma.tipo === 'oggetto' ? <Campi forma={{ ...v.forma, campi: v.forma.campi.filter((c) => c.nome !== interna.chiave) }} visti={visti} /> : null}
-            </details>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  if (interna.tipo === 'alternativa') {
-    const oggetto = interna.opzioni.find((o) => o.tipo === 'oggetto');
-    return oggetto ? <Campi forma={oggetto as Extract<Forma, { tipo: 'oggetto' }>} visti={visti} /> : null;
-  }
-  return null;
+/**
+ * I rimandi: per ogni campo (identificato dal suo percorso nell'albero) il
+ * nome del campo che ha già scritto per intero la stessa forma. La seconda
+ * volta che compare la stessa forma (una fonte, un dato con la sua fonte)
+ * si richiama per nome invece di ripeterla, e la struttura vera resta
+ * visibile. Si calcola prima di disegnare, visitando l'albero nello stesso
+ * ordine in cui viene disegnato: il rendering non tiene stato, e in
+ * StrictMode produce lo stesso albero.
+ */
+type Rimandi = ReadonlyMap<string, string>;
+
+function percorsoDi(sopra: string, nome: string): string {
+  return `${sopra}/${nome}`;
 }
 
-function Campi({ forma, visti }: { forma: Extract<Forma, { tipo: 'oggetto' }>; visti: Visti }) {
+function chiaveStrutturale(forma: Forma): string | undefined {
+  const interna = forma.tipo === 'elenco' ? forma.di : forma;
+  return interna.tipo === 'oggetto' && interna.campi.length > 1 ? JSON.stringify(interna) : undefined;
+}
+
+/** L'oggetto che si apre sotto una forma, se ce n'è uno; le varianti di un'unione si aprono una per una. */
+function sottoForma(forma: Forma): { oggetto: Oggetto } | { unione: Extract<Forma, { tipo: 'unione' }> } | undefined {
+  const interna = forma.tipo === 'elenco' ? forma.di : forma;
+  if (interna.tipo === 'oggetto') return { oggetto: interna };
+  if (interna.tipo === 'unione') return { unione: interna };
+  if (interna.tipo === 'alternativa') {
+    const oggetto = interna.opzioni.find((o): o is Oggetto => o.tipo === 'oggetto');
+    return oggetto ? { oggetto } : undefined;
+  }
+  return undefined;
+}
+
+function senzaChiave(unione: Extract<Forma, { tipo: 'unione' }>, variante: Oggetto): Oggetto {
+  return { ...variante, campi: variante.campi.filter((c) => c.nome !== unione.chiave) };
+}
+
+function raccogliRimandi(radice: Forma): Rimandi {
+  const visti = new Map<string, string>();
+  const rimandi = new Map<string, string>();
+  const visitaCampi = (oggetto: Oggetto, sopra: string) => {
+    for (const c of oggetto.campi) {
+      const percorso = percorsoDi(sopra, c.nome);
+      const chiave = chiaveStrutturale(c.forma);
+      if (chiave) {
+        const gia = visti.get(chiave);
+        if (gia) {
+          rimandi.set(percorso, gia);
+          continue;
+        }
+        visti.set(chiave, c.nome);
+      }
+      visitaSotto(c.forma, percorso);
+    }
+  };
+  const visitaSotto = (forma: Forma, sopra: string) => {
+    const sotto = sottoForma(forma);
+    if (!sotto) return;
+    if ('oggetto' in sotto) {
+      visitaCampi(sotto.oggetto, sopra);
+      return;
+    }
+    for (const v of sotto.unione.varianti) {
+      if (v.forma.tipo === 'oggetto') visitaCampi(senzaChiave(sotto.unione, v.forma), percorsoDi(sopra, v.valore));
+    }
+  };
+  if (radice.tipo === 'oggetto') visitaCampi(radice, '');
+  return rimandi;
+}
+
+type PropsAlbero = { rimandi: Rimandi; sopra: string };
+
+function Sotto({ forma, rimandi, sopra }: { forma: Forma } & PropsAlbero) {
+  const sotto = sottoForma(forma);
+  if (!sotto) return null;
+  if ('oggetto' in sotto) return <Campi forma={sotto.oggetto} rimandi={rimandi} sopra={sopra} />;
+  return (
+    <ul className={styles.albero}>
+      {sotto.unione.varianti.map((v) => (
+        <li key={v.valore}>
+          <details className={styles.variante}>
+            <summary><code>{sotto.unione.chiave}: «{v.valore}»</code></summary>
+            {v.forma.tipo === 'oggetto' ? <Campi forma={senzaChiave(sotto.unione, v.forma)} rimandi={rimandi} sopra={percorsoDi(sopra, v.valore)} /> : null}
+          </details>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Campi({ forma, rimandi, sopra }: { forma: Oggetto } & PropsAlbero) {
   if (forma.campi.length === 0) return null;
   return (
     <ul className={styles.albero}>
       {forma.campi.map((c) => {
-        const interna = c.forma.tipo === 'elenco' ? c.forma.di : c.forma;
-        const chiave = interna.tipo === 'oggetto' && interna.campi.length > 1 ? JSON.stringify(interna) : undefined;
-        const gia = chiave ? visti.get(chiave) : undefined;
-        if (chiave && !gia) visti.set(chiave, c.nome);
+        const percorso = percorsoDi(sopra, c.nome);
+        const gia = rimandi.get(percorso);
         return (
           <li key={c.nome}>
             <span className={styles.campo}>
@@ -84,12 +142,18 @@ function Campi({ forma, visti }: { forma: Extract<Forma, { tipo: 'oggetto' }>; v
               {c.facoltativo ? <span className={styles.facoltativo}>facoltativo</span> : null}
               <span className={styles.tipo}>{inParole(c.forma)}{gia ? `, come «${gia}» sopra` : ''}</span>
             </span>
-            {gia ? null : <Sotto forma={c.forma} visti={visti} />}
+            {gia ? null : <Sotto forma={c.forma} rimandi={rimandi} sopra={percorso} />}
           </li>
         );
       })}
     </ul>
   );
+}
+
+/** La forma di un documento, ad albero, con i rimandi già calcolati. */
+function Albero({ forma }: { forma: Forma }) {
+  const rimandi = useMemo(() => raccogliRimandi(forma), [forma]);
+  return forma.tipo === 'oggetto' ? <Campi forma={forma} rimandi={rimandi} sopra="" /> : null;
 }
 
 function useTesto(url: string | undefined, scarica: Scarica): { stato: 'attesa' } | { stato: 'pronto'; testo: string } | { stato: 'errore' } {
@@ -158,7 +222,7 @@ export function SchermataFormato({ esempioBando, esempioFascicoli, scarica, onTo
       <section className={styles.card} aria-labelledby="titolo-forma-bando">
         <h2 id="titolo-forma-bando">La forma di un bando</h2>
         <p className={styles.tenue}>Generata dagli stessi controlli che leggono i file: quello che c'è scritto qui è quello che il controllo pretende.</p>
-        {FORMA_BANDO.tipo === 'oggetto' ? <Campi forma={FORMA_BANDO} visti={new Map()} /> : null}
+        <Albero forma={FORMA_BANDO} />
       </section>
 
       <section className={styles.card} aria-labelledby="titolo-estratto">
@@ -176,7 +240,7 @@ export function SchermataFormato({ esempioBando, esempioFascicoli, scarica, onTo
         </p>
         <details className={styles.completo}>
           <summary>La forma dei fascicoli</summary>
-          {FORMA_FASCICOLI.tipo === 'oggetto' ? <Campi forma={FORMA_FASCICOLI} visti={new Map()} /> : null}
+          <Albero forma={FORMA_FASCICOLI} />
         </details>
         {esempioFascicoli ? <a className={styles.link} href={esempioFascicoli.url} target="_blank" rel="noreferrer">Apri un esempio: {esempioFascicoli.documento}</a> : null}
       </section>

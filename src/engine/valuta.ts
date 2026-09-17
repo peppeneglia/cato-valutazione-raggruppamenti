@@ -1,5 +1,6 @@
 // La funzione pura completa: valutazione, rimedi per requisito, percorso minimo.
 
+import { assertNever } from '../assertNever';
 import type { Miglioramento, Rimedio, RimedioApplicabile, RequisitoId, Valuta } from '../domain';
 import { trovaLotto } from './indici';
 import { percorsoMinimo } from './percorso';
@@ -7,8 +8,21 @@ import { rimediPerRequisito } from './rimedi';
 import { eBloccante } from './validazione';
 import { creaMemo, valutazione } from './valutazione';
 
+/** Esaustivo: un nuovo tipo di rimedio deve dichiarare qui se è una mossa applicabile. */
 function eApplicabile(rimedio: Rimedio): rimedio is RimedioApplicabile {
-  return rimedio.tipo === 'riassegna_quota' || rimedio.tipo === 'uscita_soggetto' || rimedio.tipo === 'ingresso_soggetto' || rimedio.tipo === 'avvalimento';
+  switch (rimedio.tipo) {
+    case 'riassegna_quota':
+    case 'uscita_soggetto':
+    case 'ingresso_soggetto':
+    case 'avvalimento':
+      return true;
+    case 'profilo_mancante':
+    case 'rinnovo_documento':
+    case 'richiesta_chiarimenti':
+      return false;
+    default:
+      return assertNever(rimedio);
+  }
 }
 
 /**

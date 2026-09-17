@@ -12,6 +12,7 @@
 import { assertNever } from '../assertNever';
 import type { Bando, Criterio, CriterioRisolto, Dato, DettaglioAnomalia, Importo, Requisito, RequisitoId } from '../domain';
 import { formattaEuro } from '../formato';
+import { senzaDuplicati } from './indici';
 
 export type CandidatoScelto = { nome: string; indice: number; valore: Dato<number> };
 
@@ -150,16 +151,6 @@ function etichettaDi(requisito: Requisito, lettura: number, candidati: Candidato
 }
 
 // ─── Risoluzione ─────────────────────────────────────────────
-
-function senzaDuplicati(anomalie: DettaglioAnomalia[]): DettaglioAnomalia[] {
-  const viste = new Set<string>();
-  return anomalie.filter((a) => {
-    const chiave = JSON.stringify(a);
-    if (viste.has(chiave)) return false;
-    viste.add(chiave);
-    return true;
-  });
-}
 
 /**
  * Tutte le varianti del requisito, oppure le anomalie che impediscono di

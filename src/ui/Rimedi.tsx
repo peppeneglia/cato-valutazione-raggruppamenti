@@ -20,13 +20,19 @@ export function Rimedi({ rimedi, contesto, dispatch }: Props) {
     <ul className={styles.elenco}>
       {rimedi.map((rimedio, i) => (
         <li key={i} className={styles.voce}>
-          <span>{descriviRimedio(rimedio, contesto)}</span>
           {eApplicabile(rimedio) ? (
-            <button type="button" className={styles.prova} onClick={() => dispatch({ tipo: 'prova_rimedio', mossa: rimedio })}>
-              Prova
-            </button>
+            <>
+              <span className={styles.testo}>{descriviRimedio(rimedio, contesto)}</span>
+              <button type="button" className={styles.prova} aria-label={`Prova: ${descriviRimedio(rimedio, contesto)}`} onClick={() => dispatch({ tipo: 'prova_rimedio', mossa: rimedio })}>
+                Prova
+              </button>
+            </>
           ) : (
-            <span className={styles.esterno}>da fare fuori dallo strumento</span>
+            <>
+              {/* Prima del testo: si sa subito che non è una mossa da provare qui. */}
+              <span className={styles.esterno}>da fare fuori dallo strumento</span>
+              <span className={styles.testo}>{descriviRimedio(rimedio, contesto)}</span>
+            </>
           )}
         </li>
       ))}

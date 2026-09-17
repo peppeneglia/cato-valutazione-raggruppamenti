@@ -18,14 +18,15 @@ export function Forma({ stato }: { stato: Stato }) {
     case 'scoperto':
       return (
         <svg className={styles.forma} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-          <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" fill="currentColor" />
+          <rect x="1.5" y="1.5" width="13" height="13" rx="4" fill="currentColor" />
           <path d="M5 5l6 6M11 5l-6 6" fill="none" stroke="var(--c-sfondo)" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       );
     case 'da_verificare':
       return (
         <svg className={styles.forma} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-          <path d="M8 1.2L14.8 8 8 14.8 1.2 8z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+          {/* Un rombo, ma con gli angoli arrotondati: un quadrato stondato ruotato di 45°. */}
+          <rect x="3.4" y="3.4" width="9.2" height="9.2" rx="2.6" transform="rotate(45 8 8)" fill="none" stroke="currentColor" strokeWidth="1.6" />
           <text x="8" y="11.2" textAnchor="middle" fontSize="8.5" fontWeight="700" fill="currentColor">?</text>
         </svg>
       );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bando, certificazione, dichiarazione, esecutore, lotto, parametri, prestazione, raggruppamento, requisito, soggetto } from './prova';
+import { bando, certificazione, dichiarazione, esecutore, lotto, parametri, prestazione, raggruppamento, REFERENZE, requisito, servizio, soggetto } from './prova';
 import { valuta } from './valuta';
 import { valutaBase } from './valutazione';
 
@@ -61,6 +61,13 @@ describe('valutaBase', () => {
     const p = parametri({ bando: bando([l]), soggetti: [soggetto('s-a', [certificazione('ISO 9001', 'x', '2026-09-30')])] });
     expect(valutaBase({ ...p, dataRiferimento: '2026-09-30' }).verdetto).toBe('ammissibile');
     expect(valutaBase({ ...p, dataRiferimento: '2026-10-01' }).verdetto).toBe('non_ammissibile');
+  });
+  it('non lancia su un fascicolo con una data malformata: la voce non conta e l’anomalia lo dice', () => {
+    const l = lotto({ requisiti: [requisito('r-1', { tipo: 'servizi', cpv: '1', anni: 3, ancoraggio: 'non_dichiarato', numeroMinimo: 1, sostantivo: REFERENZE }, { tipo: 'almeno_un_membro' })] });
+    const p = parametri({ bando: bando([l]), soggetti: [soggetto('s-a', [servizio('1', '2019-01-01', '2019-6-30')])] });
+    const esito = valuta(p);
+    expect(esito.anomalie.map((a) => a.codice)).toContain('data_malformata');
+    expect(esito.requisiti[0]?.stato).toBe('scoperto');
   });
   it('non muta gli input', () => {
     const p = parametri();

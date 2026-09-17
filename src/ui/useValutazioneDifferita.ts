@@ -7,10 +7,10 @@ import { useEffect, useState } from 'react';
 import type { Esito, LottoId, ParametriValutazione, Raggruppamento, VoceConfronto } from '../domain';
 import { confrontaLotti, confrontaRaggruppamenti, valuta } from '../engine';
 
-export const RITARDO_MS = 250;
+const RITARDO_MS = 250;
 
-export const ETICHETTA_ATTUALE = 'Composizione attuale';
-export const ETICHETTA_PRECEDENTE = "Prima dell'ultima prova";
+const ETICHETTA_ATTUALE = 'Composizione attuale';
+const ETICHETTA_PRECEDENTE = "Prima dell'ultima prova";
 
 export type ValutazioneDifferita =
   | { stato: 'in_calcolo' }

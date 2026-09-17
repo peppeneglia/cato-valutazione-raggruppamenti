@@ -1,10 +1,10 @@
-// La tabella principale: una riga per requisito, quattro cose in riga —
-// stato, nome breve, quanto manca, una frase che dice perché — e tutto
-// il resto nell'espansione: descrizione integrale con la fonte, contributi
-// per membro, motivazione, letture, assunzioni, rimedi. I requisiti
-// coperti sono a un filtro di distanza: chi guarda cerca i problemi.
+// L'esito per requisito: una mini card per requisito, quattro cose in riga —
+// i dettagli, nome breve con una frase che dice perché, quanto manca, stato
+// — e tutto il resto nella card dei dettagli: descrizione integrale con la
+// fonte, contributi per membro, motivazione, letture, assunzioni, rimedi. I
+// requisiti coperti sono a un filtro di distanza: chi guarda cerca i problemi.
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   azioneRichiesta,
   descriviIndeterminatezza,
@@ -37,8 +37,6 @@ type Props = {
   contesto: ContestoDescrizioni;
   dispatch: (azione: Azione) => void;
 };
-
-const COLONNE = 4;
 
 type RigaProps = {
   requisito: Requisito;
@@ -122,46 +120,79 @@ function Espansione({ requisito, esito, rimedi, membri, legenda, contesto, dispa
   );
 }
 
-function RigaRequisito(props: RigaProps) {
+function Chiudi() {
+  return (
+    <svg className={styles.iconaChiudi} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/**
+ * Una mini card per requisito: Dettagli a sinistra, poi il nome con la
+ * ragione, quanto manca, e lo stato a destra. Lo stato dice già il colore:
+ * l'azione in riga resta nel colore del testo, per non ripeterlo. I dettagli
+ * si aprono in una card sotto, che si chiude con la X in alto a destra.
+ */
+function SchedaRequisito(props: RigaProps) {
   const { requisito, esito, contesto, aperta, onApri } = props;
+  const bottone = useRef<HTMLButtonElement>(null);
   if (!esito) {
     return (
-      <tr id={`requisito-${requisito.id}`} className={styles.riga}>
-        <td colSpan={COLONNE}>{requisito.nomeBreve}: non valutato (vedi anomalie).</td>
-      </tr>
+      <li className={styles.voce}>
+        <div id={`requisito-${requisito.id}`} className={styles.scheda}>
+          <p className={styles.requisito}>{requisito.nomeBreve}: non valutato (vedi anomalie).</p>
+        </div>
+      </li>
     );
   }
   const ragione = ragioneBreve(esito, requisito, contesto);
   const azione = azioneRichiesta(esito, richiedeChiarimenti);
+  const manca = quantoManca(esito, contesto);
   const idDettagli = `dettagli-${requisito.id}`;
+  const idTitolo = `titolo-dettagli-${requisito.id}`;
   return (
-    <>
-      <tr id={`requisito-${requisito.id}`} className={`${styles.riga} ${styles[esito.stato]}`}>
-        <td className={styles.stato}><StatoRequisito stato={esito.stato} /></td>
-        <td className={styles.requisito}>
-          <span className={styles.nome}>{requisito.nomeBreve}</span>
+    <li className={styles.voce}>
+      <div id={`requisito-${requisito.id}`} className={`${styles.scheda} ${aperta ? styles.schedaAperta : ''}`}>
+        <button ref={bottone} type="button" className={styles.dettagli} aria-label={`Dettagli di ${requisito.nomeBreve}`} aria-expanded={aperta} aria-controls={idDettagli} onClick={onApri}>
+          Dettagli
+        </button>
+        <div className={styles.requisito}>
+          <h3 className={styles.nome}>{requisito.nomeBreve}</h3>
           {ragione ? (
-            <span className={styles.ragione}>
+            <p className={styles.ragione}>
               {ragione}
-              {azione ? <span className={azione === 'chiarimenti' ? styles.chiarimenti : styles.daValutare}> {azione}</span> : null}
-            </span>
+              {azione ? <span className={styles.azione}> {azione}</span> : null}
+            </p>
           ) : null}
-        </td>
-        <td className={styles.manca}>{quantoManca(esito, contesto)}</td>
-        <td className={styles.azioni}>
-          <button type="button" className={styles.dettagli} aria-expanded={aperta} aria-controls={idDettagli} onClick={onApri}>
-            {aperta ? 'Chiudi' : 'Dettagli'}
-          </button>
-        </td>
-      </tr>
+        </div>
+        {/* Solo lo scoperto ha un colore suo: quanto manca «da verificare» resta nel colore del testo. */}
+        {manca ? <p className={`${styles.manca} ${esito.stato === 'scoperto' ? styles.scoperto : ''}`}>{manca}</p> : null}
+        <span className={styles.stato}><StatoRequisito stato={esito.stato} /></span>
+      </div>
       {aperta ? (
-        <tr id={idDettagli} className={styles.rigaEspansione}>
-          <td colSpan={COLONNE}>
-            <Espansione {...props} esito={esito} />
-          </td>
-        </tr>
+        <div id={idDettagli} className={styles.cardDettagli} aria-labelledby={idTitolo}>
+          <div className={styles.testataDettagli}>
+            <h4 id={idTitolo} className={styles.titoloDettagli}>
+              <span className="occhiello">Dettagli</span>
+              <span>{requisito.nomeBreve}</span>
+            </h4>
+            <button
+              type="button"
+              className={styles.chiudi}
+              aria-label={`Chiudi i dettagli di ${requisito.nomeBreve}`}
+              onClick={() => {
+                onApri();
+                bottone.current?.focus();
+              }}
+            >
+              <Chiudi />
+            </button>
+          </div>
+          <Espansione {...props} esito={esito} />
+        </div>
       ) : null}
-    </>
+    </li>
   );
 }
 
@@ -203,8 +234,8 @@ export function TabellaEsito({ lotto, requisiti, rimediPerRequisito, membri, leg
   const coperti = ordinati.filter((r) => esiti.get(r.id)?.stato === 'coperto');
   const visibili = filtro === 'da_risolvere' ? problemi : filtro === 'coperti' ? coperti : [...problemi, ...coperti];
 
-  const riga = (requisito: Requisito) => (
-    <RigaRequisito
+  const scheda = (requisito: Requisito) => (
+    <SchedaRequisito
       key={requisito.id}
       requisito={requisito}
       esito={esiti.get(requisito.id)}
@@ -230,26 +261,15 @@ export function TabellaEsito({ lotto, requisiti, rimediPerRequisito, membri, leg
           ))}
         </div>
       </div>
-      <table className={styles.tabella}>
-        <thead>
-          <tr>
-            <th scope="col">Stato</th>
-            <th scope="col">Requisito</th>
-            <th scope="col">Quanto manca</th>
-            <th scope="col"><span className={styles.nascosto}>Dettagli</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {visibili.map(riga)}
-          {visibili.length === 0 ? (
-            <tr className={styles.riga}>
-              <td colSpan={COLONNE} className={styles.vuoto}>
-                {filtro === 'da_risolvere' ? 'Tutti i requisiti sono coperti.' : 'Nessun requisito è coperto.'}
-              </td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
+      {visibili.length > 0 ? (
+        <ul className={styles.elenco} aria-label="Requisiti">
+          {visibili.map(scheda)}
+        </ul>
+      ) : (
+        <p className={styles.vuoto}>
+          {filtro === 'da_risolvere' ? 'Tutti i requisiti sono coperti.' : 'Nessun requisito è coperto.'}
+        </p>
+      )}
     </section>
   );
 }

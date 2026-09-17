@@ -9,7 +9,7 @@ import type { Caricato } from './documenti/carica';
 import type { DocumentoBando, DocumentoFascicoli } from './documenti/formato';
 import type { Soggetto, SoggettoId } from './domain';
 
-export type Origine = 'server' | 'disco';
+type Origine = 'server' | 'disco';
 
 export type VoceBando = {
   chiave: string;
@@ -35,12 +35,16 @@ export type Scelta = {
 export const SCELTA_VUOTA: Scelta = { imprese: [] };
 
 /** Un raggruppamento ne ha almeno due: con una sola impresa non c'è niente da comporre. */
-export const MINIMO_IMPRESE = 2;
+const MINIMO_IMPRESE = 2;
 
-export type ImpresaDisponibile = { soggetto: Soggetto; voce: VoceFascicoli };
+/** Un'impresa con il fascicolo da cui viene: sempre uno valido, perché da un file rotto non esce nessuna impresa. */
+export type ImpresaDisponibile = { soggetto: Soggetto; voce: VoceFascicoli & { caricato: { stato: 'valido' } } };
 
 export function impreseDisponibili(fascicoli: VoceFascicoli[]): ImpresaDisponibile[] {
-  return fascicoli.flatMap((voce) => (voce.caricato.stato === 'valido' ? voce.caricato.documento.soggetti.map((soggetto) => ({ soggetto, voce })) : []));
+  return fascicoli.flatMap((voce) => {
+    const { caricato } = voce;
+    return caricato.stato === 'valido' ? caricato.documento.soggetti.map((soggetto) => ({ soggetto, voce: { ...voce, caricato } })) : [];
+  });
 }
 
 export function includiImpresa(scelta: Scelta, id: SoggettoId, inclusa: boolean): Scelta {
@@ -55,7 +59,7 @@ export function scegliMandataria(scelta: Scelta, id: SoggettoId): Scelta {
 }
 
 /** Le imprese nell'ordine dell'elenco, non in quello dei clic: la composizione non dipende da come si è arrivati. */
-export function impreseInOrdine(scelta: Scelta, disponibili: ImpresaDisponibile[]): SoggettoId[] {
+function impreseInOrdine(scelta: Scelta, disponibili: ImpresaDisponibile[]): SoggettoId[] {
   return disponibili.map((d) => d.soggetto.id).filter((id) => scelta.imprese.includes(id));
 }
 

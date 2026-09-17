@@ -2,7 +2,7 @@ import { assertNever } from '../assertNever';
 import type { Anomalia, StatoRequisito, Verdetto } from '../domain';
 import { eBloccante } from './validazione';
 
-export type RigaVerdetto = { stato: StatoRequisito; vincolante: boolean };
+type RigaVerdetto = { stato: StatoRequisito; vincolante: boolean };
 
 /**
  * Uno scoperto su requisito vincolante, o un'anomalia bloccante → non

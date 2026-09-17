@@ -17,8 +17,9 @@ body {
    della pagina è grande e stretto; quello di una card appena sopra il corpo. */
 h1, h2, h3 { margin: 0; font-weight: var(--peso-verdetto); line-height: 1.2; color: var(--c-titolo); }
 h1 { font-size: var(--testo-titolo-pagina); letter-spacing: var(--spaziatura-titolo); }
-h2 { font-size: var(--testo-titolo); letter-spacing: -0.01em; }
-h3 { font-size: var(--testo-base); font-weight: var(--peso-forte); }
+h2 { font-size: var(--testo-titolo-card); letter-spacing: var(--spaziatura-titolo); }
+h3 { font-size: var(--testo-titolo); font-weight: var(--peso-forte); }
+h4 { margin: 0; font-size: var(--testo-base); font-weight: var(--peso-forte); color: var(--c-titolo); }
 p { margin: 0; }
 
 table { border-collapse: collapse; width: 100%; }
@@ -41,6 +42,16 @@ details > summary { cursor: pointer; }
 .cifra {
   font-variant-numeric: tabular-nums;
   text-align: right;
+  white-space: nowrap;
+}
+
+/* Solo per chi usa un lettore di schermo: fuori dallo schermo, ma nell'albero. */
+.nascosto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
   white-space: nowrap;
 }
 

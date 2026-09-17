@@ -16,7 +16,9 @@
 //
 // L'esito risponde a una domanda: sono dentro su questo lotto, e se no cosa
 // mi manca. Ciò che risponde sta in alto e grande; ciò che motiva sotto; ciò
-// che documenta dietro un'interazione.
+// che documenta dietro un'interazione. Una colonna sola, card a tutta
+// larghezza: il verdetto, i dati della gara, la composizione da manipolare,
+// l'esito per requisito, i quesiti, le note.
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Azione, Ingresso, Lavoro, Sessione } from './lavoro';
@@ -81,7 +83,7 @@ function useRaccolta(): Raccolta | undefined {
 type Schermata = 'scelta' | 'esito' | 'formato';
 
 /** L'indirizzo del formato: si apre anche in un'altra scheda, e sopravvive a un ricaricamento. */
-export const INDIRIZZO_FORMATO = '?vista=formato';
+const INDIRIZZO_FORMATO = '?vista=formato';
 
 type StatoCronologia = { schermata: Schermata; dallaPagina: true };
 
@@ -99,7 +101,7 @@ function schermataDallIndirizzo(): Schermata {
  * passo, Indietro lo toglie. L'esito non ha indirizzo: un ricaricamento
  * riparte dalla scelta, perché la scelta non sopravvive al ricaricamento.
  */
-function useSchermata(): { schermata: Schermata; apri: (s: Exclude<Schermata, 'scelta'>) => void; torna: () => void } {
+function useSchermata(): { schermata: Schermata; apri: (s: Exclude<Schermata, 'scelta'>) => void; torna: () => void; riallinea: () => void } {
   const [schermata, setSchermata] = useState<Schermata>(schermataDallIndirizzo);
   useEffect(() => {
     if (statoDi(window.history.state)?.schermata === 'esito') window.history.replaceState(null, '', window.location.pathname);
@@ -112,16 +114,17 @@ function useSchermata(): { schermata: Schermata; apri: (s: Exclude<Schermata, 's
     window.history.pushState(stato, '', s === 'formato' ? INDIRIZZO_FORMATO : window.location.pathname);
     setSchermata(s);
   }, []);
+  /** La scelta al posto del passo corrente, senza toccare la cronologia: il passo non era della pagina, o non vale più. */
+  const riallinea = useCallback(() => {
+    window.history.replaceState(null, '', window.location.pathname);
+    setSchermata('scelta');
+  }, []);
   const torna = useCallback(() => {
     // Se il passo l'ha aggiunto la pagina, Indietro è la cosa giusta; se si è arrivati da un link, si torna alla scelta sul posto.
-    if (statoDi(window.history.state)) {
-      window.history.back();
-    } else {
-      window.history.replaceState(null, '', window.location.pathname);
-      setSchermata('scelta');
-    }
-  }, []);
-  return { schermata, apri, torna };
+    if (statoDi(window.history.state)) window.history.back();
+    else riallinea();
+  }, [riallinea]);
+  return { schermata, apri, torna, riallinea };
 }
 
 function leggiTesto(file: File): Promise<string> {
@@ -149,7 +152,7 @@ export default function App() {
   const [ultimoCaricamento, setUltimoCaricamento] = useState<EsitoCaricamento>();
   const [scelta, setScelta] = useState<Scelta>(SCELTA_VUOTA);
   const [sessione, setSessione] = useState<Sessione & { dataIniziale: string }>();
-  const { schermata, apri, torna } = useSchermata();
+  const { schermata, apri, torna, riallinea } = useSchermata();
   const contatore = useRef(0);
 
   // Cambiare schermata riparte dall'alto: la nuova schermata non eredita lo scorrimento della vecchia.
@@ -176,7 +179,12 @@ export default function App() {
   );
   const imprese = useMemo(() => impreseDisponibili(fascicoli), [fascicoli]);
   const soggetti = useMemo(() => imprese.map((i) => i.soggetto), [imprese]);
-  const pronta = sceltaPronta(scelta, bandi, imprese);
+  const pronta = useMemo(() => sceltaPronta(scelta, bandi, imprese), [scelta, bandi, imprese]);
+
+  // L'esito senza una scelta pronta — Avanti del browser dopo un ricaricamento — non ha niente da mostrare: il passo torna a essere la scelta.
+  useEffect(() => {
+    if (schermata === 'esito' && !pronta) riallinea();
+  }, [schermata, pronta, riallinea]);
 
   // Entrando nell'esito — dal bottone o con Avanti del browser — la sessione si allinea alla scelta prima di disegnare.
   useLayoutEffect(() => {
@@ -203,26 +211,17 @@ export default function App() {
     (raccolta?.bandi ?? []).flatMap((b) => (b.stato === 'valido' ? [b.documento.provenienza] : [])),
     (raccolta?.fascicoli ?? []).flatMap((f) => (f.stato === 'valido' ? [f.documento.provenienza] : [])),
   );
-  /**
-   * «Cambia gara» c'è in ogni schermata. Dall'esito e dal formato torna alla
-   * scelta; sulla scelta porta alla card della gara, con il fuoco sulla gara scelta.
-   */
-  const cambiaGara = () => {
-    if (schermata !== 'scelta') {
-      torna();
-      return;
-    }
-    const card = document.getElementById('titolo-scelta-gara')?.closest('section');
-    card?.scrollIntoView?.({ block: 'start' });
-    const gara = card?.querySelector<HTMLInputElement>('input[name="gara"]:checked') ?? card?.querySelector<HTMLInputElement>('input[name="gara"]');
-    gara?.focus();
+  /** Il marchio porta alla home: dall'esito e dal formato torna alla scelta, sulla scelta riparte dall'alto. */
+  const home = () => {
+    if (schermata !== 'scelta') torna();
+    else window.scrollTo(0, 0);
   };
   /** Ogni schermata sta nella stessa cornice. */
   const conCornice = (contenuto: ReactNode) => (
     <div className={styles.app}>
-      <Intestazione onCambiaGara={cambiaGara} />
+      <Intestazione onHome={home} />
       {contenuto}
-      <PiePagina dati={raccolta ? perimetro : 'Caricamento dei documenti…'} />
+      <PiePagina dati={raccolta ? perimetro : 'Caricamento dei documenti…'} onHome={home} />
     </div>
   );
 
@@ -290,11 +289,13 @@ export default function App() {
         provenienze={{ bando: provenienza, fascicoli: provenienzeFascicoli }}
         lavoro={sessione.lavoro}
         onAzione={suAzione}
+        onTorna={torna}
         fraseData={sessione.lavoro.dataRiferimento === sessione.dataIniziale ? fraseDataRiferimento(sessione.dataIniziale, proposta) : undefined}
       />,
     );
   }
-  if (schermata === 'esito' && pronta) return conCornice(null);
+  // Nell'esito ma la sessione non è ancora allineata (ci pensa l'effetto sopra), o la scelta non è pronta (si torna alla scelta): niente da disegnare.
+  if (schermata === 'esito') return conCornice(null);
 
   return conCornice(
     <SchermataScelta
@@ -322,11 +323,13 @@ type PropsValutazione = {
   provenienze: { bando: Provenienza; fascicoli: Provenienza[] };
   lavoro: Lavoro;
   onAzione: (azione: Azione) => void;
+  /** Indietro, alla scelta: il lavoro resta. */
+  onTorna: () => void;
   /** Da dove viene la data di riferimento, finché è quella di partenza. */
   fraseData: string | undefined;
 };
 
-function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch, fraseData }: PropsValutazione) {
+function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch, onTorna, fraseData }: PropsValutazione) {
   const contesto = useMemo(() => ({ bando, soggetti }), [bando, soggetti]);
   const [vista, setVista] = useState<Vista>('lotto');
 
@@ -372,6 +375,9 @@ function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch,
   return (
     <main className={styles.pagina}>
       <div className={styles.testata}>
+        <p>
+          <button type="button" className={styles.torna} onClick={onTorna}>← Torna alla scelta</button>
+        </p>
         <p className="occhiello">{bando.stazioneAppaltante} · Gara in valutazione</p>
         <h1 className={styles.oggetto}>{bando.oggetto}</h1>
         <div className={styles.fatti}>
@@ -419,32 +425,28 @@ function Valutazione({ bando, soggetti, provenienze, lavoro, onAzione: dispatch,
         <>
           <BloccoVerdetto verdetto={esito.verdetto} frase={frase} conteggi={conteggi} dispatch={dispatch} />
 
-          <details className={styles.datiBando}>
-            <summary>Dati del bando e del lotto</summary>
-            <IntestazioneBando bando={bando} lotto={lotto} />
-          </details>
+          <IntestazioneBando bando={bando} lotto={lotto} />
 
-          <div className={styles.corpo}>
-            <div className={styles.principale}>
-              {lotto ? (
-                <TabellaEsito
-                  lotto={lotto}
-                  requisiti={esito.requisiti}
-                  rimediPerRequisito={rimediPerRequisito}
-                  membri={lavoro.raggruppamento.membri}
-                  legenda={legenda}
-                  contesto={contesto}
-                  dispatch={dispatch}
-                />
-              ) : null}
-              {lotto ? <QuesitiAperti lotto={lotto} rimediPerRequisito={rimediPerRequisito} /> : null}
-            </div>
-            <aside className={styles.laterale}>
-              <Composizione lotto={lotto} raggruppamento={lavoro.raggruppamento} soggetti={soggetti} contesto={contesto} dispatch={dispatch} />
+          <div className={styles.composizione}>
+            <Composizione lotto={lotto} raggruppamento={lavoro.raggruppamento} soggetti={soggetti} contesto={contesto} dispatch={dispatch} />
+            <div className={styles.registro}>
               <Storia storia={lavoro.storia} onAnnulla={() => dispatch({ tipo: 'annulla' })} />
               <ConfrontoProva differita={differita} haProve={precedente !== undefined} />
-            </aside>
+            </div>
           </div>
+
+          {lotto ? (
+            <TabellaEsito
+              lotto={lotto}
+              requisiti={esito.requisiti}
+              rimediPerRequisito={rimediPerRequisito}
+              membri={lavoro.raggruppamento.membri}
+              legenda={legenda}
+              contesto={contesto}
+              dispatch={dispatch}
+            />
+          ) : null}
+          {lotto ? <QuesitiAperti lotto={lotto} rimediPerRequisito={rimediPerRequisito} /> : null}
 
           <NoteMotore
             avvisi={esito.avvisiScadenza}

@@ -132,6 +132,12 @@ describe('criterio fatturato', () => {
     expect(valutaCriterio(globale, [fatturatoGlobale(2025, 1)], CONTESTO).valore).toEqual({ tipo: 'misura', certo: 100, incerto: 0 });
     expect(valutaCriterio(specifico, [fatturatoGlobale(2025, 1)], CONTESTO).valore).toEqual({ tipo: 'misura', certo: 0, incerto: 0 });
   });
+  it('lo stesso esercizio due volte conta una volta sola, e lo dice', () => {
+    const c = valutaCriterio(specifico, [fatturato(2025, 'dispositivi medici', 1), fatturato(2025, 'dispositivi medici', 1)], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'misura', certo: 100, incerto: 0 });
+    expect(c.usati).toHaveLength(1);
+    expect(c.note[0]).toContain('esercizio 2025 già contato');
+  });
   it('con ancoraggio alla pubblicazione la finestra parte da quell’anno', () => {
     const contesto: ContestoCriterio = { dataRiferimento: '2027-01-10', dataPubblicazione: '2026-12-20', terminePresentazione: '2026-11-14' };
     const c = valutaCriterio({ ...specifico, periodo: { tipo: 'a_ritroso', esercizi: 1, ancoraggio: 'pubblicazione' } }, [fatturato(2025, 'dispositivi medici', 1), fatturato(2026, 'dispositivi medici', 2)], contesto);
@@ -165,6 +171,20 @@ describe('criterio servizi', () => {
     const c = valutaCriterio({ ...criterio, importoMinimoUnitario: 200_000 }, [servizio('33100000', '2024-01-01', '2024-12-31', 199_999.99), servizio('33100000', '2024-01-01', '2024-12-31', 200_000)], CONTESTO);
     expect(c.valore).toEqual({ tipo: 'misura', certo: 1, incerto: 0 });
     expect(c.note[0]).toContain('sotto il minimo unitario');
+  });
+  it('un servizio con una data malformata non conta e non fa lanciare il motore, nemmeno con l’ancoraggio assunto', () => {
+    const fascicolo = [servizio('33100000', '2024-01-01', '2024-6-30'), servizio('33100000', '2024-1-1', '2024-12-31'), servizio('33100000', '2024-01-01', '2024-12-31')];
+    for (const ancoraggio of ['riferimento', 'non_dichiarato'] as const) {
+      const c = valutaCriterio({ ...criterio, ancoraggio }, fascicolo, CONTESTO);
+      expect(c.valore).toEqual({ tipo: 'misura', certo: 1, incerto: 0 });
+      expect(c.note.filter((n) => n.includes('data malformata'))).toHaveLength(2);
+    }
+  });
+  it('un servizio non analogo e sotto il minimo è non analogo: l’assunzione sulla classe CPV si dichiara', () => {
+    const c = valutaCriterio({ ...criterio, cifreCpvComuni: 2, importoMinimoUnitario: 200_000 }, [servizio('80500000', '2024-01-01', '2024-12-31', 1)], CONTESTO);
+    expect(c.valore).toEqual({ tipo: 'misura', certo: 0, incerto: 0 });
+    expect(c.note).toEqual(['non analoghi per classe CPV, non contati: «Servizio 80500000» (CPV 80500000)']);
+    expect(c.assunzioni.map((a) => a.codice)).toEqual(['classe_cpv']);
   });
   it('ancorato alla pubblicazione, un servizio iniziato dopo non conta', () => {
     const c = valutaCriterio({ ...criterio, ancoraggio: 'pubblicazione' }, [servizio('33100000', '2026-09-05', '2026-09-10')], CONTESTO);

@@ -1,79 +1,198 @@
 .sezione {
+  composes: card from './Card.module.css';
   display: grid;
-  gap: var(--sp-2);
+  gap: var(--sp-5);
 }
 
-.titolo {
-  font-size: var(--testo-titolo);
-}
-
-.dati {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1) var(--sp-5);
-  margin: 0;
-  font-size: var(--testo-sm);
-}
-
-.dati div {
-  display: flex;
-  gap: var(--sp-1);
-}
-
-.dati dt {
-  color: var(--c-testo-tenue);
-}
-
-.dati dt::after {
-  content: ':';
-}
-
-.dati dd {
-  margin: 0;
-}
-
-.sottotitolo {
+.testata {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
+  justify-content: space-between;
+  gap: var(--sp-1) var(--sp-4);
 }
 
-.idLotto,
-.cig {
-  font-variant-numeric: tabular-nums;
+.fonte {
   font-size: var(--testo-xs);
   color: var(--c-testo-tenue);
-  font-weight: var(--peso-normale);
-}
-
-.importoLotto {
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--peso-normale);
-}
-
-.prestazioni th,
-.prestazioni td {
-  padding: var(--sp-1) var(--sp-2);
-  border-bottom: var(--spessore-bordo) solid var(--c-bordo);
-  font-size: var(--testo-sm);
-}
-
-.didascalia {
-  font-size: var(--testo-xs);
-  color: var(--c-testo-tenue);
-  padding-bottom: var(--sp-1);
 }
 
 .cifra {
   font-variant-numeric: tabular-nums;
-  text-align: right;
+}
+
+.nota {
+  margin: 0;
+  font-size: var(--testo-xs);
+  color: var(--c-testo-tenue);
+}
+
+/* ─── I fatti del bando ────────────────────────────────────── */
+
+/* Riquadri che vanno a capo: l'etichetta piccola sopra, il valore grande sotto. */
+.fatti {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(13em, 100%), 1fr));
+  gap: var(--sp-3);
+}
+
+.fatto {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-1);
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--raggio);
+  background: var(--c-superficie);
+}
+
+.fatto dd {
+  margin: 0;
+}
+
+.valore {
+  font-size: var(--testo-titolo);
+  font-weight: var(--peso-verdetto);
+  line-height: 1.3;
+  color: var(--c-titolo);
+  overflow-wrap: anywhere;
+}
+
+/* ─── Valori e lotto ───────────────────────────────────────── */
+
+.blocco {
+  display: grid;
+  gap: var(--sp-3);
+  padding-top: var(--sp-5);
+  border-top: var(--spessore-bordo) solid var(--c-bordo-tenue);
+}
+
+.sottotitolo {
+  font-size: var(--testo-titolo);
+  font-weight: var(--peso-verdetto);
+}
+
+.valori {
+  margin: 0;
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.valoreBando {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.nomeValore {
+  font-weight: var(--peso-forte);
+  color: var(--c-testo);
+}
+
+.avviso {
+  font-weight: var(--peso-normale);
+  color: var(--c-da-verificare);
+}
+
+.candidati {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.candidato {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-2) var(--sp-4);
+  border: var(--spessore-bordo) solid var(--c-bordo);
+  border-radius: var(--raggio);
+}
+
+.importo {
+  font-size: var(--testo-titolo);
+  font-weight: var(--peso-verdetto);
+  color: var(--c-titolo);
+}
+
+.lotto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-1) var(--sp-5);
+}
+
+.oggettoLotto {
+  flex: 1 1 24em;
+  min-width: 0;
+  font-size: var(--testo-titolo);
+  font-weight: var(--peso-verdetto);
+  line-height: 1.3;
+}
+
+.importoLotto {
+  font-size: var(--testo-titolo-card);
+  font-weight: var(--peso-verdetto);
+  color: var(--c-titolo);
   white-space: nowrap;
 }
 
-.vincolo,
-.vuoto {
+.prestazioni {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+/* Una prestazione: descrizione, natura come pillola, importo; la fonte sotto. */
+.prestazione {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--raggio);
+  background: var(--c-superficie);
+  font-size: var(--testo-sm);
+}
+
+.prestazione > .nota {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 599px) {
+  .prestazione {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .descrizionePrestazione {
+    grid-column: 1 / -1;
+  }
+}
+
+.descrizionePrestazione {
+  font-weight: var(--peso-forte);
+  color: var(--c-testo);
+}
+
+.natura {
+  padding: 2px var(--sp-2);
+  border-radius: var(--raggio-pillola);
+  background: var(--c-sfondo);
+  font-size: var(--testo-xs);
+  font-weight: var(--peso-forte);
+  color: var(--c-testo-tenue);
+}
+
+.importoPrestazione {
+  font-weight: var(--peso-verdetto);
+  color: var(--c-titolo);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.vincolo {
   font-size: var(--testo-sm);
   color: var(--c-testo-tenue);
 }

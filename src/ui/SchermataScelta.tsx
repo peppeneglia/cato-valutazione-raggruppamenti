@@ -2,9 +2,9 @@
 // strumento e cosa non fa, poi chiede cosa valutare — quale gara, quali
 // imprese, chi è la mandataria — e da lì si entra nell'esito.
 //
-// Il caricamento da disco sta accanto alle gare disponibili, con lo stesso
-// peso: è ciò che rende lo strumento capace di valutare un bando qualunque,
-// non solo quelli che ha già.
+// Il caricamento da disco sta sotto le gare disponibili, nella stessa card:
+// è ciò che rende lo strumento capace di valutare un bando qualunque, non
+// solo quelli che ha già.
 
 import { useId } from 'react';
 import type { Caricato } from '../documenti/carica';
@@ -83,41 +83,45 @@ function Caricamento({ ultimo, onFile, indirizzoFormato, onFormato }: { ultimo: 
   const idSpiegazione = useId();
   return (
     <section className={styles.carica} aria-labelledby={`${idSpiegazione}-titolo`}>
-      <h3 id={`${idSpiegazione}-titolo`} className={styles.caricaTitolo}>Valuta un altro bando</h3>
-      <p id={idSpiegazione} className={styles.caricaSpiegazione}>
-        Carica un file JSON con i requisiti strutturati di un bando, oppure con i fascicoli delle tue imprese.
-        Il file si legge nel tuo browser e non viene inviato a nessuno.
-      </p>
-      {/* Prima del bottone: chi arriva deve vedere che lo strumento legge un formato, non una gara. */}
-      <a
-        className={styles.formato}
-        href={indirizzoFormato}
-        onClick={(e) => {
-          if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-          e.preventDefault();
-          onFormato();
-        }}
-      >
-        <span className={styles.formatoTitolo}>Il formato che il motore si aspetta</span>
-        <span className={styles.formatoTesto}>
-          I requisiti strutturati di un bando: la forma dei campi, un estratto vero con le note che citano articolo e pagina, e il file completo.
-        </span>
-      </a>
-      <label className={styles.bottoneFile}>
-        Scegli un file JSON
-        <input
-          type="file"
-          accept=".json,application/json"
-          className={styles.nascosto}
-          aria-describedby={idSpiegazione}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) onFile(file);
-            e.target.value = '';
+      <div className={styles.caricaTesto}>
+        <h3 id={`${idSpiegazione}-titolo`} className={styles.caricaTitolo}>Valuta un altro bando</h3>
+        <p id={idSpiegazione} className={styles.caricaSpiegazione}>
+          Carica un file JSON con i requisiti strutturati di un bando, oppure con i fascicoli delle tue imprese.
+          Il file si legge nel tuo browser e non viene inviato a nessuno.
+        </p>
+      </div>
+      <div className={styles.caricaAzioni}>
+        {/* Prima del bottone: chi arriva deve vedere che lo strumento legge un formato, non una gara. */}
+        <a
+          className={styles.formato}
+          href={indirizzoFormato}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            onFormato();
           }}
-        />
-      </label>
-      <div aria-live="polite">
+        >
+          <span className={styles.formatoTitolo}>Il formato che il motore si aspetta</span>
+          <span className={styles.formatoTesto}>
+            I requisiti strutturati di un bando: la forma dei campi, un estratto vero con le note che citano articolo e pagina, e il file completo.
+          </span>
+        </a>
+        <label className={styles.bottoneFile}>
+          Scegli un file JSON
+          <input
+            type="file"
+            accept=".json,application/json"
+            className="nascosto"
+            aria-describedby={idSpiegazione}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onFile(file);
+              e.target.value = '';
+            }}
+          />
+        </label>
+      </div>
+      <div aria-live="polite" className={styles.caricaEsito}>
         {ultimo?.tipo === 'bando' ? (
           <p className={styles.caricato}>Bando caricato da {ultimo.file} e scelto: «{ultimo.oggetto}».</p>
         ) : null}
@@ -175,23 +179,21 @@ export function SchermataScelta({ bandi, fascicoli, altri, scelta, onScelta, ult
 
       <section className={styles.card} aria-labelledby="titolo-scelta-gara">
         <h2 id="titolo-scelta-gara" className={styles.passo}><span className={styles.numero} aria-hidden="true">1</span>Gara</h2>
-        <div className={styles.garaGriglia}>
-          <div className={styles.gare}>
-            {bandiValidi.length > 0 ? (
-              <ul className={styles.elenco} aria-label="Gare disponibili">
-                {bandiValidi.map((v) => <Gara key={v.chiave} voce={v} scelta={scelta} onScelta={onScelta} oggi={oggi} />)}
-              </ul>
-            ) : (
-              <p className={styles.vuoto}>Nessuna gara disponibile: caricane una dal tuo computer.</p>
-            )}
-            {guasti.length > 0 ? (
-              <ul className={styles.elenco} aria-label="Documenti non utilizzabili">
-                {guasti.map((d) => <DocumentoNonUtilizzabile key={d.file} documento={d} />)}
-              </ul>
-            ) : null}
-          </div>
-          <Caricamento ultimo={ultimoCaricamento} onFile={onFile} indirizzoFormato={indirizzoFormato} onFormato={onFormato} />
+        <div className={styles.gare}>
+          {bandiValidi.length > 0 ? (
+            <ul className={styles.elenco} aria-label="Gare disponibili">
+              {bandiValidi.map((v) => <Gara key={v.chiave} voce={v} scelta={scelta} onScelta={onScelta} oggi={oggi} />)}
+            </ul>
+          ) : (
+            <p className={styles.vuoto}>Nessuna gara disponibile: caricane una dal tuo computer.</p>
+          )}
+          {guasti.length > 0 ? (
+            <ul className={styles.elenco} aria-label="Documenti non utilizzabili">
+              {guasti.map((d) => <DocumentoNonUtilizzabile key={d.file} documento={d} />)}
+            </ul>
+          ) : null}
         </div>
+        <Caricamento ultimo={ultimoCaricamento} onFile={onFile} indirizzoFormato={indirizzoFormato} onFormato={onFormato} />
         {/* Gli errori di un file caricato stanno a tutta larghezza: sono da leggere, non da intravedere. */}
         <div aria-live="polite">
           {ultimoCaricamento?.tipo === 'errori' ? (
@@ -213,7 +215,7 @@ export function SchermataScelta({ bandi, fascicoli, altri, scelta, onScelta, ult
             <ul className={styles.elenco}>
               {imprese.map(({ soggetto, voce }) => {
                 const inclusa = scelta.imprese.includes(soggetto.id);
-                const natura = voce.caricato.stato === 'valido' ? voce.caricato.documento.provenienza.natura : 'esempio';
+                const natura = voce.caricato.documento.provenienza.natura;
                 return (
                   <li key={soggetto.id} className={`${styles.impresa} ${inclusa ? styles.impresaInclusa : ''}`}>
                     <label className={styles.impresaEtichetta}>
@@ -235,7 +237,7 @@ export function SchermataScelta({ bandi, fascicoli, altri, scelta, onScelta, ult
                         checked={scelta.mandataria === soggetto.id}
                         onChange={() => onScelta(scegliMandataria(scelta, soggetto.id))}
                       />
-                      <span className={styles.nascosto}>Mandataria: {soggetto.denominazione}</span>
+                      <span className="nascosto">Mandataria: {soggetto.denominazione}</span>
                     </label>
                   </li>
                 );

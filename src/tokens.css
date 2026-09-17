@@ -55,6 +55,8 @@
   --testo-base: 14px;
   --testo-titolo: 17px;
   --testo-mossa: 19px;
+  --testo-marchio: 21px;          /* il nome del prodotto nella cornice, tutto in una dimensione */
+  --testo-titolo-card: 21px;      /* il titolo di una card: un gradino netto sopra il corpo */
   --testo-titolo-pagina: clamp(24px, 1.2vw + 18px, 34px);
   --testo-verdetto: clamp(28px, 2vw + 16px, 44px);
   --testo-cifra-grande: clamp(34px, 2.4vw + 18px, 52px);
@@ -87,7 +89,6 @@
   /* ─── Bordi e messa a fuoco ─────────────────────────────── */
   --spessore-bordo: 1px;
   --spessore-bordo-forte: 3px;
-  --spessore-filetto-verdetto: 4px;
   --raggio: 10px;                 /* i controlli, come i bottoni dell'app */
   --raggio-piccolo: calc(var(--raggio) - 4px);
   --raggio-card: calc(var(--raggio) * 2);   /* le card: derivato, un solo numero da tenere */
@@ -96,10 +97,8 @@
   --anello-focus-distanza: 2px;
 
   /* ─── Layout ──────────────────────────────────────────────
-     La soglia delle due colonne è 1100px: le media query non leggono
-     var(), quindi il valore è ripetuto nei moduli con questo commento. */
+     Una colonna sola: ogni card occupa tutta la larghezza della pagina. */
   --larghezza-max: 1440px;
-  --larghezza-composizione: 400px;
   --larghezza-input-quota: 5.5em;
   --larghezza-input-data: 11em;
 }

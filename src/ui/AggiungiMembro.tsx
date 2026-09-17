@@ -6,9 +6,8 @@ import { useState } from 'react';
 import { etichettaRuolo } from '../descrizioni';
 import type { Raggruppamento, RuoloEsecutore, Soggetto } from '../domain';
 import type { Azione } from '../lavoro';
+import { RUOLI_ESECUTORI } from './ruoli';
 import styles from './AggiungiMembro.module.css';
-
-const RUOLI: RuoloEsecutore[] = ['mandante', 'consorziata_esecutrice', 'mandataria'];
 
 type Props = {
   raggruppamento: Raggruppamento;
@@ -46,7 +45,7 @@ export function AggiungiMembro({ raggruppamento, soggetti, dispatch }: Props) {
       <label className={styles.campo}>
         <span>Ruolo</span>
         <select value={ruolo} onChange={(e) => setRuolo(e.target.value as RuoloEsecutore)} className={styles.select}>
-          {RUOLI.map((r) => (
+          {RUOLI_ESECUTORI.map((r) => (
             <option key={r} value={r}>{etichettaRuolo(r)}</option>
           ))}
         </select>

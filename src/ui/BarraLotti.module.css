@@ -1,43 +1,33 @@
 .barra {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-2) var(--sp-4);
+  display: grid;
+  gap: var(--sp-3);
 }
 
-.nascosto {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
+/* Le card dei lotti vanno a capo invece di scorrere: l'oggetto si legge intero. */
 .elenco {
-  display: flex;
-  gap: var(--sp-2);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22em, 100%), 1fr));
+  gap: var(--sp-3);
   margin: 0;
   padding: 0;
   list-style: none;
-  overflow-x: auto;
-  max-width: 100%;
 }
 
 .elenco > li {
+  display: grid;
   min-width: 0;
 }
 
+/* Tre righe: il verdetto piccolo e colorato, il nome del lotto, l'oggetto intero. */
 .chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  max-width: min(34em, 100%);
-  padding: var(--sp-2) var(--sp-4) var(--sp-2) var(--sp-3);
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-1);
+  width: 100%;
+  padding: var(--sp-4) var(--sp-5);
   border: var(--spessore-bordo) solid var(--c-bordo);
-  border-radius: var(--raggio-pillola);
+  border-radius: var(--raggio-card);
   background: var(--c-sfondo);
-  font-size: var(--testo-sm);
   text-align: left;
   color: var(--c-testo);
 }
@@ -52,37 +42,45 @@
   box-shadow: inset 0 0 0 var(--spessore-bordo) var(--c-azione);
 }
 
-.forma {
+.verdetto {
   display: inline-flex;
   align-items: center;
-  width: 1em;
-  height: 1em;
+  gap: var(--sp-2);
+  font-size: var(--testo-sm);
+  font-weight: var(--peso-verdetto);
+}
+
+.forma {
+  display: inline-flex;
+  width: 1.1em;
+  height: 1.1em;
   flex: none;
 }
 
 .forma svg {
-  width: 1em;
-  height: 1em;
+  width: 100%;
+  height: 100%;
 }
 
 .coperto { color: var(--c-coperto); }
 .scoperto { color: var(--c-scoperto); }
 .da_verificare { color: var(--c-da-verificare); }
-.attesa { color: var(--c-testo-tenue); justify-content: center; }
+.attesa { color: var(--c-testo-tenue); font-weight: var(--peso-normale); font-style: italic; }
 
 .nome {
-  font-weight: var(--peso-forte);
-  white-space: nowrap;
+  font-size: var(--testo-titolo);
+  font-weight: var(--peso-verdetto);
+  color: var(--c-titolo);
 }
 
 .oggetto {
+  font-size: var(--testo-base);
+  line-height: var(--interlinea);
   color: var(--c-testo-tenue);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .confronta {
-  composes: secondario piccolo from './Bottoni.module.css';
-  margin-left: auto;
+  composes: secondario from './Bottoni.module.css';
+  justify-self: start;
 }

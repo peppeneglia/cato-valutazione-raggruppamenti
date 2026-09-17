@@ -9,11 +9,12 @@
 
 import { assertNever } from '../assertNever';
 import type { Lotto, ParametriValutazione, PercorsoMinimo, Raggruppamento, Requisito, RequisitoId } from '../domain';
-import { sogliaInterna } from './criteri';
+import { contestoCriterioDi, sogliaInterna } from './criteri';
 import { quotaCanonica, quotaPositiva } from './quote';
 import { contributoDi } from './requisito';
 import { applicaMossa, mosseCandidate, type Mossa } from './rimedi';
 import { eBloccante } from './validazione';
+import { confrontaTesto } from './testo';
 import { valutaBase, type EsitoBase, type Memo } from './valutazione';
 import { variantiDi } from './varianti';
 
@@ -27,10 +28,10 @@ export function chiaveStato(raggruppamento: Raggruppamento): string {
       const quote = Object.entries(m.quote)
         .filter(([, q]) => quotaPositiva(q))
         .map(([p, q]) => [p, quotaCanonica(q)] as const)
-        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+        .sort(([a], [b]) => confrontaTesto(a, b));
       return [m.soggettoId, m.ruolo, quote];
     })
-    .sort((a, b) => (String(a[0]) < String(b[0]) ? -1 : 1));
+    .sort((a, b) => confrontaTesto(String(a[0]), String(b[0])));
   return JSON.stringify(membri);
 }
 
@@ -51,7 +52,7 @@ function copribileInTeoria(requisito: Requisito, parametri: ParametriValutazione
   const { varianti } = variantiDi(requisito, parametri.bando, memo?.varianti);
   if (varianti.length === 0) return false;
   const contesto = {
-    criterio: { dataRiferimento: parametri.dataRiferimento, dataPubblicazione: parametri.bando.dataPubblicazione, terminePresentazione: parametri.bando.terminePresentazione },
+    criterio: contestoCriterioDi(parametri),
     memo: memo?.criteri,
   };
   return varianti.every((variante) => {
@@ -116,7 +117,7 @@ function giaRaggiunto(verdetto: 'ammissibile' | 'ammissibile_con_riserva', resid
   return { esito: 'gia_ammissibile', verdetto, residui, miglioramenti: [] };
 }
 
-export type OpzioniRicerca = {
+type OpzioniRicerca = {
   /**
    * Se false, la ricerca ignora il limite teorico ed esplora tutto lo spazio.
    * Serve solo ai test che dimostrano che il limite non cambia l'esito.

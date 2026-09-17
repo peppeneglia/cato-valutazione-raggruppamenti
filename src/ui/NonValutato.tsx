@@ -1,9 +1,12 @@
 // Il perimetro dello strumento, dichiarato con la fonte. Non è una scusa:
 // è ciò che questo strumento fa e ciò che non fa, perché chi lo usa
-// sappia cosa sta guardando. I riferimenti sono al disciplinare di gara
-// ASL Roma 6, n. 9445747.
+// sappia cosa sta guardando. L'elenco vale per ogni bando; le fonti accanto
+// alle voci sono un esempio, prese dal disciplinare di gara ASL Roma 6,
+// n. 9445747, e la pagina lo dice: non sono le fonti del bando in esame.
 
 import styles from './NonValutato.module.css';
+
+const DISCIPLINARE_DI_ESEMPIO = 'disciplinare di gara ASL Roma 6, n. 9445747';
 
 const VOCI: { titolo: string; testo: string; fonte?: string }[] = [
   {
@@ -75,10 +78,14 @@ export function NonValutato() {
   return (
     <section aria-labelledby="titolo-perimetro" className={styles.sezione}>
       <h2 id="titolo-perimetro">Cosa questo strumento non valuta</h2>
+      <p className={styles.premessa}>
+        L'elenco vale per ogni bando. I riferimenti ad articoli e pagine accanto alle voci sono, a titolo di esempio,
+        quelli del {DISCIPLINARE_DI_ESEMPIO}: non sono le fonti del bando in esame.
+      </p>
       <dl className={styles.elenco}>
         {VOCI.map((v) => (
           <div key={v.titolo} className={styles.voce}>
-            <dt>{v.titolo}{v.fonte ? <span className={styles.fonte}> — {v.fonte}</span> : null}</dt>
+            <dt>{v.titolo}{v.fonte ? <span className={styles.fonte}> — nel disciplinare di esempio: {v.fonte}</span> : null}</dt>
             <dd>{v.testo}</dd>
           </div>
         ))}

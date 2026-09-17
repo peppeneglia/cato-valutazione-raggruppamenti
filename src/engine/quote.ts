@@ -3,7 +3,7 @@
 
 import type { PrestazioneId } from '../domain';
 
-export const TOLLERANZA_QUOTA = 1e-9;
+const TOLLERANZA_QUOTA = 1e-9;
 const DECIMALI_CANONICI = 6;
 
 export function quotaValida(quota: number): boolean {

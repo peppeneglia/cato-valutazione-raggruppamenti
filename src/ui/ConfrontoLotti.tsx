@@ -35,9 +35,19 @@ export function ConfrontoLotti({ bando, lottoId, differita, onSeleziona }: Props
   const classifica = new Map<LottoId, VoceConfronto<LottoId>>(differita.stato === 'pronto' ? differita.lotti.map((v) => [v.chiave, v]) : []);
   const inCalcolo = differita.stato === 'in_calcolo';
 
+  // L'id del titolo è suo: nella vista del confronto la barra dei lotti, con il suo h2 «Lotti», sta nello stesso DOM.
+  if (bando.lotti.length === 0) {
+    return (
+      <section aria-labelledby="titolo-confronto-lotti-tabella">
+        <h2 id="titolo-confronto-lotti-tabella">Lotti</h2>
+        <p className={styles.vuoto}>Il bando non ha lotti: non c'è niente da valutare.</p>
+      </section>
+    );
+  }
+
   return (
-    <section aria-labelledby="titolo-lotti">
-      <h2 id="titolo-lotti">Lotti</h2>
+    <section aria-labelledby="titolo-confronto-lotti-tabella">
+      <h2 id="titolo-confronto-lotti-tabella">Lotti</h2>
       <table className={styles.tabella}>
         <caption className={styles.didascalia}>
           Lo stesso raggruppamento valutato su ogni lotto del bando, in ordine: verdetto, mosse del percorso minimo, requisiti scoperti.
@@ -74,7 +84,6 @@ export function ConfrontoLotti({ bando, lottoId, differita, onSeleziona }: Props
           })}
         </tbody>
       </table>
-      {bando.lotti.length === 0 ? <p className={styles.vuoto}>Il bando non ha lotti: non c'è niente da valutare.</p> : null}
     </section>
   );
 }

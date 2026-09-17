@@ -29,9 +29,11 @@ import type {
   StatoRequisito,
   VoceFascicolo,
 } from '../domain';
+import { contestoCriterioDi } from './criteri';
 import { confrontaDate } from './date';
 import { indicizza } from './indici';
 import { ausiliarieDi, esecutoriDi, type MembroEsecutore } from './membri';
+import { PESO_STATO } from './operatori';
 import { quotaPositiva, quotaSu } from './quote';
 import { contributoDi, type FattoScadutoDi } from './requisito';
 import { eBloccante } from './validazione';
@@ -113,12 +115,12 @@ function mosseIngresso(lotto: Lotto, esecutori: MembroEsecutore[], esterni: Sogg
   return mosse;
 }
 
-/** Il candidato copre davvero il requisito nel proprio fascicolo, con certezza, sotto ogni variante. */
+/** Il candidato contribuisce al requisito con certezza, nel proprio fascicolo, sotto ogni variante: un prefiltro, è la rivalutazione a confermare. */
 function copreDaSolo(candidato: Soggetto, requisito: Requisito, parametri: ParametriValutazione, memo: Memo | undefined): boolean {
   const { varianti } = variantiDi(requisito, parametri.bando, memo?.varianti);
   if (varianti.length === 0) return false;
   const contesto = {
-    criterio: { dataRiferimento: parametri.dataRiferimento, dataPubblicazione: parametri.bando.dataPubblicazione, terminePresentazione: parametri.bando.terminePresentazione },
+    criterio: contestoCriterioDi(parametri),
     memo: memo?.criteri,
   };
   return varianti.every((variante) => {
@@ -263,13 +265,12 @@ export function applicaMossa(raggruppamento: Raggruppamento, mossa: Mossa): Ragg
   }
 }
 
-export function valutaDopo(parametri: ParametriValutazione, mossa: Mossa, memo?: Memo): EsitoBase {
+function valutaDopo(parametri: ParametriValutazione, mossa: Mossa, memo?: Memo): EsitoBase {
   return valutaBase({ ...parametri, raggruppamento: applicaMossa(parametri.raggruppamento, mossa) }, memo);
 }
 
 // ─── Verifica ────────────────────────────────────────────────
 
-const PESO: Record<StatoRequisito, number> = { coperto: 0, da_verificare: 1, scoperto: 2 };
 
 function statoDi(esito: EsitoBase, requisitoId: RequisitoId): StatoRequisito | undefined {
   return esito.requisiti.find((r) => r.requisitoId === requisitoId)?.stato;
@@ -280,7 +281,7 @@ export function peggiora(prima: EsitoBase, dopo: EsitoBase): boolean {
   if (dopo.anomalie.some(eBloccante)) return true;
   return prima.requisiti.some((r) => {
     const nuovo = statoDi(dopo, r.requisitoId);
-    return nuovo !== undefined && PESO[nuovo] > PESO[r.stato];
+    return nuovo !== undefined && PESO_STATO[nuovo] > PESO_STATO[r.stato];
   });
 }
 
@@ -300,13 +301,14 @@ function firmaEsito(dopo: EsitoBase, raggruppamento: Raggruppamento, mossa: Moss
  * segnalazione in più, non un'alternativa.
  */
 function senzaEquivalenti<T extends { mossa: Mossa; dopo: EsitoBase }>(candidate: T[], raggruppamento: Raggruppamento): T[] {
+  const firme = new Map(candidate.map((c) => [c, firmaEsito(c.dopo, raggruppamento, c.mossa)]));
   const migliori = new Map<string, T>();
   for (const c of candidate) {
-    const firma = firmaEsito(c.dopo, raggruppamento, c.mossa);
+    const firma = firme.get(c) ?? '';
     const attuale = migliori.get(firma);
     if (!attuale || c.dopo.anomalie.length < attuale.dopo.anomalie.length) migliori.set(firma, c);
   }
-  return candidate.filter((c) => migliori.get(firmaEsito(c.dopo, raggruppamento, c.mossa)) === c);
+  return candidate.filter((c) => migliori.get(firme.get(c) ?? '') === c);
 }
 
 // ─── Rinnovo (non applicabile, ma verificato) ────────────────
@@ -358,7 +360,7 @@ export function richiedeChiarimenti(i: Indeterminatezza): boolean {
 }
 
 /** Il quesito da porre alla stazione appaltante, in una frase. */
-export function quesitoDi(requisito: Requisito, indeterminatezza: Indeterminatezza): string {
+function quesitoDi(requisito: Requisito, indeterminatezza: Indeterminatezza): string {
   const nome = `«${requisito.descrizione}»`;
   switch (indeterminatezza.tipo) {
     case 'regola_non_dichiarata':
@@ -391,7 +393,7 @@ function richiestaChiarimenti(requisito: Requisito, esitoRequisito: EsitoRequisi
 
 // ─── Rimedi per requisito ────────────────────────────────────
 
-export type ScadutiPerRequisito = ReadonlyMap<RequisitoId, FattoScadutoDi[]>;
+type ScadutiPerRequisito = ReadonlyMap<RequisitoId, FattoScadutoDi[]>;
 
 /**
  * Per ogni requisito non coperto: le mosse che, applicate da sole, lo

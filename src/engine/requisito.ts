@@ -29,9 +29,10 @@ import type {
 import { formattaConUnita } from '../formato';
 import { sogliaInterna, unitaDi, valutaCriterio, type ContestoCriterio, type ContributoGrezzo, type FattoScaduto, type FattoUsato } from './criteri';
 import { inEuro } from './importi';
+import { senzaDuplicati } from './indici';
 import { eAusiliaria, eEsecutore, type MembroAusiliaria, type MembroEsecutore } from './membri';
 import { assunzioniArrotondamento, componiMotivazione, type DatiMotivazione, type RigaMotivazione } from './motivazione';
-import { componi, type MisurazioneGrezza, type Partecipante } from './operatori';
+import { componi, PESO_STATO, type MisurazioneGrezza, type Partecipante } from './operatori';
 import { quotaSu } from './quote';
 import { descriviCandidato, type Variante } from './varianti';
 
@@ -168,15 +169,6 @@ function unisciNote(note: string[]): string | undefined {
   return note.length === 0 ? undefined : note.join('; ');
 }
 
-function senzaDuplicati<T>(elementi: T[]): T[] {
-  const viste = new Set<string>();
-  return elementi.filter((e) => {
-    const chiave = JSON.stringify(e);
-    if (viste.has(chiave)) return false;
-    viste.add(chiave);
-    return true;
-  });
-}
 
 // ─── Una variante ────────────────────────────────────────────
 
@@ -288,7 +280,11 @@ function valutaVariante(requisito: Requisito, variante: Variante, contesto: Cont
       });
       if (conteggiato) {
         usati.push(...ausiliaria.grezzo.usati.map((fatto) => ({ soggettoId: membro.soggettoId, requisitoId: requisito.id, fatto })));
-        giudizi.push(...ausiliaria.grezzo.giudizi.map((g) => ({ tipo: 'giudizio_richiesto' as const, soggettoId: membro.soggettoId, ...g })));
+        // Stessa regola dell'esecutore: il giudizio conta solo se il valore composto dell'ausiliata è ancora incerto.
+        const compostoAusiliata = partecipanti.find((p) => p.soggettoId === ausiliaria.membro.ausiliataId)?.valore;
+        if (compostoAusiliata === undefined || incerto(compostoAusiliata)) {
+          giudizi.push(...ausiliaria.grezzo.giudizi.map((g) => ({ tipo: 'giudizio_richiesto' as const, soggettoId: membro.soggettoId, ...g })));
+        }
       }
     }
   }
@@ -332,7 +328,6 @@ function valutaVariante(requisito: Requisito, variante: Variante, contesto: Cont
 
 // ─── Fusione delle varianti ──────────────────────────────────
 
-const PESO: Record<StatoRequisito, number> = { coperto: 0, da_verificare: 1, scoperto: 2 };
 
 function stessaUnita(a: Misurazione | undefined, b: Misurazione | undefined): boolean {
   return a !== undefined && b !== undefined && JSON.stringify(a.unita) === JSON.stringify(b.unita);
@@ -345,8 +340,8 @@ function stessaUnita(a: Misurazione | undefined, b: Misurazione | undefined): bo
  */
 function peggiore(valutate: VarianteValutata[]): VarianteValutata {
   return valutate.reduce((acc, v) => {
-    const pa = PESO[acc.esito.stato];
-    const pv = PESO[v.esito.stato];
+    const pa = PESO_STATO[acc.esito.stato];
+    const pv = PESO_STATO[v.esito.stato];
     if (pv !== pa) return pv > pa ? v : acc;
     if (!stessaUnita(acc.esito.misurazione, v.esito.misurazione)) return acc;
     const da = acc.esito.misurazione?.delta ?? 0;
